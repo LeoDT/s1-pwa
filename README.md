@@ -32,7 +32,7 @@ Stage1st（Discuz X3.5）只读阅读器 PWA：用 S1 账号登录、按板块�
 ```bash
 pnpm install
 cp .dev.vars.example .dev.vars          # 按需填写，可留空
-pnpm exec wrangler d1 migrations apply DB --local
+pnpm exec wrangler d1 migrations apply s1-progress --local
 pnpm dev                                # 同时起 vite(5180) 与 wrangler dev(8787)
 ```
 
@@ -86,14 +86,14 @@ pnpm exec wrangler d1 create s1-progress
 #    替换后本地 D1 也会按新 id 建库，需要重新执行一次本地迁移
 
 # 2. 执行迁移（使用迁移表，不要手工 execute 0001）
-pnpm exec wrangler d1 migrations apply DB --remote
+pnpm exec wrangler d1 migrations apply s1-progress --remote
 
-# 3. 设置服务端 secrets
+# 3. 首次部署（此时还没有 secrets；先让 Worker 存在）
+pnpm run deploy
+
+# 4. 设置服务端 secrets（每条都会立即创建并部署一个新版本）
 pnpm exec wrangler secret put ACCESS_TOKEN      # 例如 openssl rand -hex 32
 pnpm exec wrangler secret put HISTORY_SECRET    # 例如 openssl rand -base64 32
-
-# 4. 预检 + 部署
-pnpm run deploy
 
 # 5. 自检
 curl https://<worker>.workers.dev/api/health

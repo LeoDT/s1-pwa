@@ -87,11 +87,11 @@
 
 ## M6 部署与迁移预检（0.5 天）⏳（代码/预检/文档完成，待 Cloudflare 登录）
 
-- [ ] `wrangler d1 create s1-progress` + `d1 migrations apply DB --remote`（需 `wrangler login`）
-- [ ] `wrangler secret put ACCESS_TOKEN` + `HISTORY_SECRET`
-- [ ] `pnpm run deploy`，`/api/health` 自检
+- [ ] `wrangler d1 create s1-progress` + `d1 migrations apply s1-progress --remote`（需 `wrangler login`）
+- [ ] `pnpm run deploy` 首次部署，然后 `wrangler secret put ACCESS_TOKEN` + `HISTORY_SECRET`
+- [ ] `/api/health` 自检
 - [x] 迁移预检：`pnpm preflight`（`server/core` 平台耦合 / 占位 `database_id` / 构建产物 / `.dev.vars`）
-- [x] 本地空库迁移验证（`d1 migrations apply DB --local --persist-to .pi/tmp/d1-fresh`）
+- [x] 本地空库迁移验证（`d1 migrations apply s1-progress --local --persist-to .pi/tmp/d1-fresh`）
 - [x] README 部署步骤 + 常见问题（登录过期、被限流、换域名、SW 更新、`HISTORY_SECRET`）
 
 **验收**：真实部署后 `/api/health` 正常、访问令牌生效、登录与跨设备历史可用。
@@ -128,7 +128,7 @@
 | 空行 | 上游正文的连续空 `<br>` **不做归一**（用户选择保留作者原始留白） |
 | 左栏激活态 | 大屏当前打开的帖子行加 `--color-panel-light` 底 + 3px 强调色竖条 + `aria-current` |
 | 路由参数 | core 路由表支持 `:name` 单段占位符（编译成正则），`/api/history/index` 先于 `/:tid` 注册；方法不符仍返回 405 |
-| D1 配置 | `wrangler.jsonc` 的 `database_id` 是占位 UUID；M6 部署前用 `wrangler d1 create s1-progress` 生成真实 id。本地用 `pnpm exec wrangler d1 migrations apply DB --local` |
+| D1 配置 | `wrangler.jsonc` 的 `database_id` 是占位 UUID；M6 部署前用 `wrangler d1 create s1-progress` 生成真实 id。本地用 `pnpm exec wrangler d1 migrations apply s1-progress --local` |
 | 游客态 | 进度写入与历史请求都挂在 `useSession()` 之后；未登录只读本地镜像，不产生 401 请求。历史页离线时退回本地镜像 |
 | 跨设备续读 | 启动/恢复联网时 `HistorySync` 拉最近 100 条写入本地镜像，列表点开即可续读；列表徽章只用轻量 `/api/history/index` |
 | 退出登录 | 同时清本地 `progress` 镜像与 `outbox`，避免换账号串数据 |
@@ -139,8 +139,9 @@
 | 上游抓取 | `/api/img` 与 `/api/file` 共用 `fetchUpstreamAsset()`：手动跟重定向、逐跳 SSRF 校验、大小上限、cookie 仅发上游域 |
 | 附件 | 经 `/api/file` 取 blob 后 `a[download]` 触发下载；文件名优先 `Content-Disposition`，兜底用帖子里的附件名 |
 | 数据库名 | 统一 `s1-progress`（`wrangler.jsonc` 的 `database_name`）；建库后把真实 `database_id` 填回，占位 UUID 由 preflight 拦截 |
-| 迁移方式 | 用 `d1 migrations apply DB --remote`（有 `d1_migrations` 记录，可重复执行），不再手工 `d1 execute --file` |
+| 迁移方式 | 用 `d1 migrations apply s1-progress --remote`（有 `d1_migrations` 记录，可重复执行），不再手工 `d1 execute --file` |
 | 部署命令 | 文档统一 `pnpm run deploy`，避免 `pnpm deploy` 与 pnpm 自身 deploy 命令混淆；`deploy` 内先 build + preflight |
+| 首次部署顺序 | 先 `pnpm run deploy` 让 Worker 存在，再 `wrangler secret put`（会立即创建并部署新版本）；避免对全新 Worker 直接 `secret put` 的平台差异 |
 | 部署预检 | `scripts/preflight.mjs`：检查占位 `database_id`、`server/core` 平台耦合、`dist/index.html`/`sw.js`/manifest、迁移文件、`.dev.vars` 未被 git 跟踪 |
 | 本地 D1 | 空库迁移在 `.pi/tmp/d1-fresh` 验证通过（`progress` + `idx_progress_recent` + `d1_migrations`） |
 | PWA 本地验证 | Vite dev 不注册 SW；必须 `pnpm build` 后用 wrangler 托管 `dist`，且每次构建后重启 wrangler（assets 清单启动时固定） |
