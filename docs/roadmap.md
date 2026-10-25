@@ -85,13 +85,16 @@
 **验收**：真机可安装、断网可打开壳、字号切换即时生效、键盘 Tab 可达。
 （本地已用 Chromium + 生产构建验证 manifest / SW / 离线壳 / 设置；iOS 主屏与真实断网仍需真机确认。）
 
-## M6 部署与迁移预检（0.5 天）
+## M6 部署与迁移预检（0.5 天）⏳（代码/预检/文档完成，待 Cloudflare 登录）
 
-- [ ] `wrangler d1 create s1pwa` + `d1 execute --file=migrations/0001_init.sql`
+- [ ] `wrangler d1 create s1-progress` + `d1 migrations apply DB --remote`（需 `wrangler login`）
 - [ ] `wrangler secret put ACCESS_TOKEN` + `HISTORY_SECRET`
-- [ ] `pnpm build && wrangler deploy`，`/api/health` 自检
-- [ ] 迁移预检：`grep -r "env\.DB\|caches\.default\|process\.env\|wrangler" server/core/` 必须为空
-- [ ] README 部署步骤 + 常见问题（登录过期、被限流、换域名）
+- [ ] `pnpm run deploy`，`/api/health` 自检
+- [x] 迁移预检：`pnpm preflight`（`server/core` 平台耦合 / 占位 `database_id` / 构建产物 / `.dev.vars`）
+- [x] 本地空库迁移验证（`d1 migrations apply DB --local --persist-to .pi/tmp/d1-fresh`）
+- [x] README 部署步骤 + 常见问题（登录过期、被限流、换域名、SW 更新、`HISTORY_SECRET`）
+
+**验收**：真实部署后 `/api/health` 正常、访问令牌生效、登录与跨设备历史可用。
 
 ## 实现备注（与设计的偏差记录）
 
@@ -135,6 +138,13 @@
 | 图片缓存 | Cache API 本身无 TTL：用 `imgMeta.lastUsed` 自己做 7 天过期 + 500MB LRU；启动时与新图入库后各跑一次。站内表情（`static.stage1st.com/image/smiley/`）不做 7 天过期，但仍参与 LRU |
 | 上游抓取 | `/api/img` 与 `/api/file` 共用 `fetchUpstreamAsset()`：手动跟重定向、逐跳 SSRF 校验、大小上限、cookie 仅发上游域 |
 | 附件 | 经 `/api/file` 取 blob 后 `a[download]` 触发下载；文件名优先 `Content-Disposition`，兜底用帖子里的附件名 |
+| 数据库名 | 统一 `s1-progress`（`wrangler.jsonc` 的 `database_name`）；建库后把真实 `database_id` 填回，占位 UUID 由 preflight 拦截 |
+| 迁移方式 | 用 `d1 migrations apply DB --remote`（有 `d1_migrations` 记录，可重复执行），不再手工 `d1 execute --file` |
+| 部署命令 | 文档统一 `pnpm run deploy`，避免 `pnpm deploy` 与 pnpm 自身 deploy 命令混淆；`deploy` 内先 build + preflight |
+| 部署预检 | `scripts/preflight.mjs`：检查占位 `database_id`、`server/core` 平台耦合、`dist/index.html`/`sw.js`/manifest、迁移文件、`.dev.vars` 未被 git 跟踪 |
+| 本地 D1 | 空库迁移在 `.pi/tmp/d1-fresh` 验证通过（`progress` + `idx_progress_recent` + `d1_migrations`） |
+| PWA 本地验证 | Vite dev 不注册 SW；必须 `pnpm build` 后用 wrangler 托管 `dist`，且每次构建后重启 wrangler（assets 清单启动时固定） |
+| README | 补齐 M3–M5 状态、本地 D1/PWA 验证、部署步骤、secrets 注意事项、排障（登录过期/限流/换域名/SW 更新） |
 | PWA 壳 | `vite-plugin-pwa` 用 `generateSW`：预缓存构建产物 + `navigateFallback: /index.html`；**`/api/*` 不经过 SW 缓存**（图片仍由 Cache API 自己管），断网时深链回壳、数据请求走现有错误态 |
 | PWA 图标 | 192/512（any）+ 512 maskable + iOS 180 `apple-touch-icon`；manifest `display: standalone`、theme/background 用设计令牌；`index.html` 只保留 favicon 与 apple-touch-icon 链接，manifest link 由插件注入 |
 | 持久化存储 | 启动时调用 `navigator.storage.persist()`（失败/被拒绝忽略），降低 Cache/IDB 被系统回收的概率 |

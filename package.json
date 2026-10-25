@@ -13,7 +13,8 @@
     "test": "vitest run",
     "fixtures": "node scripts/fetch-fixtures.mjs",
     "smoke": "node scripts/smoke-e2e.mjs",
-    "deploy": "pnpm build && wrangler deploy"
+    "preflight": "node scripts/preflight.mjs",
+    "deploy": "pnpm build && pnpm preflight && wrangler deploy"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.5",
