@@ -13,8 +13,7 @@
     {
       "binding": "DB",
       "database_name": "s1-progress",
-      // M6 部署前用 `wrangler d1 create s1-progress` 生成的真实 id 替换
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "a3d2c225-858f-4eb3-94d8-845bed81a472",
       "migrations_dir": "migrations"
     }
   ],
