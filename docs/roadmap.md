@@ -85,18 +85,18 @@
 **验收**：真机可安装、断网可打开壳、字号切换即时生效、键盘 Tab 可达。
 （本地已用 Chromium + 生产构建验证 manifest / SW / 离线壳 / 设置；iOS 主屏与真实断网仍需真机确认。）
 
-## M6 部署与迁移预检（0.5 天）🟡（已首次部署，待 ACCESS_TOKEN / 真机）
+## M6 部署与迁移预检（0.5 天）✅（生产已跑通；真机安装/双设备见验收清单）
 
 - [x] `wrangler d1 create s1-progress` + `d1 migrations apply s1-progress --remote`
 - [x] `pnpm run deploy` 首次部署（Workers + Static Assets + D1）
 - [x] `HISTORY_SECRET` 已设置
-- [ ] `ACCESS_TOKEN` 待设置（用户自行执行）
+- [x] `ACCESS_TOKEN` + `HISTORY_SECRET` 已设置；`/api/config` 返回 `authRequired: true`
 - [x] `/api/health` 返回 ok；PWA manifest / SW / 离线壳已在生产 URL 冒烟通过
 - [x] 迁移预检：`pnpm preflight`（`server/core` 平台耦合 / 占位 `database_id` / 构建产物 / `.dev.vars`）
 - [x] 本地空库迁移验证（`d1 migrations apply s1-progress --local --persist-to .pi/tmp/d1-fresh`）
 - [x] README 部署步骤 + 常见问题（登录过期、被限流、换域名、SW 更新、`HISTORY_SECRET`）
 
-**验收**：设置 `ACCESS_TOKEN` 后 `/api/config` 的 `authRequired=true`，再验登录、跨设备历史与真机安装。
+**验收**：生产 `/api/health`、`/api/config`、登录与续读已跑通；真机安装、双设备历史、真实断网按验收清单继续。
 
 ## 实现备注（与设计的偏差记录）
 
@@ -130,7 +130,7 @@
 | 空行 | 上游正文的连续空 `<br>` **不做归一**（用户选择保留作者原始留白） |
 | 左栏激活态 | 大屏当前打开的帖子行加 `--color-panel-light` 底 + 3px 强调色竖条 + `aria-current` |
 | 路由参数 | core 路由表支持 `:name` 单段占位符（编译成正则），`/api/history/index` 先于 `/:tid` 注册；方法不符仍返回 405 |
-| D1 配置 | `wrangler.jsonc` 的 `database_id` 是占位 UUID；M6 部署前用 `wrangler d1 create s1-progress` 生成真实 id。本地用 `pnpm exec wrangler d1 migrations apply s1-progress --local` |
+| D1 配置 | 已创建 `s1-progress` 并回填真实 `database_id`；换账号/重建库时替换，preflight 拦截占位 UUID。本地用 `pnpm exec wrangler d1 migrations apply s1-progress --local` |
 | 游客态 | 进度写入与历史请求都挂在 `useSession()` 之后；未登录只读本地镜像，不产生 401 请求。历史页离线时退回本地镜像 |
 | 跨设备续读 | 启动/恢复联网时 `HistorySync` 拉最近 100 条写入本地镜像，列表点开即可续读；列表徽章只用轻量 `/api/history/index` |
 | 退出登录 | 同时清本地 `progress` 镜像与 `outbox`，避免换账号串数据 |
@@ -140,7 +140,7 @@
 | 图片缓存 | Cache API 本身无 TTL：用 `imgMeta.lastUsed` 自己做 7 天过期 + 500MB LRU；启动时与新图入库后各跑一次。站内表情（`static.stage1st.com/image/smiley/`）不做 7 天过期，但仍参与 LRU |
 | 上游抓取 | `/api/img` 与 `/api/file` 共用 `fetchUpstreamAsset()`：手动跟重定向、逐跳 SSRF 校验、大小上限、cookie 仅发上游域 |
 | 附件 | 经 `/api/file` 取 blob 后 `a[download]` 触发下载；文件名优先 `Content-Disposition`，兜底用帖子里的附件名 |
-| 数据库名 | 统一 `s1-progress`（`wrangler.jsonc` 的 `database_name`）；建库后把真实 `database_id` 填回，占位 UUID 由 preflight 拦截 |
+| 数据库名 | 统一 `s1-progress`（`wrangler.jsonc` 的 `database_name`）；真实 `database_id` 已回填，换账号/重建库时需替换，占位 UUID 由 preflight 拦截 |
 | 迁移方式 | 用 `d1 migrations apply s1-progress --remote`（有 `d1_migrations` 记录，可重复执行），不再手工 `d1 execute --file` |
 | 部署命令 | 文档统一 `pnpm run deploy`，避免 `pnpm deploy` 与 pnpm 自身 deploy 命令混淆；`deploy` 内先 build + preflight |
 | 首次部署顺序 | 先 `pnpm run deploy` 让 Worker 存在，再 `wrangler secret put`（会立即创建并部署新版本）；避免对全新 Worker 直接 `secret put` 的平台差异 |

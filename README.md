@@ -16,7 +16,7 @@ Stage1st（Discuz X3.5）只读阅读器 PWA：用 S1 账号登录、按板块�
 | M3 阅读进度 | ✅ D1、身份探针、楼层定位、历史列表、离线补写 |
 | M4 图片与附件 | ✅ `/api/img`、`/api/file`、灯箱、省流量模式、缓存统计/清理 |
 | M5 PWA 打磨 | ✅ manifest / Service Worker / 离线壳 / 无障碍 / 表情缓存不过期 |
-| M6 部署 | 🟡 已首次部署（Worker + D1）；`HISTORY_SECRET` 已配置，待 `ACCESS_TOKEN` 与真机验收 |
+| M6 部署 | ✅ 已部署到 Cloudflare Workers + D1；`ACCESS_TOKEN` / `HISTORY_SECRET` 均生效（真机安装/双设备可继续验收） |
 
 ## 环境要求
 
@@ -75,8 +75,8 @@ pnpm run deploy   # build + preflight + wrangler deploy
 
 ## 部署到 Cloudflare
 
-> 数据库名统一为 `s1-progress`。`wrangler.jsonc` 里的 `database_id` 是占位 UUID，
-> `pnpm preflight` 会拦住未替换的部署。
+> 数据库名统一为 `s1-progress`。当前 `wrangler.jsonc` 已填本项目的真实 `database_id`；
+> 换账号或重建库时需要替换，`pnpm preflight` 会拦住占位 UUID。
 
 ```bash
 # 1. 登录并建库
