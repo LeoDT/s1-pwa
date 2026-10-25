@@ -114,10 +114,10 @@ export function ThreadPane({ tid, page }: ThreadPaneProps) {
         {data ? (
           <div className="mx-auto max-w-[800px]">
             <header className="border-b border-line px-4 pb-3 pt-3">
-              <h1 className="text-[17px] font-semibold leading-[1.45] text-heading">
+              <h1 className="text-title font-semibold leading-[1.45] text-heading">
                 {data.title}
               </h1>
-              <p className="mt-1 text-[12.5px] text-muted">
+              <p className="mt-1 text-meta text-muted">
                 {boardName ? `${boardName} · ` : ''}
                 {data.page} / {data.totalPages} 页 · {data.posts.length} 楼
               </p>

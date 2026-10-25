@@ -81,7 +81,7 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
         <button
           type="button"
           onClick={() => setState({ status: 'loading' })}
-          className="flex min-h-[120px] w-full items-center justify-center gap-2 rounded-sm border border-line bg-panel-light text-[13px] text-muted"
+          className="flex min-h-[120px] w-full items-center justify-center gap-2 rounded-sm border border-line bg-panel-light text-ui text-muted"
         >
           <ImageOff size={16} />
           图片加载失败 · 点击重试

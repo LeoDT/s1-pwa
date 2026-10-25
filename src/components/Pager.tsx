@@ -20,13 +20,13 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
   }
 
   return (
-    <div className={cn('flex items-center justify-center gap-2 text-[14px] text-text', className)}>
+    <div className={cn('flex items-center justify-center gap-2 text-ui text-text', className)}>
       <button
         type="button"
         aria-label="上一页"
         disabled={page <= 1}
         onClick={() => go(page - 1)}
-        className="inline-flex size-11 items-center justify-center rounded-md disabled:opacity-40 active:bg-panel-light"
+        className="inline-flex size-11 items-center justify-center rounded-md disabled:opacity-40 transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
       >
         <ChevronLeft size={20} />
       </button>
@@ -55,7 +55,7 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
             setDraft(String(page))
             setEditing(true)
           }}
-          className="rounded-md px-2 py-1 tnum active:bg-panel-light"
+          className="rounded-md px-2 py-1 tnum transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
         >
           {page} / {totalPages}
         </button>
@@ -66,7 +66,7 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
         aria-label="下一页"
         disabled={page >= totalPages}
         onClick={() => go(page + 1)}
-        className="inline-flex size-11 items-center justify-center rounded-md disabled:opacity-40 active:bg-panel-light"
+        className="inline-flex size-11 items-center justify-center rounded-md disabled:opacity-40 transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
       >
         <ChevronRight size={20} />
       </button>

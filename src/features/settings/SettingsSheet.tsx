@@ -13,24 +13,29 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      // 焦点落在弹层本身（tabIndex=-1），避免打开瞬间给「关闭」按钮画焦点环
+      dialog.focus()
+    }
     if (!open && dialog.open) dialog.close()
   }, [open])
 
   return (
     <dialog
       ref={dialogRef}
+      tabIndex={-1}
       onClose={onClose}
       onCancel={onClose}
-      className="m-0 mt-auto w-full max-w-none bg-transparent p-0 backdrop:bg-black/45 sm:m-auto sm:max-w-md"
+      className="m-0 mt-auto w-full max-w-none bg-transparent p-0 backdrop:bg-black/45 focus:outline-none sm:m-auto sm:max-w-md"
     >
       <div className="max-h-[80dvh] overflow-y-auto rounded-t-lg bg-canvas pb-[env(safe-area-inset-bottom)] sm:rounded-lg">
         <div className="sticky top-0 flex items-center justify-between border-b border-line bg-panel px-4 py-3">
-          <h2 className="text-[16px] font-semibold text-heading">设置</h2>
+          <h2 className="text-title font-semibold text-heading">设置</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-[14px] text-text active:bg-panel-light"
+            className="rounded-md px-2 py-1 text-ui text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
           >
             关闭
           </button>
@@ -65,8 +70,8 @@ function AccessTokenSection() {
 
   return (
     <section className="space-y-2">
-      <h3 className="text-[13px] font-medium text-muted">访问令牌</h3>
-      <p className="text-[12.5px] leading-relaxed text-muted">
+      <h3 className="text-ui font-medium text-muted">访问令牌</h3>
+      <p className="text-meta leading-relaxed text-muted">
         当前：{token.data ? '已保存' : '未保存'}
       </p>
       <div className="flex gap-2">
@@ -79,20 +84,20 @@ function AccessTokenSection() {
           }}
           placeholder="粘贴新的访问令牌"
           autoComplete="off"
-          className="min-w-0 flex-1 rounded-md border border-line bg-canvas px-3 py-2 text-[15px]"
+          className="min-w-0 flex-1 rounded-md border border-line bg-canvas px-3 py-2 text-body"
         />
         <button
           type="button"
           onClick={() => mutation.mutate(draft.trim())}
           disabled={mutation.isPending || draft.trim() === ''}
-          className="rounded-md bg-accent-strong px-3 py-2 text-[14px] font-medium text-on-accent disabled:opacity-50"
+          className="rounded-md bg-accent-strong px-3 py-2 text-ui font-medium text-on-accent disabled:opacity-50"
         >
           保存
         </button>
       </div>
-      {saved ? <p className="text-[12.5px] text-accent-strong">已更新</p> : null}
+      {saved ? <p className="text-meta text-accent-strong">已更新</p> : null}
       {mutation.isError ? (
-        <p className="text-[12.5px] text-danger">{errorMessage(mutation.error)}</p>
+        <p className="text-meta text-danger">{errorMessage(mutation.error)}</p>
       ) : null}
     </section>
   )
@@ -111,8 +116,8 @@ function AccountSection() {
 
   return (
     <section className="space-y-2">
-      <h3 className="text-[13px] font-medium text-muted">账号</h3>
-      <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-[14px]">
+      <h3 className="text-ui font-medium text-muted">账号</h3>
+      <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-ui">
         <ShieldCheck size={18} className="text-accent-strong" />
         <span className="text-text">
           {session.data ? `已登录（uid ${session.data.uid}）` : '未登录'}
@@ -123,14 +128,14 @@ function AccountSection() {
           type="button"
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
-          className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-[14px] text-danger active:bg-panel-light"
+          className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-ui text-danger transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
         >
           <LogOut size={16} />
           退出登录
         </button>
       ) : null}
       {mutation.isError ? (
-        <p className="text-[12.5px] text-danger">{errorMessage(mutation.error)}</p>
+        <p className="text-meta text-danger">{errorMessage(mutation.error)}</p>
       ) : null}
     </section>
   )
@@ -142,15 +147,15 @@ function AboutSection() {
 
   return (
     <section className="space-y-2">
-      <h3 className="text-[13px] font-medium text-muted">关于</h3>
-      <p className="text-[12.5px] text-muted">版本 {config.data?.version ?? '—'}</p>
+      <h3 className="text-ui font-medium text-muted">关于</h3>
+      <p className="text-meta text-muted">版本 {config.data?.version ?? '—'}</p>
       <button
         type="button"
         onClick={async () => {
           await caches.delete('s1-img-v1')
           setCleared(true)
         }}
-        className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-[14px] text-text active:bg-panel-light"
+        className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-ui text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
       >
         <Trash2 size={16} />
         {cleared ? '图片缓存已清空' : '清空图片缓存'}

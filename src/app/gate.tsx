@@ -25,11 +25,11 @@ export function Gate({ children }: { children: ReactNode }) {
   if (config.isError) {
     return (
       <div className="mt-10 space-y-2 text-center">
-        <p className="text-[15px] text-danger">{errorMessage(config.error)}</p>
+        <p className="text-body text-danger">{errorMessage(config.error)}</p>
         <button
           type="button"
           onClick={() => void config.refetch()}
-          className="rounded-md border border-line px-3 py-1.5 text-[14px] text-text"
+          className="rounded-md border border-line px-3 py-1.5 text-ui text-text"
         >
           重试
         </button>

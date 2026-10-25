@@ -30,11 +30,11 @@ export function TokenForm() {
     >
       <div className="flex items-center gap-2 text-heading">
         <KeyRound size={20} />
-        <h2 className="text-[17px] font-semibold">需要访问令牌</h2>
+        <h2 className="text-title font-semibold">需要访问令牌</h2>
       </div>
-      <p className="text-[14px] leading-relaxed text-text">
+      <p className="text-ui leading-relaxed text-text">
         这台服务器开启了访问令牌。令牌在部署时设置（
-        <code className="rounded bg-panel-light px-1 py-0.5 text-[12.5px]">
+        <code className="rounded bg-panel-light px-1 py-0.5 text-meta">
           wrangler secret put ACCESS_TOKEN
         </code>
         ），填一次即可，本机会记住。
@@ -45,15 +45,15 @@ export function TokenForm() {
         onChange={(event) => setToken(event.target.value)}
         placeholder="访问令牌"
         autoComplete="off"
-        className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[15px] text-text placeholder:text-muted"
+        className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-body text-text placeholder:text-muted"
       />
       {mutation.isError ? (
-        <p className="text-[13px] text-danger">{errorMessage(mutation.error)}</p>
+        <p className="text-ui text-danger">{errorMessage(mutation.error)}</p>
       ) : null}
       <button
         type="submit"
         disabled={mutation.isPending || token.trim() === ''}
-        className="w-full rounded-md bg-accent-strong px-3 py-2 text-[15px] font-medium text-on-accent active:opacity-90 disabled:opacity-50"
+        className="w-full rounded-md bg-accent-strong px-3 py-2 text-body font-medium text-on-accent active:opacity-90 disabled:opacity-50"
       >
         {mutation.isPending ? '保存中…' : '保存并继续'}
       </button>

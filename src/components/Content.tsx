@@ -16,15 +16,15 @@ const ALLOWED_ATTR = [
 
 const VOID_TAGS = new Set(['area', 'base', 'col', 'embed', 'link', 'meta', 'source', 'track', 'wbr'])
 
-/** Discuz <font size="1..7"> 映射，上限 48px 防刷屏 */
+/** Discuz <font size="1..7"> 映射（rem：12/14/16/18/24/32/48），上限 48px 防刷屏 */
 const FONT_SIZE: Record<string, string> = {
-  '1': '12px',
-  '2': '13px',
-  '3': '16px',
-  '4': '18px',
-  '5': '24px',
-  '6': '32px',
-  '7': '48px',
+  '1': '0.75rem',
+  '2': '0.875rem',
+  '3': '1rem',
+  '4': '1.125rem',
+  '5': '1.5rem',
+  '6': '2rem',
+  '7': '3rem',
 }
 
 interface ContentProps {
@@ -96,7 +96,7 @@ function renderNode(
   if (tag === 'table') {
     return (
       <span key={key} className="my-2 block max-w-full overflow-x-auto">
-        <table className="border-collapse text-[15px]">{children}</table>
+        <table className="border-collapse text-body">{children}</table>
       </span>
     )
   }
@@ -111,14 +111,14 @@ function renderNode(
 
   if (tag === 'blockquote') {
     return (
-      <blockquote key={key} className="my-2 border-l-2 border-line pl-3 text-[15px] text-muted">
+      <blockquote key={key} className="my-2 border-l-2 border-line pl-3 text-body text-muted">
         {children}
       </blockquote>
     )
   }
 
   if (tag === 'pre' || tag === 'code') {
-    return createElement(tag, { key, className: 'rounded-sm bg-panel-light px-1 py-0.5 text-[14px]' }, children)
+    return createElement(tag, { key, className: 'rounded-sm bg-panel-light px-1 py-0.5 text-ui' }, children)
   }
 
   return createElement(tag, { key }, children)

@@ -31,6 +31,13 @@
   --font-sans:
     -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC",
     "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+
+  /* 字号四档（rem；根字号固定 16，所以 0.75/0.875/1/1.25 = 12/14/16/20）
+     见 docs/design-system.md §2 */
+  --text-meta: 0.75rem;
+  --text-ui: 0.875rem;
+  --text-body: 1rem;
+  --text-title: 1.25rem;
 }
 
 @utility tnum {
@@ -40,11 +47,17 @@
 @layer base {
   :root {
     color-scheme: light;
-    --post-font-size: 17px;
+    --post-font-size: 1rem;
     --header-h: 48px;
     --bar-h: 48px;
     /* 大屏浏览框架：左栏 360 + 正文 800 */
     --frame-w: 1160px;
+
+    /* 动效只做反馈：按下/悬停/抽屉，不做入场。见 docs/design-system.md §6 */
+    --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --motion-press: 140ms;
+    --motion-hover: 180ms;
+    --motion-sheet: 240ms;
   }
 
   html {
@@ -73,6 +86,35 @@
   button {
     font: inherit;
     color: inherit;
+  }
+
+  /* 设置抽屉：只做一次位移+淡入（240ms），不做内容入场 */
+  dialog[open] > div {
+    animation: sheet-in var(--motion-sheet) var(--motion-ease);
+  }
+
+  dialog[open]::backdrop {
+    animation: sheet-backdrop-in var(--motion-sheet) ease-out;
+  }
+
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes sheet-backdrop-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   :focus-visible {

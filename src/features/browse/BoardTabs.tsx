@@ -26,7 +26,7 @@ export function BoardTabs({ boards, activeFid, onSelect }: BoardTabsProps) {
               type="button"
               onClick={() => onSelect(board.fid)}
               className={cn(
-                'relative shrink-0 snap-start whitespace-nowrap px-3.5 text-[14px]',
+                'relative shrink-0 snap-start whitespace-nowrap px-3.5 text-ui',
                 active ? 'font-medium text-heading' : 'text-text',
               )}
             >

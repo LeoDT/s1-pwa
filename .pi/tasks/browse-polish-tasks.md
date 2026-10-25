@@ -7,5 +7,6 @@
 - [x] 5 顶栏固定 Stage1st 字样，帖子标题进正文
 - [x] 文档同步（navigation / design-system / roadmap）
 - [x] 验证：typecheck / test / build / 浏览器冒烟 + 截图
-- [ ] 5.5 排版复盘报告（taste-skill 对照，待确认后再改）
+- [x] 5.5 排版复盘报告（taste-skill 对照，已确认：正文16/标题20/其他12，rem 化）
+- [x] 5.6 字号四档 rem 化 + 正文字号设置接线 + 动效仅反馈（悬停/按下/抽屉）
 - [ ] 提交本轮改动（等用户过目）

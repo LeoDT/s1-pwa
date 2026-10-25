@@ -20,7 +20,7 @@ export function QuoteBlock({ quote, base, onOpenPost }: QuoteBlockProps) {
 
   return (
     <div className="mb-2 rounded-sm border-l-[3px] border-line bg-panel-light/70 px-3 py-2">
-      <div className="mb-1 flex items-start gap-1 text-[12.5px] text-muted">
+      <div className="mb-1 flex items-start gap-1 text-meta text-muted">
         {clickable ? (
           <button
             type="button"
@@ -37,7 +37,7 @@ export function QuoteBlock({ quote, base, onOpenPost }: QuoteBlockProps) {
 
       <div
         className={cn(
-          'text-[15px] leading-relaxed text-text',
+          'text-body leading-relaxed text-text',
           collapsible && !expanded && 'max-h-32 overflow-hidden',
         )}
       >
@@ -48,7 +48,7 @@ export function QuoteBlock({ quote, base, onOpenPost }: QuoteBlockProps) {
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="mt-1 inline-flex items-center gap-1 text-[12.5px] text-link"
+          className="mt-1 inline-flex items-center gap-1 text-meta text-link"
         >
           {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           {expanded ? '收起' : '展开'}

@@ -32,25 +32,25 @@ export function StatusPage() {
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <h2 className="text-[17px] font-semibold text-heading">运行诊断</h2>
-        <p className="text-[15px] leading-relaxed text-text">
+        <h2 className="text-title font-semibold text-heading">运行诊断</h2>
+        <p className="text-body leading-relaxed text-text">
           前端、Worker、代理与浏览链路均可在此自检。
         </p>
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-[13px] font-medium text-muted">接口</h3>
+        <h3 className="text-ui font-medium text-muted">接口</h3>
         <CheckRow label="GET /api/health" state={health} />
         <CheckRow label="GET /api/config" state={config} />
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-[13px] font-medium text-muted">设计令牌</h3>
+        <h3 className="text-ui font-medium text-muted">设计令牌</h3>
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
           {TOKEN_SWATCHES.map((swatch) => (
             <div key={swatch.name} className="overflow-hidden rounded-sm border border-line">
               <div className={`h-10 ${swatch.className}`} />
-              <div className="bg-panel-light px-1 py-1 text-center text-[10px] text-muted">
+              <div className="bg-panel-light px-1 py-1 text-center text-meta text-muted">
                 {swatch.name}
               </div>
             </div>
@@ -58,7 +58,7 @@ export function StatusPage() {
         </div>
       </section>
 
-      <section className="space-y-1 rounded-md border border-line bg-panel-light p-3 text-[13px] leading-relaxed text-text">
+      <section className="space-y-1 rounded-md border border-line bg-panel-light p-3 text-ui leading-relaxed text-text">
         <p className="font-medium text-heading">访问令牌</p>
         <p>
           部署时用 <code className="rounded bg-canvas px-1">wrangler secret put ACCESS_TOKEN</code> 设置；
@@ -92,8 +92,8 @@ function CheckRow({ label, state }: CheckRowProps) {
         />
       )}
       <div className="min-w-0">
-        <p className="text-[14px] font-medium text-heading">{label}</p>
-        <p className="break-all text-[12.5px] text-muted tnum">{detail}</p>
+        <p className="text-ui font-medium text-heading">{label}</p>
+        <p className="break-all text-meta text-muted tnum">{detail}</p>
       </div>
     </div>
   )

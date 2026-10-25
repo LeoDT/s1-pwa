@@ -10,7 +10,7 @@ export interface Prefs {
 }
 
 export const DEFAULT_PREFS: Prefs = {
-  fontSize: 17,
+  fontSize: 16,
   dataSaver: false,
   edgeSwipe: false,
   leftPane: true,
@@ -36,6 +36,7 @@ export function savePrefs(patch: Partial<Prefs>): Prefs {
   return next
 }
 
+/** 根字号固定 16px，正文按 rem 缩放（见 docs/design-system.md §2） */
 export function applyPrefs(prefs: Prefs): void {
-  document.documentElement.style.setProperty('--post-font-size', `${prefs.fontSize}px`)
+  document.documentElement.style.setProperty('--post-font-size', `${prefs.fontSize / 16}rem`)
 }

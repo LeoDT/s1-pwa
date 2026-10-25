@@ -20,7 +20,7 @@ export function ThreadRow({ thread, onOpen, active = false, read = false, newRep
       onClick={onOpen}
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'flex w-full items-start gap-3 px-4 py-2.5 text-left active:bg-panel-light',
+        'flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light',
         active && 'bg-panel-light shadow-[inset_3px_0_0_var(--color-accent-strong)]',
         !active && read && 'shadow-[inset_3px_0_0_var(--color-accent-strong)]',
       )}
@@ -32,18 +32,18 @@ export function ThreadRow({ thread, onOpen, active = false, read = false, newRep
           read ? 'border-accent-strong' : 'border-line',
         )}
       >
-        <span className={cn('text-[13px] font-medium tnum', read ? 'text-accent-strong' : 'text-text')}>
+        <span className={cn('text-ui font-medium tnum', read ? 'text-accent-strong' : 'text-text')}>
           {thread.replies}
         </span>
         {newReplies > 0 ? (
-          <span className="text-[11px] font-medium tnum text-flag-strong">+{newReplies}</span>
+          <span className="text-meta font-medium tnum text-flag-strong">+{newReplies}</span>
         ) : null}
       </span>
 
       <span className="min-w-0 flex-1">
         <span
           className={cn(
-            'line-clamp-2 block text-[15px] font-medium leading-[1.45]',
+            'line-clamp-2 block text-body font-medium leading-[1.45]',
             active ? 'text-heading' : 'text-text',
           )}
         >

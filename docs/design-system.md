@@ -33,7 +33,7 @@
 |---|---|---|---|---|
 | `--color-text` | 8.16 | 5.93 | 6.37 | ✅ 任意字号 |
 | `--color-heading` | 10.40 | 7.56 | 8.12 | ✅ 任意字号 |
-| `--color-muted` | 5.59 | 4.07 | 4.37 | ✅ canvas / ⚠️ panel-light 只用 ≥15px 元信息；panel 上改用 `--color-text` |
+| `--color-muted` | 5.59 | 4.07 | 4.37 | ✅ canvas 任意字号；panel/panel-light 上只用 ≥14px 元信息 |
 | `--color-link` | 6.11 | 4.44 | 4.77 | ✅ 正文；顶栏上改用 `--color-text` 或加深 |
 | `--color-accent-strong` | 4.62 | 3.36 | 3.61 | ✅ 仅 canvas 上的文字；作为**背景**时配 `--color-on-accent`（4.99） |
 | `--color-flag` | 3.58 | 2.60 | 2.79 | ❌ 不作文字色（≥20px 粗体可作大字强调）；只做描边/图标 |
@@ -65,19 +65,34 @@
 
 不加载 web font（避免 FOIT 与体积）。数字统一 `font-variant-numeric: tabular-nums`。
 
+**字号只有四档，全部用 rem**（根字号固定 16px，所以渲染值就是 12/14/16/20）：
+
+| 令牌 | rem | px | 用途 |
+|---|---|---|---|
+| `text-meta` | 0.75 | 12 | 楼号/时间/作者/fid/角标/引用头/表格标签/错误小字 |
+| `text-ui` | 0.875 | 14 | 按钮/表单/设置项/板块 tab/列表徽章数字/附件链接 |
+| `text-body` | 1 | 16 | 列表标题/正文/引用正文/空态文案/顶栏站点名 |
+| `text-title` | 1.25 | 20 | 页面内 h1（帖子标题）/ 抽屉标题 / 登录页标题 |
+
 | 用途 | 字号/行高 | 字重 | 颜色 |
 |---|---|---|---|
-| 页面标题（顶栏） | 15/1.3 | 600 | `--color-heading` |
-| 帖子正文 | **17/1.75**（设置可调 15–18） | 400 | `--color-text` |
-| 帖子内引用 | 15/1.6 | 400 | `--color-text` |
-| 列表标题 | 15/1.45，`line-clamp: 2` | 500 | `--color-text` |
-| 列表徽章数字 | 13/1.1 | 500 | `--color-text` |
-| 元信息（楼号/时间/作者） | 12.5/1.4 | 400 | `--color-muted` |
-| Sheet/弹层标题 | 16/1.4 | 600 | `--color-heading` |
+| 顶栏站点名 `Stage1st` | 16/1.3 | 600 | `--color-heading` |
+| 帖子标题（内容内 h1） | 20/1.45 | 600 | `--color-heading` |
+| 帖子正文 | **16/1.75**（`--post-font-size`，设置可调 15–18） | 400 | `--color-text` |
+| 帖子内引用 | 16/1.6 | 400 | `--color-text` |
+| 列表标题 | 16/1.45，`line-clamp: 2` | 500 | `--color-text` |
+| 列表徽章数字 | 14/1.1 | 500 | `--color-text` |
+| 元信息（楼号/时间/作者） | 12/1.4（作者用 500 字重 + `--color-text` 区分，不放大字号） | 400 | `--color-muted` |
+| 设置分组标题 | 14/1.4 | 500 | `--color-muted` |
 | 按钮/表单 | 14/1.4 | 500 | — |
-| Toast | 13/1.5 | 400 | `--color-canvas` on `--color-text` 底 |
 
-正文行宽：容器 `max-width: 800px`，左右 `padding: 0 16px`（小屏）/`0 24px`（大屏），17px 下约 42–45 汉字/行。
+**为什么用 rem**：设置里的正文字号写成 `--post-font-size: <n>/16 rem`，只缩放阅读内容（UI 尺寸不变）；同时浏览器默认字号/最小字号对 rem 生效（px 不会），上游 `<font size>` 也按 rem 映射。根字号保持 16px，所以 px→rem 不改变现有渲染。
+
+正文行宽：容器 `max-width: 800px`，左右 `padding: 0 16px`（小屏）/`0 24px`（大屏），16px 下约 42–45 汉字/行。
+
+**不做的两件事**（taste-skill app-screen 规则对照后的决定）：
+1. 不把上游正文里的连续空 `<br>` 归一——保留作者原始留白。
+2. 不做入场动画（见 §6）。
 
 ## 3. 间距 / 圆角 / 描边 / 阴影
 
@@ -192,12 +207,12 @@
 ### 5.3 帖子 `PostCard`
 
 ```
-12#  用户名                      2019-4-23 14:41      ← 元信息 12.5 muted
+12#  用户名                      2019-4-23 14:41      ← 元信息 12 muted
 ┌ 引用 ─────────────────────────────────────────┐
 │ ▸ pgain2004  2019-4-23 13:25                   │  ← 可点击（有 pid 时）
 │ 隐了这一栏连页码都会看不到的啊……                 │
 └────────────────────────────────────────────────┘
-正文……（17/1.75）
+正文……（16/1.75）
 [图片 100% 宽]
 ```
 
@@ -208,7 +223,7 @@
 ### 5.4 引用块 `QuoteBlock`
 
 - `background: color-mix(in srgb, var(--color-panel-light) 70%, transparent)`、左 3px `--color-line`、`--radius-sm`、`padding: 10px 12px`、`margin-bottom: 10px`
-- 头部一行 12.5px `--color-muted`，有 pid 时渲染为按钮：hover 下划线 `--color-flag-strong`，右侧加 `↗` 图标
+- 头部一行 12px `--color-muted`，有 pid 时渲染为按钮：hover 下划线 `--color-flag-strong`，右侧加 `↗` 图标
 - 超过 8 行折叠，底部「展开」；引用内图片不加载，显示 `[图片]` 占位 chip
 - 无 pid（如"作者被禁止或删除"）→ 不可点，纯文本
 
@@ -235,15 +250,16 @@
 ### 5.8 Sheet / 设置
 
 - 小屏：底部抽屉，`max-height: 80dvh`，上圆角 14，顶部 40×4 拖拽条
+- 内容：常用板块管理（就地编辑：排序/移除/从板块树添加/手动 fid）→ 访问令牌 → 账号 → 关于；板块管理不再有独立页面
 - 大屏：右侧面板 380px
-- 内容：访问令牌、账号信息（uid + 登录时间 + 退出登录）、正文字号（15/16/17/18 分段控件）、省流量模式（Switch）、图片缓存（占用 + 清空）、边缘滑动开关、关于/版本
+- 内容：常用板块管理、访问令牌、账号信息（uid + 登录时间 + 退出登录）、正文字号（15/16/17/18 分段控件）、省流量模式（Switch）、图片缓存（占用 + 清空）、边缘滑动开关、关于/版本
 
 ### 5.9 状态类组件
 
 | 组件 | 规格 |
 |---|---|
 | `Skeleton` | `--color-panel-light` 底 + 1.2s 渐变扫光；`prefers-reduced-motion` 时静态 |
-| `EmptyState` | 20px 图标 + 15px `--color-muted` 文案 + 可选按钮 |
+| `EmptyState` | 20px 图标 + 16px `--color-muted` 文案 + 可选按钮 |
 | `ErrorState` | 同上，图标 `--color-danger`，附「重试」按钮；展示上游错误码对应的中文文案 |
 | `Toast` | 底部居中（底部条之上 12px），`--color-text` 底 + `--color-canvas` 字，`--radius-md`；error 变体用 `--color-danger` 底 + 白字 |
 | `InlineBanner` | 顶栏下方 36px 高，`--color-panel-light` 底，左侧 3px `--color-danger`（登录过期）/ `--color-flag`（限流提示） |
@@ -260,10 +276,25 @@
 
 - 点击目标 ≥ 44×44；列表项整行可点。
 - 楼层定位高亮：目标楼 `box-shadow: inset 0 0 0 2px var(--color-flag)`，800ms 后 400ms 淡出。
-- 页面切换动画：仅大屏右栏做 120ms 淡入；小屏用系统 push 动画（不做自定义转场）。
-- 键盘（≥1024）：`←/→` 翻页（输入框聚焦时禁用）、`Esc` 关闭浮层、`/` 聚焦板块切换。
-- 下拉刷新不做（与 PWA 手势冲突），改由顶栏刷新按钮。
-- `prefers-reduced-motion: reduce` → 关闭扫光与淡入。
+- 键盘（≥1024）：`←/→` 翻页（输入框聚焦时禁用）、`Esc` 关闭浮层。
+
+### 6.1 动效（只做反馈，不做入场）
+
+依据 taste-skill `references/app-screens.md §2.8`：**app 屏没有 motion floor，屏幕上的内容不做入场动画**，动效只用于「按下 / 悬停 / 焦点 / 抽屉打开 / 一行出现」。
+
+| 场景 | 时长 / 曲线 | 实现 |
+|---|---|---|
+| 按下反馈（行、按钮） | `--motion-press` 140ms | `transition-colors` + `active:bg-panel-light` |
+| 悬停（仅 hover 设备） | `--motion-press` 140ms | `hover:bg-panel-light`（Tailwind v4 的 `hover:` 已限定 hover 设备） |
+| 设置抽屉打开 | `--motion-sheet` 240ms，`--motion-ease` | `dialog[open] > div` 位移 12px + 淡入；遮罩同步淡入 |
+| 小屏顶栏收起/展开 | 200ms，`transform` | 已有 |
+| 楼层定位高亮 | 300ms 淡出 | 已有 |
+
+硬约束：
+- **不加**入场 stagger、滚动场景、视差、preload、自定义光标、整页平滑滚动（那些是 landing page 规则，会干扰阅读）。
+- 只动 `transform` / `opacity` / 颜色，不动布局属性；不做 overshoot / bounce。
+- `prefers-reduced-motion: reduce` → 全局动画降为 0.01ms（骨架屏变静态，抽屉直接出现），内容不会因此消失。
+- 骨架屏的 `animate-pulse` 是加载状态，不算入场动画。
 
 ## 7. 图标
 
@@ -311,10 +342,24 @@
     "Microsoft YaHei", sans-serif;
 }
 
+  /* 字号四档（rem） */
+  --text-meta: 0.75rem;
+  --text-ui: 0.875rem;
+  --text-body: 1rem;
+  --text-title: 1.25rem;
+}
+
 :root {
   color-scheme: light;
-  --post-font-size: 17px;   /* 设置项写入 */
+  --post-font-size: 1rem;   /* prefs.applyPrefs 写入：fontSize / 16 + 'rem' */
+  --frame-w: 1160px;
+
+  /* 动效令牌：只用于反馈，不做入场 */
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-press: 140ms;
+  --motion-hover: 180ms;
+  --motion-sheet: 240ms;
 }
 ```
 
-正文字号设置通过 `body { font-size: var(--post-font-size) }` + 正文使用 `1rem` 生效。
+正文字号：`PostCard` 正文用 `text-[length:var(--post-font-size)]`，根字号固定 16px，设置只影响阅读内容（15–18px）。

@@ -84,22 +84,22 @@ export function LoginPage() {
     >
       <div className="flex items-center gap-2 text-heading">
         <LogIn size={20} />
-        <h2 className="text-[17px] font-semibold">用 S1 账号登录</h2>
+        <h2 className="text-title font-semibold">用 S1 账号登录</h2>
       </div>
-      <p className="text-[13px] leading-relaxed text-muted">
+      <p className="text-ui leading-relaxed text-muted">
         凭证只保存在这台设备（IndexedDB），服务端仅做转发，不落盘。
         账号若设置过安全提问，必须选对问题并填写答案，否则会计入失败次数。
       </p>
 
-      {loginPage.isPending ? <p className="text-[14px] text-muted">正在读取登录页…</p> : null}
+      {loginPage.isPending ? <p className="text-ui text-muted">正在读取登录页…</p> : null}
 
       {loginPage.isError ? (
         <div className="space-y-2 rounded-md border border-line bg-panel-light p-3">
-          <p className="text-[13px] text-danger">{errorMessage(loginPage.error)}</p>
+          <p className="text-ui text-danger">{errorMessage(loginPage.error)}</p>
           <button
             type="button"
             onClick={() => void loginPage.refetch()}
-            className="rounded-md border border-line bg-canvas px-3 py-1.5 text-[13px]"
+            className="rounded-md border border-line bg-canvas px-3 py-1.5 text-ui"
           >
             重试
           </button>
@@ -157,17 +157,17 @@ export function LoginPage() {
           ) : null}
 
           {loginPage.data.form.captcha ? (
-            <p className="rounded-md border border-line bg-panel-light p-3 text-[13px] text-danger">
+            <p className="rounded-md border border-line bg-panel-light p-3 text-ui text-danger">
               当前需要验证码：请先用浏览器登录一次 stage1st.com，再回来重试。
             </p>
           ) : null}
 
           {mutation.isError ? (
-            <p className="text-[13px] text-danger">{errorMessage(mutation.error)}</p>
+            <p className="text-ui text-danger">{errorMessage(mutation.error)}</p>
           ) : null}
 
           {lock.remainingMinutes > 0 ? (
-            <p className="rounded-md border border-line bg-panel-light p-3 text-[13px] text-danger">
+            <p className="rounded-md border border-line bg-panel-light p-3 text-ui text-danger">
               S1 暂时锁定登录（密码错误次数过多），约 {lock.remainingMinutes} 分钟后可重试。
               请确认账号、密码以及<strong className="font-medium">安全提问</strong>都已填对——
               账号设置过安全提问时，选错问题同样会被计为失败。
@@ -182,7 +182,7 @@ export function LoginPage() {
               values.username === '' ||
               values.password === ''
             }
-            className="w-full rounded-md bg-accent-strong px-3 py-2.5 text-[15px] font-medium text-on-accent active:opacity-90 disabled:opacity-50"
+            className="w-full rounded-md bg-accent-strong px-3 py-2.5 text-body font-medium text-on-accent active:opacity-90 disabled:opacity-50"
           >
             {mutation.isPending ? '登录中…' : '登录'}
           </button>
@@ -193,12 +193,12 @@ export function LoginPage() {
 }
 
 const inputClass =
-  'w-full rounded-md border border-line bg-canvas px-3 py-2 text-[15px] text-text'
+  'w-full rounded-md border border-line bg-canvas px-3 py-2 text-body text-text'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <span className="text-[13px] text-muted">{label}</span>
+      <span className="text-ui text-muted">{label}</span>
       {children}
     </label>
   )

@@ -31,7 +31,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className={cn('mx-auto flex w-full items-center gap-1 px-1', frameWidth)}>
       {/* 左侧预留给「浏览历史」入口，后续里程碑接入 */}
       <div className="w-11" />
-      <span className="min-w-0 flex-1 truncate text-center text-[15px] font-semibold text-heading">
+      <span className="min-w-0 flex-1 truncate text-center text-body font-semibold text-heading">
         {WORDMARK}
       </span>
       <div className="flex items-center">
@@ -40,7 +40,7 @@ export function Shell({ children }: { children: ReactNode }) {
           aria-label="设置"
           title="设置"
           onClick={() => setSettingsOpen(true)}
-          className="inline-flex size-11 items-center justify-center rounded-md text-text active:bg-panel-light"
+          className="inline-flex size-11 items-center justify-center rounded-md text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
         >
           <Settings size={20} />
         </button>

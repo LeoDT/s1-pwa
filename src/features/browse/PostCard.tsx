@@ -25,22 +25,22 @@ export function PostCard({ post, highlighted, onOpenPost, onOpenAttachment, tid 
         highlighted && 'shadow-[inset_0_0_0_2px_var(--color-flag)]',
       )}
     >
-      <header className="mb-1.5 flex items-baseline gap-2 text-[12.5px] text-muted">
+      <header className="mb-1.5 flex items-baseline gap-2 text-meta text-muted">
         <span className="shrink-0 tnum">
           {post.floor === 1 ? '楼主' : post.floor !== null ? `${post.floor}#` : '—'}
         </span>
-        <span className="min-w-0 truncate text-[14px] font-medium text-text">
+        <span className="min-w-0 truncate text-meta font-medium text-text">
           {post.authorName || '匿名'}
         </span>
         <span className="ml-auto shrink-0 tnum">{post.postedAt}</span>
       </header>
 
-      {post.editedNote ? <p className="mb-1 text-[12px] text-muted">{post.editedNote}</p> : null}
+      {post.editedNote ? <p className="mb-1 text-meta text-muted">{post.editedNote}</p> : null}
 
       {post.hidden ? (
-        <p className="text-[15px] text-muted">该楼层内容不可见</p>
+        <p className="text-body text-muted">该楼层内容不可见</p>
       ) : (
-        <div className="break-words text-[1rem] leading-[1.75] text-text">
+        <div className="break-words text-[length:var(--post-font-size)] leading-[1.75] text-text">
           {post.blocks.map((block, index) =>
             block.kind === 'quote' ? (
               <QuoteBlock key={index} quote={block} base={UPSTREAM_ROOT} onOpenPost={jump} />
@@ -58,7 +58,7 @@ export function PostCard({ post, highlighted, onOpenPost, onOpenAttachment, tid 
               <button
                 type="button"
                 onClick={() => onOpenAttachment(attachment.url, attachment.name)}
-                className="text-[13px] text-link underline decoration-line underline-offset-2"
+                className="text-ui text-link underline decoration-line underline-offset-2"
               >
                 附件：{attachment.name}
               </button>

@@ -108,7 +108,7 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
         className="h-full overflow-y-auto overscroll-contain pb-[calc(var(--bar-h)+env(safe-area-inset-bottom))]"
       >
         <div
-          className="flex items-center justify-center overflow-hidden text-[12.5px] text-muted"
+          className="flex items-center justify-center overflow-hidden text-meta text-muted"
           style={{ height: pull }}
         >
           {pull > 0 || refreshing
@@ -143,12 +143,12 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
               ))}
             </div>
 
-            <div ref={sentinelRef} className="py-4 text-center text-[12.5px] text-muted">
+            <div ref={sentinelRef} className="py-4 text-center text-meta text-muted">
               {forum.isFetchNextPageError ? (
                 <button
                   type="button"
                   onClick={() => void forum.fetchNextPage()}
-                  className="text-[13px] text-link underline decoration-line underline-offset-2"
+                  className="text-ui text-link underline decoration-line underline-offset-2"
                 >
                   第 {loaded + 1} 页加载失败，点击重试
                 </button>
@@ -158,7 +158,7 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
                 <button
                   type="button"
                   onClick={() => void forum.fetchNextPage()}
-                  className="text-[13px] text-link"
+                  className="text-ui text-link"
                 >
                   加载更多（{loaded} / {total} 页）
                 </button>

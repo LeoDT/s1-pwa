@@ -36,7 +36,7 @@ export function EmptyState({ text, action }: { text: string; action?: ReactNode 
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
       <Inbox size={22} className="text-muted" />
-      <p className="text-[15px] text-muted">{text}</p>
+      <p className="text-body text-muted">{text}</p>
       {action}
     </div>
   )
@@ -46,12 +46,12 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
       <AlertCircle size={22} className="text-danger" />
-      <p className="text-[15px] text-danger">{message}</p>
+      <p className="text-body text-danger">{message}</p>
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-md border border-line px-3 py-1.5 text-[14px] text-text active:bg-panel-light"
+          className="rounded-md border border-line px-3 py-1.5 text-ui text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
         >
           重试
         </button>

@@ -195,7 +195,7 @@ message HTML
 
 白名单标签：`a, b, strong, i, em, u, s, strike, br, p, div, span, font, blockquote, ol, ul, li, code, pre, table, thead, tbody, tr, th, td, hr, img, sub, sup`。
 白名单属性：`href, src, alt, title, color, size, face, colspan, rowspan`。
-`font[size]` 映射：1→12px、2→13px、3→16px、4→18px、5→24px、6→32px、7→48px（上限 48px）。
+`font[size]` 映射（rem）：1→0.75rem(12)、2→0.875rem(14)、3→1rem(16)、4→1.125rem(18)、5→1.5rem(24)、6→2rem(32)、7→3rem(48)，上限 48px。
 
 护栏：单帖节点数 > 5000 时只渲染前 5000 个并提示；`<table>` 宽度用 `overflow-x: auto` 包裹。
 
