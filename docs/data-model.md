@@ -230,6 +230,7 @@ export interface ProgressStore {
 
 `caches.open('s1-img-v1')`，key = `/api/img?u=…`。
 `imgMeta` 记录字节数与最近访问时间；**超过 7 天未访问**的条目在启动/新图入库后清理，总占用 > 500MB 时再按 `lastUsed` 淘汰。
+站内表情（`static.stage1st.com/image/smiley/`）是固定静态资源，不做 7 天过期，但仍参与 500MB LRU。
 设置页显示本站占用（`imgMeta` 汇总）与 `navigator.storage.estimate().usage`，可一键清空（同时清 Cache、`imgMeta` 与内存 objectURL）。
 Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 

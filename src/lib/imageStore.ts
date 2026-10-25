@@ -9,9 +9,13 @@ import { getAppToken } from './api'
 import { cookieHeader } from './cookieJar'
 
 const CACHE_NAME = 's1-img-v1'
+const IMAGE_PATH = '/api/img'
 const MAX_TOTAL_BYTES = 500 * 1024 * 1024
 /** 图片缓存保留 7 天：冷门图不长期占空间 */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+/** 站内表情是固定静态资源，不做 7 天过期（仍参与 500MB LRU） */
+const LONG_LIVED_HOST = 'static.stage1st.com'
+const LONG_LIVED_PATH = '/image/smiley/'
 const MAX_CONCURRENT = 6
 const MAX_OBJECT_URLS = 60
 
@@ -44,7 +48,27 @@ function withSlot<T>(task: () => Promise<T>): Promise<T> {
 }
 
 export function imageCacheKey(absoluteUrl: string): string {
-  return `/api/img?u=${encodeURIComponent(absoluteUrl)}`
+  return `${IMAGE_PATH}?u=${encodeURIComponent(absoluteUrl)}`
+}
+
+/** 站内表情没有内容时效，不需要 7 天过期；见 docs/data-model.md §5.3 */
+export function isLongLivedImage(absoluteUrl: string): boolean {
+  try {
+    const url = new URL(absoluteUrl)
+    return url.hostname === LONG_LIVED_HOST && url.pathname.startsWith(LONG_LIVED_PATH)
+  } catch {
+    return false
+  }
+}
+
+function isLongLivedCacheKey(key: string): boolean {
+  const prefix = `${IMAGE_PATH}?u=`
+  if (!key.startsWith(prefix)) return false
+  try {
+    return isLongLivedImage(decodeURIComponent(key.slice(prefix.length)))
+  } catch {
+    return false
+  }
 }
 
 /** 返回可直接给 <img src> 的 blob URL（同一 src 复用） */
@@ -119,7 +143,7 @@ function trimObjectUrls(): void {
   }
 }
 
-/** 7 天过期 + 500MB LRU；启动时与每次新图入库后调用 */
+/** 7 天过期（站内表情除外）+ 500MB LRU；启动时与每次新图入库后调用 */
 export async function pruneImageCache(): Promise<void> {
   const entries = await idbAll<CacheMeta>('imgMeta')
   if (entries.length === 0) return
@@ -129,11 +153,11 @@ export async function pruneImageCache(): Promise<void> {
   const kept: CacheMeta[] = []
 
   for (const entry of entries) {
-    if (now - entry.lastUsed > MAX_AGE_MS) {
+    if (isLongLivedCacheKey(entry.key) || now - entry.lastUsed <= MAX_AGE_MS) {
+      kept.push(entry)
+    } else {
       await cache.delete(entry.key)
       await idbDel('imgMeta', entry.key)
-    } else {
-      kept.push(entry)
     }
   }
 

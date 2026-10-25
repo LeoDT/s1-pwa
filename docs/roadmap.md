@@ -66,7 +66,7 @@
 ## M4 图片与附件（1 天）✅
 
 - [x] `/api/img` + `/api/file`（SSRF 防护、类型/大小校验、缓存头）
-- [x] `imageStore`：Cache API + LRU（7 天 TTL / 500MB）+ 并发 6 + 去重
+- [x] `imageStore`：Cache API + LRU（7 天 TTL，站内表情除外 / 500MB）+ 并发 6 + 去重
 - [x] `ProxyImage`：IntersectionObserver、骨架、失败重试、省流量模式
 - [x] `ImageLightbox`：1x/2x、Esc/点空白关闭
 - [x] 附件点击 → blob 下载
@@ -132,7 +132,7 @@
 | 回复快照 | `ProgressRow.replies` 只在进入帖子时取一次，本次阅读内翻页/刷新不更新（`newReplies = 列表回复数 - 快照`） |
 | 浏览历史 | 不是独立页面：`/history` 与 `/history/t/…` 复用 `BrowseLayout`，小屏占满、大屏占左栏，底部板块条常驻；行样式与板块列表共用 `ListRow`；从历史进入的详情页翻页/引用跳转都留在 `/history/t/…` |
 | 激活色 | 历史按钮（`aria-current="page"`）、板块 tab、帖子行激活/已读徽章统一用 `--color-accent-strong` 文字，与左侧 3px 竖条一致 |
-| 图片缓存 | Cache API 本身无 TTL：用 `imgMeta.lastUsed` 自己做 7 天过期 + 500MB LRU；启动时与新图入库后各跑一次 |
+| 图片缓存 | Cache API 本身无 TTL：用 `imgMeta.lastUsed` 自己做 7 天过期 + 500MB LRU；启动时与新图入库后各跑一次。站内表情（`static.stage1st.com/image/smiley/`）不做 7 天过期，但仍参与 LRU |
 | 上游抓取 | `/api/img` 与 `/api/file` 共用 `fetchUpstreamAsset()`：手动跟重定向、逐跳 SSRF 校验、大小上限、cookie 仅发上游域 |
 | 附件 | 经 `/api/file` 取 blob 后 `a[download]` 触发下载；文件名优先 `Content-Disposition`，兜底用帖子里的附件名 |
 | PWA 壳 | `vite-plugin-pwa` 用 `generateSW`：预缓存构建产物 + `navigateFallback: /index.html`；**`/api/*` 不经过 SW 缓存**（图片仍由 Cache API 自己管），断网时深链回壳、数据请求走现有错误态 |
