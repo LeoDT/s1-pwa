@@ -3,10 +3,12 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { router } from '@/app/router'
-import { applyPrefs, loadPrefs } from '@/lib/prefs'
+import { applyPrefs, getPrefs } from '@/lib/prefs'
+import { pruneImageCache } from '@/lib/imageStore'
 import '@/styles/tokens.css'
 
-applyPrefs(loadPrefs())
+applyPrefs(getPrefs())
+void pruneImageCache().catch(() => undefined)
 
 const queryClient = new QueryClient({
   defaultOptions: {

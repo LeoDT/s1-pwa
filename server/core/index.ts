@@ -3,6 +3,7 @@ import type { AppConfig } from '../../shared/types'
 import type { CoreDeps } from './env'
 import { checkAppToken, fail, json } from './http'
 import { clearHistory, deleteHistory, historyIndex, listHistory, putHistory } from './history'
+import { handleFile } from './file'
 import { handleImage } from './image'
 import { handleProxy } from './proxy'
 import { compileRoutes, type Route } from './route'
@@ -42,6 +43,11 @@ const routes: Route[] = [
     method: 'GET',
     path: '/api/img',
     handler: (request, deps, url) => handleImage(request, deps, url),
+  },
+  {
+    method: 'GET',
+    path: '/api/file',
+    handler: (request, deps, url) => handleFile(request, deps, url),
   },
   {
     method: 'GET',

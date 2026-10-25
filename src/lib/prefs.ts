@@ -18,6 +18,9 @@ export const DEFAULT_PREFS: Prefs = {
 
 const STORAGE_KEY = 's1r:prefs'
 
+let cached: Prefs | null = null
+const listeners = new Set<() => void>()
+
 export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -29,10 +32,23 @@ export function loadPrefs(): Prefs {
   }
 }
 
+/** 同步读取当前偏好（useSyncExternalStore 的快照） */
+export function getPrefs(): Prefs {
+  cached ??= loadPrefs()
+  return cached
+}
+
+export function subscribePrefs(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
 export function savePrefs(patch: Partial<Prefs>): Prefs {
-  const next = { ...loadPrefs(), ...patch }
+  const next = { ...getPrefs(), ...patch }
+  cached = next
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   applyPrefs(next)
+  for (const listener of listeners) listener()
   return next
 }
 

@@ -4,12 +4,14 @@
  *
  * 为什么不用 <img src="/api/img?...">：需要带访问令牌与 S1 cookie，且要能统计/清理缓存。
  */
-import { idbAll, idbDel, idbSet } from './db'
+import { idbAll, idbDel, idbGet, idbSet } from './db'
 import { getAppToken } from './api'
 import { cookieHeader } from './cookieJar'
 
 const CACHE_NAME = 's1-img-v1'
 const MAX_TOTAL_BYTES = 500 * 1024 * 1024
+/** 图片缓存保留 7 天：冷门图不长期占空间 */
+const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const MAX_CONCURRENT = 6
 const MAX_OBJECT_URLS = 60
 
@@ -82,7 +84,9 @@ export async function loadImage(absoluteUrl: string): Promise<string> {
         size: blob.size,
         lastUsed: Date.now(),
       })
-      void prune()
+      void pruneImageCache()
+    } else {
+      void touchMeta(key)
     }
 
     const blob = await response.blob()
@@ -101,8 +105,7 @@ export async function loadImage(absoluteUrl: string): Promise<string> {
 }
 
 async function touchMeta(key: string): Promise<void> {
-  const meta = await idbAll<CacheMeta>('imgMeta')
-  const found = meta.find((item) => item.key === key)
+  const found = await idbGet<CacheMeta>('imgMeta', key)
   if (found) await idbSet('imgMeta', key, { ...found, lastUsed: Date.now() })
 }
 
@@ -116,20 +119,33 @@ function trimObjectUrls(): void {
   }
 }
 
-async function prune(): Promise<void> {
+/** 7 天过期 + 500MB LRU；启动时与每次新图入库后调用 */
+export async function pruneImageCache(): Promise<void> {
   const entries = await idbAll<CacheMeta>('imgMeta')
-  const total = entries.reduce((sum, entry) => sum + entry.size, 0)
-  if (total <= MAX_TOTAL_BYTES) return
+  if (entries.length === 0) return
 
   const cache = await caches.open(CACHE_NAME)
-  entries.sort((a, b) => a.lastUsed - b.lastUsed)
+  const now = Date.now()
+  const kept: CacheMeta[] = []
 
-  let remaining = total
   for (const entry of entries) {
-    if (remaining <= MAX_TOTAL_BYTES) break
+    if (now - entry.lastUsed > MAX_AGE_MS) {
+      await cache.delete(entry.key)
+      await idbDel('imgMeta', entry.key)
+    } else {
+      kept.push(entry)
+    }
+  }
+
+  let total = kept.reduce((sum, entry) => sum + entry.size, 0)
+  if (total <= MAX_TOTAL_BYTES) return
+
+  kept.sort((a, b) => a.lastUsed - b.lastUsed)
+  for (const entry of kept) {
+    if (total <= MAX_TOTAL_BYTES) break
     await cache.delete(entry.key)
     await idbDel('imgMeta', entry.key)
-    remaining -= entry.size
+    total -= entry.size
   }
 }
 

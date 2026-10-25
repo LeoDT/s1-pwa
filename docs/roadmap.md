@@ -63,14 +63,14 @@
 
 **验收**：读到第 12 楼退出，重进直接落到第 12 楼；两台设备（手机+桌面）读到同一位置；断网读两页后联网自动补写。
 
-## M4 图片与附件（1 天）
+## M4 图片与附件（1 天）✅
 
-- [ ] `/api/img` + `/api/file`（SSRF 防护、类型/大小校验、缓存头）
-- [ ] `imageStore`：Cache API + 内存 LRU + 并发 6 + 去重 + 引用计数
-- [ ] `ProxyImage`：IntersectionObserver、骨架、失败重试、省流量模式
-- [ ] `ImageLightbox`：1x/2x、Esc/点空白关闭
-- [ ] 附件点击 → blob 下载
-- [ ] 设置页：缓存占用显示 + 清空
+- [x] `/api/img` + `/api/file`（SSRF 防护、类型/大小校验、缓存头）
+- [x] `imageStore`：Cache API + LRU（7 天 TTL / 500MB）+ 并发 6 + 去重
+- [x] `ProxyImage`：IntersectionObserver、骨架、失败重试、省流量模式
+- [x] `ImageLightbox`：1x/2x、Esc/点空白关闭
+- [x] 附件点击 → blob 下载
+- [x] 设置页：缓存占用显示 + 清空（顺手接上正文字号/省流量开关）
 
 **验收**：一屏 20+ 张图滚动流畅；二次进入零网络请求（Cache 命中）；附件可下载。
 
@@ -131,6 +131,9 @@
 | 回复快照 | `ProgressRow.replies` 只在进入帖子时取一次，本次阅读内翻页/刷新不更新（`newReplies = 列表回复数 - 快照`） |
 | 浏览历史 | 不是独立页面：`/history` 与 `/history/t/…` 复用 `BrowseLayout`，小屏占满、大屏占左栏，底部板块条常驻；行样式与板块列表共用 `ListRow`；从历史进入的详情页翻页/引用跳转都留在 `/history/t/…` |
 | 激活色 | 历史按钮（`aria-current="page"`）、板块 tab、帖子行激活/已读徽章统一用 `--color-accent-strong` 文字，与左侧 3px 竖条一致 |
+| 图片缓存 | Cache API 本身无 TTL：用 `imgMeta.lastUsed` 自己做 7 天过期 + 500MB LRU；启动时与新图入库后各跑一次 |
+| 上游抓取 | `/api/img` 与 `/api/file` 共用 `fetchUpstreamAsset()`：手动跟重定向、逐跳 SSRF 校验、大小上限、cookie 仅发上游域 |
+| 附件 | 经 `/api/file` 取 blob 后 `a[download]` 触发下载；文件名优先 `Content-Disposition`，兜底用帖子里的附件名 |
 
 ## 验收清单（手动，真机）
 

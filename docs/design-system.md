@@ -239,7 +239,7 @@
 
 - 正文图片：块级、`width: 100%`、`height: auto`、`--radius-sm`、上下 8px 外边距
 - 加载中：`--color-panel-light` 骨架（最小高 120px）；失败：`图片加载失败 · 点击重试`
-- 省流量模式：显示 `[图片] 点击加载` chip（`--color-panel-light` 底）
+- 省流量模式：显示「图片 · 点击加载」chip（`--color-panel-light` 底，min-h 64）
 - 灯箱：全屏 `rgba(0,0,0,.88)`，图片 `object-fit: contain`，提供 `1x / 2x`（2x = 原始尺寸 + 容器可拖动滚动），`Esc`/点击空白/右上 X 关闭
 
 ### 5.6 分页条 `Pager`
@@ -252,15 +252,14 @@
 ### 5.7 板块条 `BoardTabs`（小屏）
 
 - 横向滚动 + `scroll-snap-type: x proximity`，`scrollbar-width: none`
-- 每项 `padding: 0 14px; height: 48px`；active：`--color-heading` 文字 + 2px `--color-accent-strong` 下划线
+- 每项 `padding: 0 14px; height: 48px`；active：`--color-accent-strong` 文字 + 2px `--color-accent-strong` 下划线
 - 右侧固定渐隐遮罩提示可滚动；最右为「管理」入口（仅 `--color-muted` 图标）
 
 ### 5.8 Sheet / 设置
 
-- 小屏：底部抽屉，`max-height: 80dvh`，上圆角 14，顶部 40×4 拖拽条
-- 内容：常用板块管理（就地编辑：排序/移除/从板块树添加/手动 fid）→ 访问令牌 → 账号 → 关于；板块管理不再有独立页面
-- 大屏：右侧面板 380px
-- 内容：常用板块管理、访问令牌、账号信息（uid + 登录时间 + 退出登录）、正文字号（15/16/17/18 分段控件）、省流量模式（Switch）、图片缓存（占用 + 清空）、边缘滑动开关、关于/版本
+- 小屏：底部抽屉，`max-height: 80dvh`，上圆角 14
+- 大屏：居中弹层（`max-w-md`），同样是原生 `<dialog>`
+- 内容顺序：常用板块管理 → 阅读（字号 15/16/17/18 + 省流量 Switch）→ 访问令牌 → 账号（uid + 退出登录）→ 图片缓存（本站占用 + 浏览器总占用 + 清空，7 天 TTL / 500MB）→ 关于/版本
 - 抽屉是 flex 列：标题栏固定，只有内容区滚动（滚动条不覆盖标题）
 
 ### 5.9 状态类组件

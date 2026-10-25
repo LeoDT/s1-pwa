@@ -6,6 +6,7 @@ import { ErrorState, PostSkeleton } from '@/components/states'
 import { useBoards, useThreadPage } from './queries'
 import { useReadingProgress } from './useReadingProgress'
 import { DEFAULT_BOARDS } from '@/lib/boards'
+import { downloadAttachment } from '@/lib/attachments'
 import { errorMessage } from '@/lib/errors'
 import { locatePid } from '@/lib/locate'
 import { consumeFromList } from '@/lib/navigation'
@@ -199,8 +200,8 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
   }
 
   const openAttachment = (url: string, name: string) => {
-    // M4 会改成经 /api/file 取 blob 下载；当前先打开原地址
-    if (window.confirm(`下载附件「${name}」？`)) window.open(url, '_blank', 'noopener')
+    if (!window.confirm(`下载附件「${name}」？`)) return
+    void downloadAttachment(url, name).catch((error) => window.alert(errorMessage(error)))
   }
 
   const data = query.data

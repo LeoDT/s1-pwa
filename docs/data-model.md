@@ -134,7 +134,7 @@ export interface ProgressStore {
 
 ### 4.5 `GET /api/file?u=<encoded-absolute-url>`
 
-附件下载：host 同上（实际只会是上游），不限 `Content-Type`，≤ 50MB，`Cache-Control: no-store`，透出 `Content-Disposition`。
+附件下载：host 同上（实际只会是上游），不限 `Content-Type`，≤ 50MB，`Cache-Control: no-store`，透出 `Content-Disposition`。客户端取回 blob 后触发浏览器下载，避免直连上游掉登录态。
 
 ### 4.6 历史接口（均需 `X-S1-Cookie`）
 
@@ -229,7 +229,9 @@ export interface ProgressStore {
 ### 5.3 图片缓存
 
 `caches.open('s1-img-v1')`，key = `/api/img?u=…`。
-`imgMeta` 记录字节数与最近访问时间，总占用 > 500MB 时按 `lastUsed` 淘汰；设置页显示 `caches.estimate().usage` 与本站占用，可一键清空（同时清 `imgMeta`）。
+`imgMeta` 记录字节数与最近访问时间；**超过 7 天未访问**的条目在启动/新图入库后清理，总占用 > 500MB 时再按 `lastUsed` 淘汰。
+设置页显示本站占用（`imgMeta` 汇总）与 `navigator.storage.estimate().usage`，可一键清空（同时清 Cache、`imgMeta` 与内存 objectURL）。
+Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 
 ## 6. 数据流与缓存
 
