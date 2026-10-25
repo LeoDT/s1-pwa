@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { DatabaseSync, type StatementSync } from 'node:sqlite'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { D1ProgressStore, type D1Database, type D1PreparedStatement } from '../server/cf/store'
+import { D1ProgressStore, missingTableHint, type D1Database, type D1PreparedStatement } from '../server/cf/store'
 import type { ProgressRow } from '../shared/types'
 
 /** 用真实的 SQLite 跑 migrations/0001_init.sql，验证 SQL 与字段映射 */
@@ -131,5 +131,18 @@ describe('D1ProgressStore', () => {
     await store.clear('user-a')
     expect(await store.list('user-a', 50, 0)).toEqual([])
     expect(await store.list('user-b', 50, 0)).toHaveLength(1)
+  })
+})
+
+describe('missingTableHint', () => {
+  it('缺表时给出可照做的迁移提示', () => {
+    const error = new Error('D1_ERROR: no such table: progress: SQLITE_ERROR')
+    expect(missingTableHint(error)).toContain('progress')
+    expect(missingTableHint(error)).toContain('pnpm db:local')
+  })
+
+  it('其它错误不劫持', () => {
+    expect(missingTableHint(new Error('D1_ERROR: no such column: x'))).toBeNull()
+    expect(missingTableHint('boom')).toBeNull()
   })
 })

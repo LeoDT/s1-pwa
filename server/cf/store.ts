@@ -113,6 +113,14 @@ export class D1ProgressStore implements ProgressStore {
   }
 }
 
+/** 本地 D1 忘了跑迁移时，上游只会给一句 `no such table: progress` */
+export function missingTableHint(error: unknown): string | null {
+  const message = error instanceof Error ? error.message : String(error)
+  const table = /no such table: (\w+)/i.exec(message)?.[1]
+  if (!table) return null
+  return `数据库缺少 ${table} 表：先应用迁移（本地 pnpm db:local，线上 pnpm exec wrangler d1 migrations apply s1-progress --remote）`
+}
+
 function toProgressRow(row: ProgressDbRow): ProgressRow {
   return {
     tid: row.tid,

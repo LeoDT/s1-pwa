@@ -130,7 +130,7 @@
 | 空行 | 上游正文的连续空 `<br>` **不做归一**（用户选择保留作者原始留白） |
 | 左栏激活态 | 大屏当前打开的帖子行加 `--color-panel-light` 底 + 3px 强调色竖条 + `aria-current` |
 | 路由参数 | core 路由表支持 `:name` 单段占位符（编译成正则），`/api/history/index` 先于 `/:tid` 注册；方法不符仍返回 405 |
-| D1 配置 | 已创建 `s1-progress` 并回填真实 `database_id`；换账号/重建库时替换，preflight 拦截占位 UUID。本地用 `pnpm exec wrangler d1 migrations apply s1-progress --local` |
+| D1 配置 | 已创建 `s1-progress` 并回填真实 `database_id`；换账号/重建库时替换，preflight 拦截占位 UUID。本地用 `pnpm db:local`（首次 clone 或换了 database_id 后必须执行一次） |
 | 游客态 | 进度写入与历史请求都挂在 `useSession()` 之后；未登录只读本地镜像，不产生 401 请求。历史页离线时退回本地镜像 |
 | 跨设备续读 | 启动/恢复联网时 `HistorySync` 拉最近 100 条写入本地镜像，列表点开即可续读；列表徽章只用轻量 `/api/history/index` |
 | 退出登录 | 同时清本地 `progress` 镜像与 `outbox`，避免换账号串数据 |

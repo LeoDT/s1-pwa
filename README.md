@@ -32,7 +32,7 @@ Stage1st（Discuz X3.5）只读阅读器 PWA：用 S1 账号登录、按板块�
 ```bash
 pnpm install
 cp .dev.vars.example .dev.vars          # 按需填写，可留空
-pnpm exec wrangler d1 migrations apply s1-progress --local
+pnpm db:local                           # 应用 D1 迁移（本地库缺表时接口会报 no such table）
 pnpm dev                                # 同时起 vite(5180) 与 wrangler dev(8787)
 ```
 
