@@ -117,9 +117,9 @@ try {
   )
   await page.screenshot({ path: path.join(shotDir, 'smoke-thread-desktop.png') })
 
-  if (articleWidth > 800) problems.push(`正文宽度 ${articleWidth}px 超过 800px 约束`)
+  if (articleWidth > 900) problems.push(`正文宽度 ${articleWidth}px 超过 900px 约束`)
   if (frame.left < 40) problems.push(`宽屏框架没有居中（left=${frame.left}px）`)
-  if (frame.width !== 1160) problems.push(`宽屏框架宽度 ${frame.width}px ≠ 1160px`)
+  if (frame.width !== 1320) problems.push(`宽屏框架宽度 ${frame.width}px ≠ 1320px`)
   if (active.length !== 1) problems.push(`左栏激活态行数 ${active.length} ≠ 1`)
   if (!active[0]?.includes(activeTitle)) problems.push(`激活行「${active[0]}」与正文标题「${activeTitle}」不一致`)
 

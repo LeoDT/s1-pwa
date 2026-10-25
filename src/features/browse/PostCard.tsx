@@ -21,7 +21,7 @@ export function PostCard({ post, highlighted, onOpenPost, onOpenAttachment, tid 
     <article
       id={`pid${post.pid}`}
       className={cn(
-        'scroll-mt-14 border-b border-line px-4 py-3 transition-shadow duration-300',
+        'scroll-mt-14 border-b border-line px-4 py-3 transition-shadow duration-300 lg:px-6',
         highlighted && 'shadow-[inset_0_0_0_2px_var(--color-flag)]',
       )}
     >

@@ -20,7 +20,7 @@ export function ThreadRow({ thread, onOpen, active = false, read = false, newRep
       onClick={onOpen}
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light',
+        'flex w-full items-start gap-3 px-4 py-2 text-left transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light',
         active && 'bg-panel-light shadow-[inset_3px_0_0_var(--color-accent-strong)]',
         !active && read && 'shadow-[inset_3px_0_0_var(--color-accent-strong)]',
       )}
@@ -28,11 +28,11 @@ export function ThreadRow({ thread, onOpen, active = false, read = false, newRep
       <span
         aria-label={`${thread.replies} 条回复${newReplies > 0 ? `，${newReplies} 条新增` : ''}`}
         className={cn(
-          'mt-0.5 flex min-w-10 shrink-0 flex-col items-center rounded-sm border bg-panel-light px-1.5 py-1',
+          'mt-0.5 flex min-w-9 shrink-0 flex-col items-center rounded-sm border bg-panel-light px-1.5 py-0.5',
           read ? 'border-accent-strong' : 'border-line',
         )}
       >
-        <span className={cn('text-ui font-medium tnum', read ? 'text-accent-strong' : 'text-text')}>
+        <span className={cn('text-meta font-medium tnum', read ? 'text-accent-strong' : 'text-text')}>
           {thread.replies}
         </span>
         {newReplies > 0 ? (
@@ -43,7 +43,7 @@ export function ThreadRow({ thread, onOpen, active = false, read = false, newRep
       <span className="min-w-0 flex-1">
         <span
           className={cn(
-            'line-clamp-2 block text-body font-medium leading-[1.45]',
+            'line-clamp-2 block text-ui font-medium leading-[1.45]',
             active ? 'text-heading' : 'text-text',
           )}
         >

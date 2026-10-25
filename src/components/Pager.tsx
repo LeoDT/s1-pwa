@@ -26,9 +26,11 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
         aria-label="上一页"
         disabled={page <= 1}
         onClick={() => go(page - 1)}
-        className="inline-flex size-11 items-center justify-center rounded-md disabled:opacity-40 transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
+        className="group inline-flex size-11 items-center justify-center disabled:opacity-40"
       >
-        <ChevronLeft size={20} />
+        <span className="flex size-9 items-center justify-center rounded-md transition-colors duration-[var(--motion-press)] group-hover:bg-panel-light group-active:bg-panel-light">
+          <ChevronLeft size={20} />
+        </span>
       </button>
 
       {editing ? (
@@ -55,9 +57,11 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
             setDraft(String(page))
             setEditing(true)
           }}
-          className="rounded-md px-2 py-1 tnum transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
+          className="group inline-flex h-11 items-center px-1"
         >
-          {page} / {totalPages}
+          <span className="inline-flex h-9 items-center rounded-md px-2 tnum transition-colors duration-[var(--motion-press)] group-hover:bg-panel-light group-active:bg-panel-light">
+            {page} / {totalPages}
+          </span>
         </button>
       )}
 
@@ -66,9 +70,11 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
         aria-label="下一页"
         disabled={page >= totalPages}
         onClick={() => go(page + 1)}
-        className="inline-flex size-11 items-center justify-center rounded-md disabled:opacity-40 transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
+        className="group inline-flex size-11 items-center justify-center disabled:opacity-40"
       >
-        <ChevronRight size={20} />
+        <span className="flex size-9 items-center justify-center rounded-md transition-colors duration-[var(--motion-press)] group-hover:bg-panel-light group-active:bg-panel-light">
+          <ChevronRight size={20} />
+        </span>
       </button>
     </div>
   )

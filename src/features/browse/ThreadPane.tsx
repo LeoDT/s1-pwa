@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
+import { RefreshCw } from 'lucide-react'
 import { Pager } from '@/components/Pager'
 import { ErrorState, PostSkeleton } from '@/components/states'
 import { useBoards, useThreadPage } from './queries'
@@ -11,6 +12,7 @@ import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useSwipeBack } from '@/lib/useSwipeBack'
 import { PostCard } from './PostCard'
 import { getLastFid } from './lastForum'
+import { cn } from '@/lib/utils'
 
 interface ThreadPaneProps {
   tid: number
@@ -112,8 +114,8 @@ export function ThreadPane({ tid, page }: ThreadPaneProps) {
         ) : null}
 
         {data ? (
-          <div className="mx-auto max-w-[800px]">
-            <header className="border-b border-line px-4 pb-3 pt-3">
+          <div className="mx-auto max-w-[900px]">
+            <header className="border-b border-line px-4 pb-3 pt-3 lg:px-6">
               <h1 className="text-title font-semibold leading-[1.45] text-heading">
                 {data.title}
               </h1>
@@ -144,6 +146,15 @@ export function ThreadPane({ tid, page }: ThreadPaneProps) {
             onChange={goPage}
             className="w-full"
           />
+          <button
+            type="button"
+            aria-label="刷新"
+            title="刷新"
+            onClick={() => void query.refetch()}
+            className="absolute right-1 top-1/2 hidden size-10 -translate-y-1/2 items-center justify-center rounded-md text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light lg:inline-flex"
+          >
+            <RefreshCw size={16} className={cn(query.isFetching && 'animate-spin')} />
+          </button>
         </div>
       ) : null}
     </div>

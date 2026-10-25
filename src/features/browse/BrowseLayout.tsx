@@ -12,8 +12,8 @@ interface BrowseLayoutProps {
 }
 
 /**
- * 浏览页双栏容器：≥1024px 左 360px 列表 + 右 800px 内容。
- * 整个框居中限宽（360 + 800 = 1160），避免宽屏下列表和正文被拉开。
+ * 浏览页双栏容器：≥1024px 左 420px 列表 + 右 900px 内容。
+ * 整个框居中限宽（420 + 900 = 1320），避免宽屏下列表和正文被拉开。
  * 见 docs/design-system.md §4.3。
  */
 export function BrowseLayout({ sidebar, main, narrow }: BrowseLayoutProps) {
@@ -22,7 +22,7 @@ export function BrowseLayout({ sidebar, main, narrow }: BrowseLayoutProps) {
   if (!wide) return <div className="h-full">{narrow === 'sidebar' ? sidebar : main}</div>
 
   return (
-    <div className="mx-auto grid h-full min-h-0 w-full max-w-[var(--frame-w)] grid-cols-[360px_minmax(0,1fr)]">
+    <div className="mx-auto grid h-full min-h-0 w-full max-w-[var(--frame-w)] grid-cols-[420px_minmax(0,1fr)]">
       <div className="relative min-h-0 overflow-hidden border-r border-line">{sidebar}</div>
       <div className="relative min-h-0 overflow-hidden">{main}</div>
     </div>

@@ -50,8 +50,8 @@
     --post-font-size: 1rem;
     --header-h: 48px;
     --bar-h: 48px;
-    /* 大屏浏览框架：左栏 360 + 正文 800 */
-    --frame-w: 1160px;
+    /* 大屏浏览框架：左栏 420 + 正文 900（常用显示器更宽，整框居中） */
+    --frame-w: 1320px;
 
     /* 动效只做反馈：按下/悬停/抽屉，不做入场。见 docs/design-system.md §6 */
     --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -120,6 +120,57 @@
   :focus-visible {
     outline: 2px solid var(--color-link);
     outline-offset: 2px;
+  }
+
+  /* 滚动条：细，与底色同族；track 透明，thumb 用 --color-line */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent-strong);
+  }
+
+  /* 板块条：小屏隐藏滚动条（贴边横滑），大屏露出 4px 细条（鼠标没有横滑手势） */
+  .board-tabs-scroll {
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .board-tabs-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .board-tabs-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-line) transparent;
+    }
+
+    .board-tabs-scroll::-webkit-scrollbar {
+      display: block;
+      height: 4px;
+    }
+
+    .board-tabs-scroll::-webkit-scrollbar-thumb {
+      background: var(--color-line);
+      border-radius: 999px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

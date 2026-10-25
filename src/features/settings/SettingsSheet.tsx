@@ -29,8 +29,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       onCancel={onClose}
       className="m-0 mt-auto w-full max-w-none bg-transparent p-0 backdrop:bg-black/45 focus:outline-none sm:m-auto sm:max-w-md"
     >
-      <div className="max-h-[80dvh] overflow-y-auto rounded-t-lg bg-canvas pb-[env(safe-area-inset-bottom)] sm:rounded-lg">
-        <div className="sticky top-0 flex items-center justify-between border-b border-line bg-panel px-4 py-3">
+      <div className="flex max-h-[80dvh] flex-col overflow-hidden rounded-t-lg bg-canvas sm:rounded-lg">
+        <div className="flex shrink-0 items-center justify-between border-b border-line bg-panel px-4 py-3">
           <h2 className="text-title font-semibold text-heading">设置</h2>
           <button
             type="button"
@@ -40,7 +40,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             关闭
           </button>
         </div>
-        <div className="space-y-6 px-4 py-4">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <BoardsPanel active={open} />
           <AccessTokenSection />
           <AccountSection />

@@ -78,14 +78,24 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
       ) : null}
 
       {state.status === 'error' ? (
-        <button
-          type="button"
-          onClick={() => setState({ status: 'loading' })}
-          className="flex min-h-[120px] w-full items-center justify-center gap-2 rounded-sm border border-line bg-panel-light text-ui text-muted"
-        >
-          <ImageOff size={16} />
-          图片加载失败 · 点击重试
-        </button>
+        <span className="relative flex min-h-[120px] w-full items-center justify-center rounded-sm border border-line bg-panel-light">
+          <button
+            type="button"
+            onClick={() => setState({ status: 'loading' })}
+            className="inline-flex items-center gap-2 text-ui text-muted"
+          >
+            <ImageOff size={16} />
+            图片加载失败 · 点击重试
+          </button>
+          <a
+            href={src}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="absolute right-2 bottom-1.5 text-meta text-link underline decoration-line underline-offset-2 hover:text-link-hover"
+          >
+            打开原图
+          </a>
+        </span>
       ) : null}
 
       {state.status === 'loading' || state.status === 'idle' ? (

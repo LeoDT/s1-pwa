@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react'
 import type { BoardEntry } from '@/lib/boards'
 import { cn } from '@/lib/utils'
 
@@ -5,19 +6,36 @@ interface BoardTabsProps {
   boards: BoardEntry[]
   activeFid?: number
   onSelect: (fid: number) => void
+  /** 大屏专用：没有下拉手势，用按钮刷新（列表 = 回第 1 页） */
+  onRefresh?: () => void | Promise<unknown>
+  refreshing?: boolean
 }
 
 /**
  * 常用板块条：贴在看板底部的固定条（大屏限在左栏宽度内）。
  * 管理入口在设置里，这里只做切换。见 docs/navigation.md §4。
  */
-export function BoardTabs({ boards, activeFid, onSelect }: BoardTabsProps) {
+export function BoardTabs({
+  boards,
+  activeFid,
+  onSelect,
+  onRefresh,
+  refreshing = false,
+}: BoardTabsProps) {
   return (
     <nav
       aria-label="常用板块"
       className="absolute inset-x-0 bottom-0 z-20 flex h-[calc(var(--bar-h)+env(safe-area-inset-bottom))] items-stretch border-t border-line bg-panel pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="flex min-w-0 flex-1 snap-x snap-proximity items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        onWheel={(event) => {
+          // 桌面没有横滑手势：滚轮在板块条上直接横向滚动（不改页面滚动）
+          const element = event.currentTarget
+          if (element.scrollWidth <= element.clientWidth) return
+          element.scrollLeft += event.deltaY
+        }}
+        className="board-tabs-scroll flex min-w-0 flex-1 snap-x snap-proximity items-stretch overflow-x-auto"
+      >
         {boards.map((board) => {
           const active = board.fid === activeFid
           return (
@@ -26,7 +44,7 @@ export function BoardTabs({ boards, activeFid, onSelect }: BoardTabsProps) {
               type="button"
               onClick={() => onSelect(board.fid)}
               className={cn(
-                'relative shrink-0 snap-start whitespace-nowrap px-3.5 text-ui',
+                'relative shrink-0 snap-start whitespace-nowrap px-3 text-meta',
                 active ? 'font-medium text-heading' : 'text-text',
               )}
             >
@@ -38,6 +56,18 @@ export function BoardTabs({ boards, activeFid, onSelect }: BoardTabsProps) {
           )
         })}
       </div>
+
+      {onRefresh ? (
+        <button
+          type="button"
+          aria-label="刷新"
+          title="刷新"
+          onClick={() => void onRefresh()}
+          className="hidden shrink-0 items-center justify-center border-l border-line px-3 text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light lg:inline-flex"
+        >
+          <RefreshCw size={16} className={cn(refreshing && 'animate-spin')} />
+        </button>
+      ) : null}
     </nav>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ThreadSummary } from '@shared/types'
@@ -30,14 +30,21 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   const scrollTopRef = useRef(0)
   const restoredRef = useRef(false)
 
-  const refresh = async () => {
+  const [refreshing, setRefreshing] = useState(false)
+  const refresh = useCallback(async () => {
     const element = scrollRef.current
     scrollTopRef.current = 0
-    // 刷新 = 回到第一页（丢弃已追加的页）
-    await queryClient.resetQueries({ queryKey: ['forum', fid] })
-    if (element) element.scrollTop = 0
-  }
-  const { pull, refreshing } = usePullToRefresh(scrollRef, refresh)
+    setRefreshing(true)
+    try {
+      // 刷新 = 回到第一页（丢弃已追加的页）
+      await queryClient.resetQueries({ queryKey: ['forum', fid] })
+      if (element) element.scrollTop = 0
+    } finally {
+      setRefreshing(false)
+    }
+  }, [fid, queryClient])
+  const pullState = usePullToRefresh(scrollRef, refresh)
+  const pull = pullState.pull
 
   if (forum.data) rememberFid(fid)
 
@@ -111,8 +118,8 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
           className="flex items-center justify-center overflow-hidden text-meta text-muted"
           style={{ height: pull }}
         >
-          {pull > 0 || refreshing
-            ? refreshing
+          {pull > 0 || refreshing || pullState.refreshing
+            ? refreshing || pullState.refreshing
               ? '刷新中…'
               : pull >= PULL_THRESHOLD
                 ? '松开刷新'
@@ -173,6 +180,8 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
       <BoardTabs
         boards={boards.data ?? []}
         activeFid={fid}
+        onRefresh={refresh}
+        refreshing={refreshing}
         onSelect={(next) =>
           void navigate({ to: '/f/$fid', params: { fid: String(next) }, replace: true })
         }
