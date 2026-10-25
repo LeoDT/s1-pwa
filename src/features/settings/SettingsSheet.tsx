@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { ChevronRight, ListOrdered, LogOut, ShieldCheck, Trash2 } from 'lucide-react'
+import { LogOut, ShieldCheck, Trash2 } from 'lucide-react'
+import { BoardsPanel } from '@/features/boards/BoardsPanel'
 import { getAppToken, setAppToken } from '@/lib/api'
 import { fetchConfig } from '@/lib/config'
 import { errorMessage } from '@/lib/errors'
@@ -36,35 +36,13 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           </button>
         </div>
         <div className="space-y-6 px-4 py-4">
-          <BoardsSection onNavigate={onClose} />
+          <BoardsPanel active={open} />
           <AccessTokenSection />
           <AccountSection />
           <AboutSection />
         </div>
       </div>
     </dialog>
-  )
-}
-
-function BoardsSection({ onNavigate }: { onNavigate: () => void }) {
-  const navigate = useNavigate()
-
-  return (
-    <section className="space-y-2">
-      <h3 className="text-[13px] font-medium text-muted">浏览</h3>
-      <button
-        type="button"
-        onClick={() => {
-          onNavigate()
-          void navigate({ to: '/boards' })
-        }}
-        className="flex w-full items-center gap-2 rounded-md border border-line px-3 py-2 text-[14px] text-text active:bg-panel-light"
-      >
-        <ListOrdered size={16} className="text-muted" />
-        <span className="flex-1 text-left">常用板块管理</span>
-        <ChevronRight size={16} className="text-muted" />
-      </button>
-    </section>
   )
 }
 

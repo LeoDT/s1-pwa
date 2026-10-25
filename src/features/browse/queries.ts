@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import type { BoardGroup, ForumPage, ThreadPage } from '@shared/types'
 import { parsePage, type ParsedPage } from '@/lib/parser/dom'
 import { assertKind } from '@/lib/parser/errors'
@@ -49,10 +49,13 @@ export function useBoards() {
   return useQuery<BoardEntry[]>({ queryKey: ['boards'], queryFn: loadBoards, staleTime: 5 * 60 * 1000 })
 }
 
-export function useForumPage(fid: number, page: number) {
-  return useQuery<ForumPage>({
-    queryKey: ['forum', fid, page],
-    queryFn: () => fetchForumPage(fid, page),
+/** 列表页：首屏 + 滚动到底追加下一页（无限滚动，见 docs/navigation.md §4） */
+export function useForumPages(fid: number) {
+  return useInfiniteQuery({
+    queryKey: ['forum', fid],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => fetchForumPage(fid, pageParam),
+    getNextPageParam: (last: ForumPage) => (last.page < last.totalPages ? last.page + 1 : undefined),
     staleTime: 30 * 1000,
     // 没有刷新按钮，靠回到前台/窗口聚焦时自动重取
     refetchOnWindowFocus: true,

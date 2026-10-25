@@ -238,7 +238,7 @@ export interface ProgressStore {
 | Query key | TTL | 失效时机 |
 |---|---|---|
 | `['config']` | 会话 | 手动刷新 |
-| `['boards-src']` | 10min | 打开板块管理 |
+| `['boards-src']` | 10min | 设置里展开「添加板块」 |
 | `['forum', fid, page]` | 30s | 下拉/刷新按钮、切换板块 |
 | `['thread', tid, page]` | 60s | 刷新按钮 |
 | `['history']` | 60s | 写入进度后 `invalidate` |

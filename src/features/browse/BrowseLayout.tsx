@@ -12,8 +12,9 @@ interface BrowseLayoutProps {
 }
 
 /**
- * 浏览页双栏容器：≥1024px 左 360px 列表 + 右内容（内容自身限制 800px）。
- * 小屏只渲染当前需要的那一栏，避免无谓请求。见 docs/design-system.md §4.3。
+ * 浏览页双栏容器：≥1024px 左 360px 列表 + 右 800px 内容。
+ * 整个框居中限宽（360 + 800 = 1160），避免宽屏下列表和正文被拉开。
+ * 见 docs/design-system.md §4.3。
  */
 export function BrowseLayout({ sidebar, main, narrow }: BrowseLayoutProps) {
   const wide = useMediaQuery(WIDE_QUERY)
@@ -21,7 +22,7 @@ export function BrowseLayout({ sidebar, main, narrow }: BrowseLayoutProps) {
   if (!wide) return <div className="h-full">{narrow === 'sidebar' ? sidebar : main}</div>
 
   return (
-    <div className="grid h-full min-h-0" style={{ gridTemplateColumns: '360px 1fr' }}>
+    <div className="mx-auto grid h-full min-h-0 w-full max-w-[var(--frame-w)] grid-cols-[360px_minmax(0,1fr)]">
       <div className="relative min-h-0 overflow-hidden border-r border-line">{sidebar}</div>
       <div className="relative min-h-0 overflow-hidden">{main}</div>
     </div>

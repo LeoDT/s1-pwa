@@ -2,11 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
 import { Pager } from '@/components/Pager'
 import { ErrorState, PostSkeleton } from '@/components/states'
-import { useSetPageTitle } from '@/app/chrome'
 import { useBoards, useThreadPage } from './queries'
 import { DEFAULT_BOARDS } from '@/lib/boards'
 import { errorMessage } from '@/lib/errors'
-import { consumeFromList, getListState } from '@/lib/navigation'
+import { consumeFromList } from '@/lib/navigation'
 import { useCollapsingHeader } from '@/lib/useCollapsingHeader'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useSwipeBack } from '@/lib/useSwipeBack'
@@ -31,8 +30,6 @@ export function ThreadPane({ tid, page }: ThreadPaneProps) {
   // 只有小屏详情页的顶栏是浮层，需要给内容留出高度
   useCollapsingHeader(scrollRef, narrow)
 
-  useSetPageTitle(query.data?.title)
-
   const listFid =
     query.data?.fid ||
     getLastFid() ||
@@ -42,14 +39,13 @@ export function ThreadPane({ tid, page }: ThreadPaneProps) {
 
   /** 滑动/返回：总是回到该帖所属板块的列表 */
   const backToList = useCallback(() => {
-    const state = getListState(listFid)
     if (consumeFromList()) {
       router.history.back()
       return
     }
     void navigate({
-      to: '/f/$fid/$page',
-      params: { fid: String(listFid), page: String(state?.page ?? 1) },
+      to: '/f/$fid',
+      params: { fid: String(listFid) },
       replace: true,
     })
   }, [listFid, navigate, router])
@@ -98,6 +94,7 @@ export function ThreadPane({ tid, page }: ThreadPaneProps) {
   }
 
   const data = query.data
+  const boardName = boards.data?.find((board) => board.fid === data?.fid)?.name
 
   return (
     <div className="relative h-full min-h-0 bg-canvas">
@@ -116,6 +113,15 @@ export function ThreadPane({ tid, page }: ThreadPaneProps) {
 
         {data ? (
           <div className="mx-auto max-w-[800px]">
+            <header className="border-b border-line px-4 pb-3 pt-3">
+              <h1 className="text-[17px] font-semibold leading-[1.45] text-heading">
+                {data.title}
+              </h1>
+              <p className="mt-1 text-[12.5px] text-muted">
+                {boardName ? `${boardName} · ` : ''}
+                {data.page} / {data.totalPages} 页 · {data.posts.length} 楼
+              </p>
+            </header>
             {data.posts.map((post) => (
               <PostCard
                 key={post.pid}

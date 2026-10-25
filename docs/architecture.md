@@ -5,7 +5,7 @@
 ```
 ┌──────────────────────── 浏览器（唯一理解 S1 的地方）────────────────────────┐
 │  React App (SPA)                                                             │
-│   ├── router       /f /t /history /boards /settings /login                    │
+│   ├── router       /f /t /history /settings /login                            │
 │   ├── parser       DOMParser + 集中选择器 → DTO                                │
 │   ├── sanitizer    DOMPurify（帖子正文）                                       │
 │   ├── apiFetch()   注入 X-App-Token / X-S1-Cookie                             │

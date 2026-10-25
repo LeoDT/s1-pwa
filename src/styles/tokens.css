@@ -43,6 +43,8 @@
     --post-font-size: 17px;
     --header-h: 48px;
     --bar-h: 48px;
+    /* 大屏浏览框架：左栏 360 + 正文 800 */
+    --frame-w: 1160px;
   }
 
   html {
