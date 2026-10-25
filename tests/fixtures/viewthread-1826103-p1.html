@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta name="format-detection" content="telephone=no" />
+<title>【论坛美化】S1 NUX【26/6/13 新增默认头像图片修改选项】 - ＰＣ数码 -  Stage1st -  手机版 - Powered by Discuz!</title>
+<meta name="keywords" content="【论坛美化】S1 NUX【26/6/13 新增默认头像图片修改选项】" />
+<meta name="description" content="业余捣鼓了那么些年头的CSS后，总结了之前S1 MUX和其它一些主题的不足，重新写了这个：相比之前的MUX，NUX：1、对长宽变化的适应性更强，有更完善的窄屏自适配布局；2 ... 【论坛美化】S1 NUX【26/6/13 新增默认头像图片修改选项】 ,Stage1st" />
+<link href="https://stage1st.com/2b/thread-1826103-1-1.html" rel="canonical" /><base href="https://stage1st.com/2b/" />
+<script type="text/javascript">var STYLEID = '7', STATICURL = 'https://static.stage1st.com/', IMGDIR = 'static/image/s1', VERHASH = 'Exp', charset = 'utf-8', discuz_uid = '0', cookiepre = 'B7Y9_2f85_', cookiedomain = '.stage1st.com', cookiepath = '/', showusercard = '1', attackevasive = '0', disallowfloat = 'newthread', creditnotice = '', defaultstyle = '', REPORTURL = 'aHR0cHM6Ly9zdGFnZTFzdC5jb20vMmIvdGhyZWFkLTE4MjYxMDMtMS0xLmh0bWw=', SITEURL = 'https://stage1st.com/2b/', JSPATH = 'data/cache/';</script>
+<link rel="stylesheet" href="https://static.stage1st.com/image/s1mobile/style.css?Exp" type="text/css" media="all">
+<link rel="stylesheet" href="https://static.stage1st.com/image/s1mobile/uno.css?Exp" type="text/css" media="all">
+<link rel="stylesheet" href="https://static.stage1st.com/image/mobile/font/dzmicon.css?Exp" type="text/css" media="all">
+<script src="https://static.stage1st.com/js/mobile/jquery.min.js?Exp" type="text/javascript"></script>
+<script src="https://static.stage1st.com/js/mobile/common.js?Exp" type="text/javascript" charset="utf-8"></script>
+<script src="https://static.stage1st.com/js/swiper/swiper-bundle.min.js?Exp" type="text/javascript"></script>
+</head>
+<body id="forum" class="pg_viewthread">
+<div id="append_parent"></div>
+<div class="header cl">
+<div class="mz"><a href="forum.php?mod=forumdisplay&fid=51&page=1&amp;mobile=2" class="z"><i class="dm-c-left"></i></a></div>
+<h2>【论坛美化】S1 NUX【26/6/13 新增默认头像图片修改选项】</h2>
+<div class="my text-red-500 truncate">
+</div>
+</div>
+<div class="viewthread"><div class="plc cl" id="pid43394299">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi pione" href="#replybtn_43394299">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+楼主</span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+<span class="y"><i class="dm-eye"></i><em>124771</em><i class="dm-chat-s"></i><em>580</em></span>2019-4-22 12:12</li>
+</ul>
+<div class="message">
+<i class="pstatus"> 本帖最后由 pgain2004 于 2026-6-13 21:51 编辑 </i><br />
+<br />
+业余捣鼓了那么些年头的CSS后，总结了之前<a href="https://bbs.saraba1st.com/2b/thread-1164934-1-1.html" target="_blank">S1 MUX</a>和其它一些主题的不足，重新写了这个：<br />
+<img src="https://s2.ax1x.com/2019/04/26/EnVBVO.jpg" border="0" alt="" /><br />
+<br />
+相比之前的MUX，NUX：<br />
+<font size="4">1、对长宽变化的适应性更强，有更完善的窄屏自适配布局；</font><br />
+<font size="4">2、覆盖更全面，连大乱斗页面都适配了；<br />
+</font><br />
+<font size="4">3、大量使用utf8字符、emoji、svg、css绘制等来替代Discuz!自带、抠边都抠不好的残废图标</font>（基于对emoji的支持，不同平台会有一定程度的显示差异，Win7等支持差的老系统可能就比较挫了，我没测试）；<br />
+<font size="4">4、相比MUX的卡片+阴影，采用浅勾边风格，更贴近论坛原样式；</font><br />
+<img src="https://s2.ax1x.com/2019/04/26/EnVyPH.jpg" border="0" alt="" /><br />
+<img src="https://s2.ax1x.com/2019/04/26/EnV6Gd.jpg" border="0" alt="" /><br />
+<img src="https://s2.ax1x.com/2019/04/26/EnVrIe.jpg" border="0" alt="" /><br />
+<br />
+<font size="4"><font color="Red">5、使用全局变量进行颜色设置，色调主题的更换和自定义都十分方便；</font></font><br />
+<img src="https://s2.ax1x.com/2019/04/26/EnVwqK.gif" border="0" alt="" /><br />
+<br />
+<br />
+<hr class="l" /><br />
+<br />
+<strong><font size="4">使用方法：</font></strong><br />
+<br />
+先安装Stylus(<a href="https://addons.mozilla.org/zh-CN/firefox/addon/styl-us/" target="_blank">Firefox</a>/<a href="https://chrome.google.com/webstore/detail/stylus/clngdbkpkpeebahjckkjfobafhncgmne" target="_blank">Chromium</a>/<a href="https://addons.opera.com/en/extensions/details/stylus/" target="_blank">Opera</a>)、xStyle(<a href="https://addons.mozilla.org/zh-CN/firefox/addon/xstyle/" target="_blank">Firefox</a>/<a href="https://chrome.google.com/webstore/detail/xstyle/hncgkmhphmncjohllpoleelnibpmccpj" target="_blank">Chromium</a>)或同类扩展，支持所有主流浏览器(除非你还在用IE)。<br />
+然后通过主题页面安装：<font face="Impact"><font size="4"><a href="https://userstyles.world/style/539/s1-nux" target="_blank">https://userstyles.world/style/539/s1-nux</a></font></font> <br />
+<br />
+内含一些简单的自定义选项，直接在CSS扩展工具中选择：<br />
+<img src="https://s21.ax1x.com/2024/12/19/pAOtQl4.png" border="0" alt="" /><br />
+<br />
+<strong><font size="4">配合：<a href="https://github.com/AutoDarkMode/Windows-Auto-Night-Mode/releases" target="_blank">Auto Night Mode</a>，Windows用户也可以让该主题根据时间段自动切换亮暗色调了</font></strong><img src="https://static.stage1st.com/image/smiley/face2017/266.gif" smilieid="2669" border="0" alt="" /></div>
+<div id="comment_43394299">
+</div>
+
+<h3 class="psth xs1"><span class="icon_ring vm"></span>评分</h3>
+<div id="ratelog_43394299">
+<dd style="margin:0">
+<div id="post_rate_43394299"></div>
+<ul class="post_box cl">
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1 xw1"><span class="z"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43394299&amp;mobile=2" class="dialog" title="查看全部评分"> 参与人数 <span class="xi1">40</span></a></span></div><div class="flex-2 xs1 xg1 xw1">战斗力 <i><span class="xi1">+41</span></i></div>
+<div class="flex-3 xs1 xg1 xw1">理由</div>
+</li><li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=491666&amp;mobile=2" target="_blank">抄袭炉石的垃圾</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=509963&amp;mobile=2" target="_blank">余风</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=444904&amp;mobile=2" target="_blank">只要主义真</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=485336&amp;mobile=2" target="_blank">海色</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅 一直在用</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=491654&amp;mobile=2" target="_blank">monki</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=395618&amp;mobile=2" target="_blank">元肉丸子</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=241325&amp;mobile=2" target="_blank">14569852</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=467586&amp;mobile=2" target="_blank">OrianaThomson</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1"></div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=442600&amp;mobile=2" target="_blank">ppkno</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=189609&amp;mobile=2" target="_blank">有点神奇</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1"></div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=157524&amp;mobile=2" target="_blank">avatar</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 2</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=404317&amp;mobile=2" target="_blank">xsl1099</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=453258&amp;mobile=2" target="_blank">kwin_</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=109625&amp;mobile=2" target="_blank">dreamd</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=244086&amp;mobile=2" target="_blank">投影机</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=250023&amp;mobile=2" target="_blank">rp1993</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=263241&amp;mobile=2" target="_blank">samfs</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=500945&amp;mobile=2" target="_blank">Litccc</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=475434&amp;mobile=2" target="_blank">NagisaLoveMami</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=490197&amp;mobile=2" target="_blank">咲苏打</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0"><div class="flex xs2 xg1 xw1"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43394299&amp;mobile=2" title="查看全部评分" class="dialog">查看全部评分</a></div></li>
+</ul>
+</dd>
+</div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="discuz_x cl"></div>
+<div class="txtlist cl">
+<div class="mtit cl">
+<a href="forum.php?mod=viewthread&amp;tid=1826103&amp;extra=page%3D1&amp;ordertype=1&amp;mobile=2" class="ytxt">倒序浏览</a>
+<a href="forum.php?mod=viewthread&amp;tid=1826103&amp;page=1&amp;authorid=152709&amp;mobile=2" rel="nofollow" class="ytxt">只看楼主</a>
+全部回复<em>580</em></div>
+</div>
+<div class="plc cl" id="pid43399969">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43399969">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+<img src ="static/image/s1/settop.png" class="vm" /> 来自 2#</span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 12:12</li>
+</ul>
+<div class="message">
+<i class="pstatus"> 本帖最后由 pgain2004 于 2024-5-19 20:09 编辑 </i><br />
+<br />
+<strong><font size="4"><img src="https://static.stage1st.com/image/smiley/face2017/231.gif" smilieid="2516" border="0" alt="" />自定义主题说明：</font></strong><br />
+进入NUX的代码编辑页面后，你能看到：<br /><div class="blockcode"><div id="code_HPp"><ol><li>/*1-0 配色*/<br /><li>/*<br /><li>bg(background)：背景色；<br /><li>pri(primary)：主色调，主要作为顶栏和标题栏背景；<br /><li>prid(primary-dark)：深主色调(暗色主题：浅)，主要用来为模块勾边；<br /><li>pril(primary-light)：浅主色调(暗色：深)；<br /><li>bn(button)：按钮色；<br /><li>bnd(button-dark)：深按钮色；<br /><li>sec(secondary)：副色调；<br /><li>secp(secondary-in-primary)：主色调背景下的副色调；<br /><li>t(text)：默认文本色；<br /><li>tl(text-light)：浅文本色；<br /><li>tg(text-grey)：灰文本色；<br /><li>pt(primarytext)：主色调背景下文本色；<br /><li>ptl(primarytext-light)：主色调背景下浅文本色；<br /><li>ic(icon)：图标色；<br /><li>icl(icon-light)：浅图标色；<br /><li>icd(icon-dark)：深图标色；<br /><li>icdd(icon-darker)：更深图标色；<br /><li>icddd(icon-darkest)：最深图标色；<br /><li>shd(shadow)：阴影色；<br /><li>shdl(shadow-light)：浅阴影色；<br /><li>*/<br /><li>:root{<br /><li>/*tea theme*/<br /><li><br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--bg:#ecedeb;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--pri:#d1d9c1;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--prid:#cc9;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--pril:#e5e9df;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--bn:#0b7ac9;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--bnd:#0555ba;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--sec:#0095ff;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--secp:#0095ff;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--t:#022C80;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--tl:#3159a9;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--tg:#889dc8;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--pt:#022C80;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--ptl:#3159a9;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--icl:#fff;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--ic:#ccc;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--icd:#999;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--icdd:#555;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--icddd:#000;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--shd:#555;<br /><li>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;--shdl:#999;<br /><li>/**/<br /><li><br /><li>/*中间的其它主题，略*/<br /><li><br /><li>/*custom theme*/<br /><li>/*<br /><li>&nbsp; &nbsp; --bg:#ecedeb;<br /><li>&nbsp; &nbsp; --pri:#d1d9c1;<br /><li>&nbsp; &nbsp; --prid:#cc9;<br /><li>&nbsp; &nbsp; --pril:#e5e9df;<br /><li>&nbsp; &nbsp; --bn:#0b7ac9;<br /><li>&nbsp; &nbsp; --bnd:#0555ba;<br /><li>&nbsp; &nbsp; --sec:#0095ff;<br /><li>&nbsp; &nbsp; --secp:#0095ff;<br /><li>&nbsp; &nbsp; --t:#022C80;<br /><li>&nbsp; &nbsp; --tl:#3159a9;<br /><li>&nbsp; &nbsp; --tg:#889dc8;<br /><li>&nbsp; &nbsp; --pt:#022C80;<br /><li>&nbsp; &nbsp; --ptl:#3159a9;<br /><li>&nbsp; &nbsp; --icl:#fff;<br /><li>&nbsp; &nbsp; --ic:#ccc;<br /><li>&nbsp; &nbsp; --icd:#999;<br /><li>&nbsp; &nbsp; --icdd:#555;<br /><li>&nbsp; &nbsp; --icddd:#000;<br /><li>&nbsp; &nbsp; --shd:#555;<br /><li>&nbsp; &nbsp; --shdl:#999;<br /><li>/**/<br /><li>}<br /><li></ol></div><em onclick="copycode(getID('code_HPp'));">复制代码</em></div>最上面是关于颜色值的说明，:root{开始是主题代码，tea theme就是经典的午后红茶(屎黄色)主题，custom theme则是自定义主题。<br />
+<font color="Red">--bg(背景色)的前一行</font>如果为空，代表该主题代码未被无效化(被注释)，主题生效。反之亦然。若有多个主题没被无效化，则最后一个主题有效(覆盖了前面的定义)。<br />
+如果不想频繁地去userstyle页面变更自定义项再更新，可以直接去掉对应主题--bg前的那个<font color="Red">/*</font>并将其它主题无效化(加上/*)。<i>本主题所有代码都是完整的，诸如签名自动隐藏功能的开关、首页板块的显示隐藏，均能通过增减/*来设置。</i><br />
+你可以随意设置随意主题的hex色值，扩展支持的话甚至能直接点击拖动，所见即所得：<br />
+<img src="https://ws1.sinaimg.cn/large/73508f0fgy1g2ba74wh4mj20cz0ao3z3.jpg" border="0" alt="" /><br />
+</div>
+<div id="comment_43399969">
+</div>
+
+<h3 class="psth xs1"><span class="icon_ring vm"></span>评分</h3>
+<div id="ratelog_43399969">
+<dd style="margin:0">
+<div id="post_rate_43399969"></div>
+<ul class="post_box cl">
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1 xw1"><span class="z"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43399969&amp;mobile=2" class="dialog" title="查看全部评分"> 参与人数 <span class="xi1">2</span></a></span></div><div class="flex-2 xs1 xg1 xw1">战斗力 <i><span class="xi1">+2</span></i></div>
+<div class="flex-3 xs1 xg1 xw1">理由</div>
+</li><li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=469113&amp;mobile=2" target="_blank">掉过脑袋</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">这么好的东西居然没人加分</div>
+</li>
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=504643&amp;mobile=2" target="_blank">DazzleP</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0"><div class="flex xs2 xg1 xw1"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43399969&amp;mobile=2" title="查看全部评分" class="dialog">查看全部评分</a></div></li>
+</ul>
+</dd>
+</div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43477773">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43477773">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+<img src ="static/image/s1/settop.png" class="vm" /> 来自 88#</span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-27 14:36</li>
+</ul>
+<div class="message">
+<h2><strong>更新内容</strong></h2>
+<i class="pstatus"> 本帖最后由 pgain2004 于 2026-6-13 21:50 编辑 </i><br />
+<div class="quote"><blockquote>V2026.6.13<br />
+新增对默认头像的替换功能<br />
+<br />
+V2026.3.29<br />
+设置帖子列表页面上方帖子类型栏的鼠标缩放行为，现在不会因为总长度变化而抽搐了<br />
+<br />
+V2025.6.20<br />
+修复一些界面的默认适配<br />
+<br />
+V2025.6.14<br />
+修复对新表情UI的适配<br />
+<br />
+V2024.12.23<br />
+进一步替换为Less变量，为后续动态字色做准备<br />
+移除高级编辑界面的超链接颜色设置（当初为啥会加这选项的？），防止出bug<br />
+修复版头选择非自动收起的情况下，顶栏仍然动态出现和消失的问题<br />
+修复几个语法错误导致的样式失效问题<br />
+<br />
+V2024.12.21<br />
+修复一些兼容问题<br />
+<br />
+V2024.12.20<br />
+新版本号直接取用更新日期<br />
+切换到Less预处理器，会导致部分设置失效，需要用户重新选择<br />
+<br />
+V1.3.6<br />
+对新的表情选择栏进行适配<br />
+<br />
+V1.3.5<br />
+给右上角的提醒状态增加动态强调元素<br />
+<br />
+V1.3.4<br />
+修复窄屏和强制宽度导致的显示bug<br />
+<br />
+V1.3.3<br />
+增加窄屏模式隐藏帖子列表中的发帖人及发帖日期选项<br />
+<br />
+V1.3.2<br />
+修正顶栏已认证手机用户的图标（就是删了）<br />
+<br />
+V1.3.1<br />
+对完全没人反馈的主题内用户信息显示方式1进行修正和完善，现在布局应该比较完善了<br />
+<br />
+V1.3.0<br />
+对显示屏蔽内容黑科技脚本的登录窗口进行适配<br />
+<br />
+V1.2.9<br />
+修复带图投票帖中的图片显示错误<br />
+<br />
+V1.2.8<br />
+完善帖内图片在维持宽高比下的尺寸自适应<br />
+<br />
+V1.27→V1.2.7<br />
+根据SemVer规范修改版本号<br />
+修正窄屏模式下导航栏分版本菜单的适配<br />
+修正一些主题色中的部分颜色选择<br />
+板块列表中会已访问链接会有稍微变暗<br />
+<br />
+V1.25-1.26<br />
+适配修正<br />
+<br />
+V1.24<br />
+部分图标变更为X3.5的dizcon原图标（配搭主题色），对S1用户标记脚本(<a href="https://bbs.saraba1st.com/2b/thread-2049578-1-1.html" target="_blank">https://bbs.saraba1st.com/2b/thread-2049578-1-1.html</a>)进行优化适配<br />
+<br />
+V1.21-1.23<br />
+适配修正<br />
+<br />
+V1.20<br />
+适配升级到Discuz X3.5后的一些变化。肯定还有bug（甚至发现了一些新页面），大家帮忙多报一下bug，我一个人很难全部发现<br />
+<br />
+V1.10-1.12<br />
+修复页码栏中下一页按钮在不同页面适配情况不同导致消失的问题<br />
+<br />
+V1.09<br />
+顶栏、快捷导航等应用磨砂玻璃透明模式<br />
+增加自适应亮暗色调选项，即自动跟随系统主题，Win用户推荐配合Auto-Night-Mode使用<br />
+一些简单的调整<br />
+<br />
+V1.086<br />
+修复在Chrome上用户头像顶部粘连效果失效的问题<br />
+<br />
+V1.085<br />
+变更评分理由字体颜色<br />
+新增字体选项，可自定义<br />
+<br />
+V1.083<br />
+修复窄屏适配下的头像信息栏适配<br />
+<br />
+V1.08<br />
+优化头像信息栏的适配<br />
+根据新的usercss规则，删除部分冗余代码<br />
+<br />
+V1.07<br />
+迁移到userstyles.world<br />
+（这代码还不是随随便便就能搞定的嘿……）<br />
+<br />
+V1.061<br />
+修复带翻页主帖页码栏被误删的问题<br />
+适配新上传附件按钮与组件<br />
+<br />
+V1.06<br />
+修复用户回复展示页的页码按钮在一定窗口宽度下消失的问题<br />
+将编辑功能图标图片直接用base64的方式嵌入(大幅增加了脚本体积，但似乎没受userstyles的字节限制？)<br />
+<br />
+V1.059<br />
+完善上传附件窗口适配，增加强制窄屏不影响顶部导航栏选项<br />
+<br />
+V1.057<br />
+完善邀请用户、论坛权限等页面的适配<br />
+<br />
+V1.0561<br />
+高亮帖子和富文本编辑器内链接，并提供字色选项<br />
+<br />
+V1.055<br />
+修复内野子版块入口适配，增强整体适配能力<br />
+<br />
+V1.054<br />
+新增配色<br />
+<br />
+V1.053<br />
+新增“窄屏下页码栏悬浮展开”选项，方便大缩放比用户点页码。<br />
+<br />
+V1.052<br />
+修正功能小窗的匹配。<br />
+<br />
+V1.051<br />
+优化部分颜色覆盖，不再影响主题加色。<br />
+<br />
+V1.05<br />
+增加滚动条颜色跟随和窄滚动条选项(默认开启)。<br />
+<br />
+V1.049<br />
+增加短信息回复栏表情选择框适配。<br />
+<br />
+V1.048<br />
+修正增补主页隐藏栏目选项；<br />
+增加主题帖内图片最大高度限定选项(默认为不限制)。<br />
+<br />
+V1.045<br />
+修改过渡界面图标(效果一般，容我再找)。<br />
+<br />
+V1.042<br />
+修复用户类型标签的显示(static服务器用https啦?)；<br />
+增加部分字体反色匹配(用来应付一些从其它网页粘贴过来的带格式文本和反色文本，不完全)。<br />
+<br />
+V1.041<br />
+可设置版头是否自动收起和展开。<br />
+<br />
+V1.04<br />
+适配充值页面。<br />
+<br />
+V1.037<br />
+适配签名编辑框的表情选择栏。<br />
+准备适配充钱界面。<br />
+复活快……乐？<br />
+<br />
+V1.036<br />
+修正主页公告和公告页UI。<br />
+只读模式快乐。<br />
+<br />
+V1.035<br />
+增加两种配色；<br />
+为板块主题列表底部增加“下一页”宽按钮（非原按钮）；<br />
+优化主题列表细节；<br />
+改善强制窄屏适配；<br />
+快捷导航改为满屏高；<br />
+修改主页格式；<br />
+增加加大主页选项；<br />
+完善大乱斗页适配；<br />
+修复小黑屋“更多”按钮的显示问题。<br />
+<br />
+V1.02<br />
+增加主题内用户信息显示选项；<br />
+增加强制宽度选项，当其被启用后，【自定义宽度(px)】和【“自定义宽度”值+40px】才会生效；<br />
+搜索页已访问链接以浅色显示；<br />
+增加快捷导航按钮右置选项(不推荐)；<br />
+增加Chromium系浏览器适配选项(Chromium居然仍不支持sticky特性！？)；<br />
+增加用户信息自动收纳新风格选项；<br />
+优化用户信息侧栏布局；<br />
+修复快捷入口子菜单错位问题。<br />
+<br />
+V1.0<br />
+初版发布。</blockquote></div><br />
+以后版本更新内容就在这个回复发，看最后能有多长。</div>
+<div id="comment_43477773">
+</div>
+
+<div id="post_rate_div_43477773"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43400086">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/14/08/16_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43400086">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+3<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=140816&amp;mobile=2">lordvv</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 12:19</li>
+</ul>
+<div class="message">
+谢谢楼主，用上了dark theme，这下不会有人质疑我上班摸鱼了<img src="https://static.stage1st.com/image/smiley/face2017/125.png" smilieid="737" border="0" alt="" /></div>
+<div id="comment_43400086">
+</div>
+
+<div id="post_rate_div_43400086"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43400176">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43400176">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+4<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 12:28</li>
+</ul>
+<div class="message">
+<i class="pstatus"> 本帖最后由 pgain2004 于 2024-12-25 22:25 编辑 </i><br />
+<br />
+紧急修了点小问题……我也不清楚userstyle改版后现在的更新机制如何，如果发现错位或者代码框字色太浅就更一下吧<img src="https://static.stage1st.com/image/smiley/face2017/227.gif" smilieid="2512" border="0" alt="" /><br />
+还有其它什么意见尽管提。<br />
+<br />
+<font color="#fffacd">测试</font><br />
+<font color="#000000">测试</font><br />
+<br />
+</div>
+<div id="comment_43400176">
+</div>
+
+<div id="post_rate_div_43400176"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43405547">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/40/43/17_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43405547">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+5<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=404317&amp;mobile=2">xsl1099</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 18:21</li>
+</ul>
+<div class="message">
+谢谢 mux用了很多年</div>
+<div id="comment_43405547">
+</div>
+
+<div id="post_rate_div_43405547"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43405671">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/45/18/43_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43405671">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+6<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=451843&amp;mobile=2">とげちー</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 18:30</li>
+</ul>
+<div class="message">
+<div class="quote">提示: <em>作者被禁止或删除 内容自动屏蔽</em></div>
+</div>
+<div id="comment_43405671">
+</div>
+
+<div id="post_rate_div_43405671"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43405817">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43405817">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+7<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 18:40</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43405671&amp;ptid=1826103" target="_blank"><font color="#999999">とげちー 发表于 2019-4-22 18:30</font></a></font><br />
+感谢，刚好最近页面变宽了看着很难受</blockquote></div><br />
+<img src="https://static.stage1st.com/image/smiley/face2017/189.png" smilieid="743" border="0" alt="" />狗叔好像已经调回去了。</div>
+<div id="comment_43405817">
+</div>
+
+<div id="post_rate_div_43405817"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43406055">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/45/05/18_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43406055">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+8<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=450518&amp;mobile=2">性欲モンスター</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 18:57</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43405817&amp;ptid=1826103" target="_blank"><font color="#999999">pgain2004 发表于 2019-4-22 18:40</font></a></font><br />
+狗叔好像已经调回去了。</blockquote></div><br />
+新表情也没了</div>
+<div id="comment_43406055">
+</div>
+
+<div id="post_rate_div_43406055"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43406080">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43406080">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+9<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 18:58</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43406055&amp;ptid=1826103" target="_blank"><font color="#999999">性欲モンスター 发表于 2019-4-22 18:57</font></a></font><br />
+新表情也没了</blockquote></div><br />
+似乎可能大概或许是因为老爷直接同步整个库回去，于是把表情更新部分也同步没了<img src="https://static.stage1st.com/image/smiley/face2017/209.gif" smilieid="1654" border="0" alt="" /><br />
+还好文件都是现成的，而且是修正过的，再加回去应该不难<img src="https://static.stage1st.com/image/smiley/face2017/223.png" smilieid="1698" border="0" alt="" /><br />
+</div>
+<div id="comment_43406080">
+</div>
+
+<div id="post_rate_div_43406080"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43409733">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/12/01/82_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43409733">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+10<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=120182&amp;mobile=2">小明神</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 23:36</li>
+</ul>
+<div class="message">
+之前一直用你的，这个更新看起来更好了。感谢楼主<br />
+<br />
+—— 来自 HUAWEI ARS-AL00, Android 8.1.0上的 <a href="https://github.com/ykrank/S1-Next/releases" target="_blank">S1Next-鹅版</a> v2.1.2</div>
+<div id="comment_43409733">
+</div>
+
+<div id="post_rate_div_43409733"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43409929">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/43/25/68_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43409929">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+11<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=432568&amp;mobile=2">千本blur</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-22 23:54</li>
+</ul>
+<div class="message">
+挺好看的，但是S1的页面真的改回去了吗，无论是否安装楼主的主题，我这里页面依然横跨了十万八千里。<br />
+<br />
+<br />
+</div>
+<div class="quote">
+附件: <em>您需要<a href="member.php?mod=logging&amp;action=login&amp;mobile=2">登录</a>才可以下载或查看附件。没有账号？<a href="member.php?mod=register&amp;mobile=2" title="注册账号">立即注册</a></em>
+</div>
+<div id="comment_43409929">
+</div>
+
+<div id="post_rate_div_43409929"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410102">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410102">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+12<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 00:15</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43409929&amp;ptid=1826103" target="_blank"><font color="#999999">千本blur 发表于 2019-4-22 23:54</font></a></font><br />
+挺好看的，但是S1的页面真的改回去了吗，无论是否安装楼主的主题，我这里页面依然横跨了十万八千里。</blockquote></div><br />
+我这主题是自适应宽屏的……<br />
+你是想要强行窄屏么？<br />
+在最后的最后加一行body{width:<font color="Red">你想要的数字</font>px!important;max-width:<font color="Red">你想要的数字</font>px!important;margin:0 auto!important}，应该就能覆盖所有其它设定，让整个页面缩窄居中了。对其它所有网页都可以这么干。<br />
+但如果是有选择地缩窄，那还请具体描述，我可以因应提供选项或者代码。</div>
+<div id="comment_43410102">
+</div>
+
+<div id="post_rate_div_43410102"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410212">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/42/38/82_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410212">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+13<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=423882&amp;mobile=2">elxy</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 00:28</li>
+</ul>
+<div class="message">
+问个问题，之前的S1 Mux修改后，一旦更新就还原回去了，这个还会有这样的问题么？</div>
+<div id="comment_43410212">
+</div>
+
+<div id="post_rate_div_43410212"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410240">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410240">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+14<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 00:31</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410212&amp;ptid=1826103" target="_blank"><font color="#999999">elxy 发表于 2019-4-23 00:28</font></a></font><br />
+问个问题，之前的S1 Mux修改后，一旦更新就还原回去了，这个还会有这样的问题么？ ...</blockquote></div><br />
+呃，是指修改的啥？自己改的代码？页面里的自定义选项？</div>
+<div id="comment_43410240">
+</div>
+
+<div id="post_rate_div_43410240"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410251">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/42/38/82_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410251">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+15<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=423882&amp;mobile=2">elxy</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 00:32</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410240&amp;ptid=1826103" target="_blank"><font color="#999999">pgain2004 发表于 2019-4-23 00:31</font></a></font><br />
+呃，是指修改的啥？自己改的代码？页面里的自定义选项？</blockquote></div><br />
+隐藏板块入口，比如主题页面中的“大乱斗”、“手游”之类的</div>
+<div id="comment_43410251">
+</div>
+
+<div id="post_rate_div_43410251"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410387">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410387">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+16<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 00:52</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410251&amp;ptid=1826103" target="_blank"><font color="#999999">elxy 发表于 2019-4-23 00:32</font></a></font><br />
+隐藏板块入口，比如主题页面中的“大乱斗”、“手游”之类的</blockquote></div><br />
+如果是设定好的自定义选项，理论上用扩展更新后也会保留。如果是自己改的代码，那在更新时确实会被覆盖，推荐另外开个txt之类的保存该部分代码，到时直接覆盖。这方面确实很难兼顾，抱歉了。</div>
+<div id="comment_43410387">
+</div>
+
+<div id="post_rate_div_43410387"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410399">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/42/38/82_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410399">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+17<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=423882&amp;mobile=2">elxy</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 00:54</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410387&amp;ptid=1826103" target="_blank"><font color="#999999">pgain2004 发表于 2019-4-23 00:52</font></a></font><br />
+如果是设定好的自定义选项，理论上用扩展更新后也会保留。如果是自己改的代码，那在更新时确实会被覆盖， ...</blockquote></div><br />
+好吧，那我用uBlock Origin屏蔽好了。</div>
+<div id="comment_43410399">
+</div>
+
+<div id="post_rate_div_43410399"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410467">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410467">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+18<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 01:05</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410399&amp;ptid=1826103" target="_blank"><font color="#999999">elxy 发表于 2019-4-23 00:54</font></a></font><br />
+好吧，那我用uBlock Origin屏蔽好了。</blockquote></div><br />
+如果你是指顶部那些快捷入口……不来看看我写的练习用脚本么，会将顶部快捷入口替换为你收藏的板块+几个可自定义项。</div>
+<div id="comment_43410467">
+</div>
+
+<div id="post_rate_div_43410467"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410684">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/43/25/68_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410684">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+19<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=432568&amp;mobile=2">千本blur</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 01:50</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410102&amp;ptid=1826103" target="_blank"><font color="#999999">pgain2004 发表于 2019-4-23 00:15</font></a></font><br />
+我这主题是自适应宽屏的……<br />
+你是想要强行窄屏么？<br />
+在最后的最后加一行body{width:你想要的数字px!import ...</blockquote></div><br />
+啊哦，谢谢，这个就很棒了。<br />
+<br />
+提一个建议，可不可以增加选项，让用户自己选择是否折叠头像下面的用户信息？感觉浏览的时候这个还看得挺多的。<br />
+<br />
+</div>
+<div id="comment_43410684">
+</div>
+
+<div id="post_rate_div_43410684"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410691">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43410691">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+20<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 01:53</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410684&amp;ptid=1826103" target="_blank"><font color="#999999">千本blur 发表于 2019-4-23 01:50</font></a></font><br />
+啊哦，谢谢，这个就很棒了。<br />
+<br />
+提一个建议，可不可以增加选项，让用户自己选择是否折叠头像下面的用户信息 ...</blockquote></div><br />
+可以，我之后加吧。</div>
+<div id="comment_43410691">
+</div>
+
+<div id="post_rate_div_43410691"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43410845">
+<div class="avatar"><img src="https://avatar.stage1st.com/noavatar.svg" /></div>
+<div class="display pi" href="#replybtn_43410845">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+21<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=215544&amp;mobile=2">酒丸</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 02:36</li>
+</ul>
+<div class="message">
+可以变成夜间模式好评<img src="https://static.stage1st.com/image/smiley/face2017/033.png" smilieid="692" border="0" alt="" /></div>
+<div id="comment_43410845">
+</div>
+
+<div id="post_rate_div_43410845"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43411316">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/50/81/41_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43411316">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+22<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=508141&amp;mobile=2">待宵</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 07:37</li>
+</ul>
+<div class="message">
+NUX版论坛首页比起MUX版更为激进，我觉得后者的首页好</div>
+<div id="comment_43411316">
+</div>
+
+<div id="post_rate_div_43411316"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43413411">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43413411">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+23<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 10:42</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410684&amp;ptid=1826103" target="_blank"><font color="#999999">千本blur 发表于 2019-4-23 01:50</font></a></font><br />
+啊哦，谢谢，这个就很棒了。<br />
+<br />
+提一个建议，可不可以增加选项，让用户自己选择是否折叠头像下面的用户信息 ...</blockquote></div><br />
+加上了<img src="https://static.stage1st.com/image/smiley/face2017/037.png" smilieid="691" border="0" alt="" /></div>
+<div id="comment_43413411">
+</div>
+
+<h3 class="psth xs1"><span class="icon_ring vm"></span>评分</h3>
+<div id="ratelog_43413411">
+<dd style="margin:0">
+<div id="post_rate_43413411"></div>
+<ul class="post_box cl">
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1 xw1"><span class="z"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43413411&amp;mobile=2" class="dialog" title="查看全部评分"> 参与人数 <span class="xi1">1</span></a></span></div><div class="flex-2 xs1 xg1 xw1">战斗力 <i><span class="xi1">+1</span></i></div>
+<div class="flex-3 xs1 xg1 xw1">理由</div>
+</li><li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=432568&amp;mobile=2" target="_blank">千本blur</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1"></div>
+</li>
+<li class="flex-box mli p0"><div class="flex xs2 xg1 xw1"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43413411&amp;mobile=2" title="查看全部评分" class="dialog">查看全部评分</a></div></li>
+</ul>
+</dd>
+</div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43413563">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43413563">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+24<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 10:51</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43411316&amp;ptid=1826103" target="_blank"><font color="#999999">待宵 发表于 2019-4-23 07:37</font></a></font><br />
+NUX版论坛首页比起MUX版更为激进，我觉得后者的首页好</blockquote></div><br />
+因为一开始主页是现在“板块分类”的这个布局：<a href="https://bbs.saraba1st.com/2b/forum.php?gid=1" target="_blank">https://bbs.saraba1st.com/2b/forum.php?gid=1</a><br />
+【板块名】<br />
+【板块简述】<br />
+【子板块入口】<br />
+【版主列表】<br />
+例如子版块入口和版主列表，我觉得有保留价值，当初MUX留的也是这个。<br />
+<br />
+后来改版成双栏后，就只剩下“总主题&amp;回复数”和“最后被回复的主题”了。<br />
+就算老爷自己也不会去看这什么总数吧，也不需要（直接就能看数据库），而后者……你会用到吗<img src="https://static.stage1st.com/image/smiley/face2017/002.png" smilieid="624" border="0" alt="" /></div>
+<div id="comment_43413563">
+</div>
+
+<div id="post_rate_div_43413563"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43413702">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/48/03/18_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43413702">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+25<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=480318&amp;mobile=2">Lisylfn</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 10:58</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43410251&amp;ptid=1826103" target="_blank"><font color="#999999">elxy 发表于 2019-4-23 00:32</font></a></font><br />
+隐藏板块入口，比如主题页面中的“大乱斗”、“手游”之类的</blockquote></div><br />
+<a href="https://openuserjs.org/scripts/ylns1314/S1_NaviBar_Customization" target="_blank">https://openuserjs.org/scripts/ylns1314/S1_NaviBar_Customization</a><br />
+用一个脚本来自定义, 两边就不会覆盖了</div>
+<div id="comment_43413702">
+</div>
+
+<h3 class="psth xs1"><span class="icon_ring vm"></span>评分</h3>
+<div id="ratelog_43413702">
+<dd style="margin:0">
+<div id="post_rate_43413702"></div>
+<ul class="post_box cl">
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1 xw1"><span class="z"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43413702&amp;mobile=2" class="dialog" title="查看全部评分"> 参与人数 <span class="xi1">1</span></a></span></div><div class="flex-2 xs1 xg1 xw1">战斗力 <i><span class="xi1">+1</span></i></div>
+<div class="flex-3 xs1 xg1 xw1">理由</div>
+</li><li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=423882&amp;mobile=2" target="_blank">elxy</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">感谢</div>
+</li>
+<li class="flex-box mli p0"><div class="flex xs2 xg1 xw1"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43413702&amp;mobile=2" title="查看全部评分" class="dialog">查看全部评分</a></div></li>
+</ul>
+</dd>
+</div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43413755">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/23/90/53_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43413755">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+26<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=239053&amp;mobile=2">离魂仙</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 11:00</li>
+</ul>
+<div class="message">
+<img src="https://wx3.sinaimg.cn/large/622734bdly1g2cduc3ctbj21h70akn0b.jpg" border="0" alt="" /><br />
+加了强制窄屏代码后变这样了，还是希望能和原版窄屏一样的模式<img src="https://static.stage1st.com/image/smiley/face2017/075.png" smilieid="646" border="0" alt="" /></div>
+<div id="comment_43413755">
+</div>
+
+<div id="post_rate_div_43413755"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43414312">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/48/03/18_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43414312">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+27<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=480318&amp;mobile=2">Lisylfn</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 11:31</li>
+</ul>
+<div class="message">
+帖子列表底部的下一页栏是删掉了吗? 帖子里的还在<br />
+<br />
+另外, 搜索页面的链接能加一个已访问的变色标记吗?<br />
+</div>
+<div id="comment_43414312">
+</div>
+
+<div id="post_rate_div_43414312"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43414370">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/47/54/34_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43414370">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+28<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=475434&amp;mobile=2">NagisaLoveMami</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 11:35</li>
+</ul>
+<div class="message">
+<div class="quote">提示: <em>作者被禁止或删除 内容自动屏蔽</em></div>
+</div>
+<div id="comment_43414370">
+</div>
+
+<div id="post_rate_div_43414370"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43414881">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43414881">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+29<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 12:03</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43413755&amp;ptid=1826103" target="_blank"><font color="#999999">离魂仙 发表于 2019-4-23 11:00</font></a></font><br />
+加了强制窄屏代码后变这样了，还是希望能和原版窄屏一样的模式</blockquote></div><br />
+增加了强制宽屏选项，但注意设置太窄会导致“地址栏”和“页码栏”在一些标题较长页数又多的帖子里相互覆盖。<br />
+另外不知道为啥这时候页面会让用户“安装”成另一个主题而不是更新原来的主题，如果你发现有两个NUX在同时生效，把老的删了就好。</div>
+<div id="comment_43414881">
+</div>
+
+<div id="post_rate_div_43414881"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43415012">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43415012">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+30<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 12:10</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43414312&amp;ptid=1826103" target="_blank"><font color="#999999">Lisylfn 发表于 2019-4-23 11:31</font></a></font><br />
+帖子列表底部的下一页栏是删掉了吗? 帖子里的还在<br />
+<br />
+另外, 搜索页面的链接能加一个已访问的变色标记吗?</blockquote></div><br />
+更了，已访问的链接会变淡。<br />
+至于删掉板块列表底部的下一页栏，主要是因为它触发的行为模式和主题内的不同，容易导致布局错乱，只能说抱歉了，习惯一下用页码栏来跳转吧。</div>
+<div id="comment_43415012">
+</div>
+
+<h3 class="psth xs1"><span class="icon_ring vm"></span>评分</h3>
+<div id="ratelog_43415012">
+<dd style="margin:0">
+<div id="post_rate_43415012"></div>
+<ul class="post_box cl">
+<li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1 xw1"><span class="z"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43415012&amp;mobile=2" class="dialog" title="查看全部评分"> 参与人数 <span class="xi1">1</span></a></span></div><div class="flex-2 xs1 xg1 xw1">战斗力 <i><span class="xi1">+1</span></i></div>
+<div class="flex-3 xs1 xg1 xw1">理由</div>
+</li><li class="flex-box mli p0">
+<div class="flex-2 xs1 xg1"><span class="z"><a href="home.php?mod=space&amp;uid=480318&amp;mobile=2" target="_blank">Lisylfn</a></span></div><div class="flex-2 xs1 xi1 xw1"> + 1</div>
+<div class="flex-3 xs1 xg1">好评加鹅</div>
+</li>
+<li class="flex-box mli p0"><div class="flex xs2 xg1 xw1"><a href="forum.php?mod=misc&amp;action=viewratings&amp;tid=1826103&amp;pid=43415012&amp;mobile=2" title="查看全部评分" class="dialog">查看全部评分</a></div></li>
+</ul>
+</dd>
+</div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43415210">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/45/32/58_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43415210">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+31<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=453258&amp;mobile=2">kwin_</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 12:21</li>
+</ul>
+<div class="message">
+用上了，感觉不错<img src="https://static.stage1st.com/image/smiley/face2017/070.png" smilieid="755" border="0" alt="" /></div>
+<div id="comment_43415210">
+</div>
+
+<div id="post_rate_div_43415210"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43415770">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/48/74/18_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43415770">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+32<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=487418&amp;mobile=2">elfspeeder</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 12:53</li>
+</ul>
+<div class="message">
+帖子内固定显示栏的第二条，就是那个帖子来源导航，影响信息密度能不能改个选项鼠标悬浮显示或者不要</div>
+<div class="quote">
+附件: <em>您需要<a href="member.php?mod=logging&amp;action=login&amp;mobile=2">登录</a>才可以下载或查看附件。没有账号？<a href="member.php?mod=register&amp;mobile=2" title="注册账号">立即注册</a></em>
+</div>
+<div id="comment_43415770">
+</div>
+
+<div id="post_rate_div_43415770"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43416316">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43416316">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+33<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 13:25</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43415770&amp;ptid=1826103" target="_blank"><font color="#999999">elfspeeder 发表于 2019-4-23 12:53</font></a></font><br />
+帖子内固定显示栏的第二条，就是那个帖子来源导航，影响信息密度能不能改个选项鼠标悬浮显示或者不要 ...</blockquote></div><br />
+隐了这一栏连页码都会看不到的啊……</div>
+<div id="comment_43416316">
+</div>
+
+<div id="post_rate_div_43416316"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43416531">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/39/21/05_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43416531">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+34<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=392105&amp;mobile=2">zhongjie</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 13:40</li>
+</ul>
+<div class="message">
+没有适配二手区吗？没看到入口啊</div>
+<div id="comment_43416531">
+</div>
+
+<div id="post_rate_div_43416531"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43416579">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43416579">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+35<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 13:44</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43416531&amp;ptid=1826103" target="_blank"><font color="#999999">zhongjie 发表于 2019-4-23 13:40</font></a></font><br />
+没有适配二手区吗？没看到入口啊</blockquote></div><br />
+不是在外野的后面么……</div>
+<div id="comment_43416579">
+</div>
+
+<div id="post_rate_div_43416579"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43416652">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/39/21/05_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43416652">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+36<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=392105&amp;mobile=2">zhongjie</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 13:48</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43416579&amp;ptid=1826103" target="_blank"><font color="#999999">pgain2004 发表于 2019-4-23 13:44</font></a></font><br />
+不是在外野的后面么……</blockquote></div><br />
+发现了，原来要到快捷导航那里找，我在页面定的导航栏或者S1首页没看到</div>
+<div id="comment_43416652">
+</div>
+
+<div id="post_rate_div_43416652"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43416699">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43416699">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+37<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 13:52</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43416652&amp;ptid=1826103" target="_blank"><font color="#999999">zhongjie 发表于 2019-4-23 13:48</font></a></font><br />
+发现了，原来要到快捷导航那里找，我在页面定的导航栏或者S1首页没看到</blockquote></div><br />
+首页有的啊，就在外野入口后面，你是用其它扩展之类的屏蔽了吧？</div>
+<div id="comment_43416699">
+</div>
+
+<div id="post_rate_div_43416699"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43416755">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/39/21/05_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43416755">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+38<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=392105&amp;mobile=2">zhongjie</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 13:56</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43416699&amp;ptid=1826103" target="_blank"><font color="#999999">pgain2004 发表于 2019-4-23 13:52</font></a></font><br />
+首页有的啊，就在外野入口后面，你是用其它扩展之类的屏蔽了吧？</blockquote></div><br />
+<img src="https://i.loli.net/2019/04/23/5cbea8ded34b7.png" border="0" alt="" /><br />
+<br />
+<img src="https://i.loli.net/2019/04/23/5cbea8dee0f42.png" border="0" alt="" /><br />
+<br />
+我的首页和扩展是这些，我也不知道是哪个出了问题<img src="https://static.stage1st.com/image/smiley/face2017/068.png" smilieid="680" border="0" alt="" /></div>
+<div id="comment_43416755">
+</div>
+
+<div id="post_rate_div_43416755"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43416872">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/15/27/09_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43416872">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+39<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=152709&amp;mobile=2">pgain2004</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 14:05</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43416755&amp;ptid=1826103" target="_blank"><font color="#999999">zhongjie 发表于 2019-4-23 13:56</font></a></font><br />
+我的首页和扩展是这些，我也不知道是哪个出了问题</blockquote></div><br />
+我在主帖展示了一个自定义选项界面，里面能设置首页各部分的显示或隐藏，你是把主板块、收藏板块和友情链接隐藏了吧。按喜好重新选择后点更新按钮就可以了。</div>
+<div id="comment_43416872">
+</div>
+
+<div id="post_rate_div_43416872"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+<div class="plc cl" id="pid43417383">
+<div class="avatar"><img src="https://avatar.stage1st.com/000/48/74/18_avatar_small.jpg" /></div>
+<div class="display pi" href="#replybtn_43417383">
+<ul class="authi">
+<li class="mtit">
+<span class="y">
+40<sup>#</sup></span>
+<span class="z">
+<a href="home.php?mod=space&amp;uid=487418&amp;mobile=2">elfspeeder</a>
+</span>
+</li>
+<li class="mtime">
+2019-4-23 14:41</li>
+</ul>
+<div class="message">
+<div class="quote"><blockquote><font size="2"><a href="https://stage1st.com/2b/forum.php?mod=redirect&amp;goto=findpost&amp;pid=43416316&amp;ptid=1826103" target="_blank"><font color="#999999">pgain2004 发表于 2019-4-23 13:25</font></a></font><br />
+隐了这一栏连页码都会看不到的啊……</blockquote></div><br />
+<img src="https://static.stage1st.com/image/smiley/face2017/068.png" smilieid="680" border="0" alt="" />知道了，是为了把个人信息栏加进去才做了两行，以前mux就一行用习惯了</div>
+<div id="comment_43417383">
+</div>
+
+<div id="post_rate_div_43417383"></div>
+</div>
+<div class="threadlist_foot cl">
+<ul>
+</ul>
+</div>
+</div>
+</div>
+<div class="pg"><strong>1</strong><a href="forum.php?mod=viewthread&tid=1826103&extra=page%3D1&amp;page=2&amp;mobile=2">2</a><a href="forum.php?mod=viewthread&tid=1826103&extra=page%3D1&amp;page=3&amp;mobile=2">3</a><a href="forum.php?mod=viewthread&tid=1826103&extra=page%3D1&amp;page=4&amp;mobile=2">4</a><a href="forum.php?mod=viewthread&tid=1826103&extra=page%3D1&amp;page=15&amp;mobile=2" class="last">.. 15</a><label><input type="text" name="custompage" class="px" size="2" title="输入页码，按回车快速跳转" value="1" onkeydown="if(event.keyCode==13) {window.location='forum.php?mod=viewthread&tid=1826103&extra=page%3D1&amp;page='+this.value;; doane(event);}" /><span title="共 15 页"> / 15 页</span></label><a href="forum.php?mod=viewthread&tid=1826103&extra=page%3D1&amp;page=2&amp;mobile=2" class="nxt">下一页</a><input type="hidden" name="multipage_url" id="multipage_url" value="https://stage1st.com/2b/thread-1826103-{page}-1.html" /></div><div class="foot foot_reply flex-box cl">
+<a href="forum.php?mod=post&amp;action=reply&amp;fid=51&amp;tid=1826103&amp;reppost=43394299&amp;page=1&amp;mobile=2" class="flex"><i class="dm-chat-s"></i>回复</a>
+<a href="home.php?mod=spacecp&amp;ac=favorite&amp;type=thread&amp;id=1826103&amp;mobile=2" class="dialog flex mx"><i class="dm-star"></i>662收藏</a>
+</div>
+<div class="foot_height_view"></div>
+<script type="text/javascript">
+$('.favbtn').on('click', function() {
+var obj = $(this);
+$.ajax({
+type:'POST',
+url:obj.attr('href') + '&handlekey=favbtn&inajax=1',
+data:{'favoritesubmit':'true', 'formhash':'e5b5a42d'},
+dataType:'xml',
+})
+.success(function(s) {
+popup.open(s.lastChild.firstChild.nodeValue);
+evalscript(s.lastChild.firstChild.nodeValue);
+})
+.error(function() {
+window.location.href = obj.attr('href');
+popup.close();
+});
+return false;
+});
+</script>
+<a href="javascript:;" class="scrolltop bottom"></a>
+
+
+<div id="mask" style="display:none;"></div>
+<div id="statcode" style="display:none;"><script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1260281688'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s4.cnzz.com/z_stat.php%3Fid%3D1260281688' type='text/javascript'%3E%3C/script%3E"));</script>
+
+<script>
+//声明_czc对象:
+var _czc = _czc || [];
+//绑定siteid，请用您的siteid替换下方"XXXXXXXX"部分
+_czc.push(["_setAccount", "1260281688"]);
+_czc.push(["_trackPageview", "http://www.giordano.com/HK/?utm_source=gdn&utm_medium=banner&utm_campaign=july30_31", "https://bbs.saraba1st.com/2b/forum.php"]);
+</script>
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-141266582-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-141266582-1');
+</script></div></body>
+</html>

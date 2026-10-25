@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/*
+ * 设计令牌 —— 见 docs/design-system.md §1 / §9
+ * 基准色板：红茶Alt（userstyles.world/style/539 的 theme_tea_alt）
+ * --color-heading / --color-muted / --color-danger 为满足对比度做的明度派生。
+ */
+@theme {
+  --color-canvas: #f6f7eb;
+  --color-panel: #d0d7bb;
+  --color-panel-light: #d7dec7;
+  --color-line: #cccc99;
+
+  --color-accent: #689d6a;
+  --color-accent-strong: #427b58;
+  --color-flag: #d65d0e;
+  --color-flag-strong: #af3a03;
+
+  --color-text: #504945;
+  --color-heading: #3f3a35;
+  --color-muted: #6b6157;
+  --color-link: #076678;
+  --color-link-hover: #af3a03;
+  --color-danger: #9c2c2f;
+  --color-on-accent: #fbfcf2;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC",
+    "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --post-font-size: 17px;
+    --header-h: 48px;
+    --bar-h: 48px;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: contain;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

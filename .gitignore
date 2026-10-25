@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+*.local
+coverage/
+.DS_Store
+
+# 本地临时脚本/抓取产物
+.pi/tmp/
+.pi/settings.json

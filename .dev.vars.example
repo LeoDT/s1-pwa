@@ -1,0 +1,8 @@
+# 本地开发用 secrets（wrangler dev 会自动读取）
+# 复制为 .dev.vars 后按需填写；留空表示关闭对应功能。
+
+# 访问令牌：留空 = 本地关闭鉴权
+ACCESS_TOKEN=
+
+# 历史分区派生密钥（M3 启用）
+HISTORY_SECRET=
