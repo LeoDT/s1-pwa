@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface PagerProps {
@@ -21,17 +21,13 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
 
   return (
     <div className={cn('flex items-center justify-center gap-2 text-ui text-text', className)}>
-      <button
-        type="button"
-        aria-label="上一页"
-        disabled={page <= 1}
-        onClick={() => go(page - 1)}
-        className="group inline-flex size-11 items-center justify-center disabled:opacity-40"
-      >
-        <span className="flex size-9 items-center justify-center rounded-md transition-colors duration-[var(--motion-press)] group-hover:bg-panel-light group-active:bg-panel-light">
-          <ChevronLeft size={20} />
-        </span>
-      </button>
+      <PagerButton label="第一页" disabled={page <= 1} onClick={() => go(1)}>
+        <ChevronsLeft size={18} />
+      </PagerButton>
+
+      <PagerButton label="上一页" disabled={page <= 1} onClick={() => go(page - 1)}>
+        <ChevronLeft size={20} />
+      </PagerButton>
 
       {editing ? (
         <input
@@ -65,17 +61,44 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
         </button>
       )}
 
-      <button
-        type="button"
-        aria-label="下一页"
+      <PagerButton label="下一页" disabled={page >= totalPages} onClick={() => go(page + 1)}>
+        <ChevronRight size={20} />
+      </PagerButton>
+
+      <PagerButton
+        label="最后一页"
         disabled={page >= totalPages}
-        onClick={() => go(page + 1)}
-        className="group inline-flex size-11 items-center justify-center disabled:opacity-40"
+        onClick={() => go(totalPages)}
       >
-        <span className="flex size-9 items-center justify-center rounded-md transition-colors duration-[var(--motion-press)] group-hover:bg-panel-light group-active:bg-panel-light">
-          <ChevronRight size={20} />
-        </span>
-      </button>
+        <ChevronsRight size={18} />
+      </PagerButton>
     </div>
+  )
+}
+
+function PagerButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string
+  disabled: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="group inline-flex size-11 items-center justify-center disabled:opacity-40"
+    >
+      <span className="flex size-9 items-center justify-center rounded-md transition-colors duration-[var(--motion-press)] group-hover:bg-panel-light group-active:bg-panel-light">
+        {children}
+      </span>
+    </button>
   )
 }

@@ -71,6 +71,11 @@ export function ThreadPane({ tid, page }: ThreadPaneProps) {
   }, [query.data, highlightPid])
 
   const goPage = (next: number) => {
+    // 第 1 页用干净 URL（/t/<tid>），避免 /1 与 / 两份地址
+    if (next === 1) {
+      void navigate({ to: '/t/$tid', params: { tid: String(tid) }, replace: true })
+      return
+    }
     void navigate({
       to: '/t/$tid/$page',
       params: { tid: String(tid), page: String(next) },

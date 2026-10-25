@@ -1,6 +1,13 @@
+import { useLayoutEffect, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { BoardEntry } from '@/lib/boards'
 import { cn } from '@/lib/utils'
+
+/**
+ * 板块条的横向滚动位置在组件重挂载（切板块会换 key）之间保留，
+ * 否则点右上角的板块时整条会跳回最左边。
+ */
+let rememberedScrollLeft = 0
 
 interface BoardTabsProps {
   boards: BoardEntry[]
@@ -22,12 +29,23 @@ export function BoardTabs({
   onRefresh,
   refreshing = false,
 }: BoardTabsProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const element = scrollRef.current
+    if (element) element.scrollLeft = rememberedScrollLeft
+  }, [])
+
   return (
     <nav
       aria-label="常用板块"
       className="absolute inset-x-0 bottom-0 z-20 flex h-[calc(var(--bar-h)+env(safe-area-inset-bottom))] items-stretch border-t border-line bg-panel pb-[env(safe-area-inset-bottom)]"
     >
       <div
+        ref={scrollRef}
+        onScroll={(event) => {
+          rememberedScrollLeft = event.currentTarget.scrollLeft
+        }}
         onWheel={(event) => {
           // 桌面没有横滑手势：滚轮在板块条上直接横向滚动（不改页面滚动）
           const element = event.currentTarget
