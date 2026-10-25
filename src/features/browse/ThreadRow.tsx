@@ -1,5 +1,6 @@
 import type { ThreadSummary } from '@shared/types'
 import { cn } from '@/lib/utils'
+import { ListRow } from './ListRow'
 
 interface ThreadRowProps {
   thread: ThreadSummary
@@ -12,44 +13,37 @@ interface ThreadRowProps {
   newReplies?: number
 }
 
-/** 列表项：左侧回复数徽章 + 标题两行截断（见 docs/design-system.md §5.2） */
-export function ThreadRow({ thread, onOpen, active = false, read = false, newReplies = 0 }: ThreadRowProps) {
+/** 板块列表项：左侧回复数徽章 + 标题两行截断（见 docs/design-system.md §5.2） */
+export function ThreadRow({
+  thread,
+  onOpen,
+  active = false,
+  read = false,
+  newReplies = 0,
+}: ThreadRowProps) {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      aria-current={active ? 'true' : undefined}
-      className={cn(
-        'flex w-full items-start gap-3 px-4 py-2 text-left transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light',
-        active && 'bg-panel-light shadow-[inset_3px_0_0_var(--color-accent-strong)]',
-        !active && read && 'shadow-[inset_3px_0_0_var(--color-accent-strong)]',
-      )}
-    >
-      <span
-        aria-label={`${thread.replies} 条回复${newReplies > 0 ? `，${newReplies} 条新增` : ''}`}
-        className={cn(
-          'mt-0.5 flex min-w-9 shrink-0 flex-col items-center rounded-sm border bg-panel-light px-1.5 py-0.5',
-          read ? 'border-accent-strong' : 'border-line',
-        )}
-      >
-        <span className={cn('text-meta font-medium tnum', read ? 'text-accent-strong' : 'text-text')}>
-          {thread.replies}
-        </span>
-        {newReplies > 0 ? (
-          <span className="text-meta font-medium tnum text-flag-strong">+{newReplies}</span>
-        ) : null}
-      </span>
-
-      <span className="min-w-0 flex-1">
-        <span
-          className={cn(
-            'line-clamp-2 block text-ui font-medium leading-[1.45]',
-            active ? 'text-heading' : 'text-text',
-          )}
-        >
-          {thread.title}
-        </span>
-      </span>
-    </button>
+    <ListRow
+      active={active}
+      read={read}
+      badgeAccent={read || active}
+      badgeLabel={`${thread.replies} 条回复${newReplies > 0 ? `，${newReplies} 条新增` : ''}`}
+      title={thread.title}
+      onOpen={onOpen}
+      badge={
+        <>
+          <span
+            className={cn(
+              'text-meta font-medium tnum',
+              read || active ? 'text-accent-strong' : 'text-text',
+            )}
+          >
+            {thread.replies}
+          </span>
+          {newReplies > 0 ? (
+            <span className="text-meta font-medium tnum text-flag-strong">+{newReplies}</span>
+          ) : null}
+        </>
+      }
+    />
   )
 }

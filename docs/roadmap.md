@@ -51,15 +51,15 @@
 
 **验收**：无返回/刷新按钮；滚动时标题收起；下拉刷新可用；滑动返回回到原页码与滚动位置；大屏板块条在左栏底部。
 
-## M3 阅读进度（1 天）
+## M3 阅读进度（1 天）✅（真实账号 / 远程 D1 待实测）
 
-- [ ] D1 表 + 迁移脚本 + `D1ProgressStore`
-- [ ] `server/core/identity.ts` 身份探针 + isolate LRU（10min/100）
-- [ ] `/api/history*` 五个端点（含 LWW upsert）
-- [ ] 客户端：`progress` 镜像、`outbox` 队列、节流刷新、`keepalive` 落盘
-- [ ] `locatePid()` + `#pid` 滚动高亮
-- [ ] 列表徽章：已读态、`+N`
-- [ ] 历史页（最近阅读、一键清除单条/全部）
+- [x] D1 表 + 迁移脚本 + `D1ProgressStore`
+- [x] `server/core/identity.ts` 身份探针 + isolate LRU（10min/100）
+- [x] `/api/history*` 五个端点（含 LWW upsert）
+- [x] 客户端：`progress` 镜像、`outbox` 队列、节流刷新、`keepalive` 落盘
+- [x] `locatePid()` + `#pid` 滚动高亮
+- [x] 列表徽章：已读态、`+N`
+- [x] 历史页（最近阅读、一键清除单条/全部）
 
 **验收**：读到第 12 楼退出，重进直接落到第 12 楼；两台设备（手机+桌面）读到同一位置；断网读两页后联网自动补写。
 
@@ -123,6 +123,14 @@
 | tailwind-merge | 自定义字号档（text-meta/ui/body/title）需要在 `cn()` 里登记成 font-size 组，否则会被当成颜色与 `text-text` 冲突而被丢掉 |
 | 空行 | 上游正文的连续空 `<br>` **不做归一**（用户选择保留作者原始留白） |
 | 左栏激活态 | 大屏当前打开的帖子行加 `--color-panel-light` 底 + 3px 强调色竖条 + `aria-current` |
+| 路由参数 | core 路由表支持 `:name` 单段占位符（编译成正则），`/api/history/index` 先于 `/:tid` 注册；方法不符仍返回 405 |
+| D1 配置 | `wrangler.jsonc` 的 `database_id` 是占位 UUID；M6 部署前用 `wrangler d1 create s1-progress` 生成真实 id。本地用 `pnpm exec wrangler d1 migrations apply DB --local` |
+| 游客态 | 进度写入与历史请求都挂在 `useSession()` 之后；未登录只读本地镜像，不产生 401 请求。历史页离线时退回本地镜像 |
+| 跨设备续读 | 启动/恢复联网时 `HistorySync` 拉最近 100 条写入本地镜像，列表点开即可续读；列表徽章只用轻量 `/api/history/index` |
+| 退出登录 | 同时清本地 `progress` 镜像与 `outbox`，避免换账号串数据 |
+| 回复快照 | `ProgressRow.replies` 只在进入帖子时取一次，本次阅读内翻页/刷新不更新（`newReplies = 列表回复数 - 快照`） |
+| 浏览历史 | 不是独立页面：`/history` 与 `/history/t/…` 复用 `BrowseLayout`，小屏占满、大屏占左栏，底部板块条常驻；行样式与板块列表共用 `ListRow`；从历史进入的详情页翻页/引用跳转都留在 `/history/t/…` |
+| 激活色 | 历史按钮（`aria-current="page"`）、板块 tab、帖子行激活/已读徽章统一用 `--color-accent-strong` 文字，与左侧 3px 竖条一致 |
 
 ## 验收清单（手动，真机）
 

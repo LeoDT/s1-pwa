@@ -1,6 +1,8 @@
+import type { ProgressStore } from './store'
+
 /**
  * core 层只认这一组字段，Cloudflare / Node 适配层负责填充。
- * 迁移检查：server/core/** 内不得出现 env.DB、caches.default、process.env、waitUntil。
+ * 迁移检查：本目录内不得直访问数据库 binding、平台缓存、进程环境或后台任务接口。
  */
 export interface CoreEnv {
   /** 部署级访问令牌；未设置则关闭鉴权 */
@@ -11,5 +13,5 @@ export interface CoreEnv {
 
 export interface CoreDeps {
   env: CoreEnv
-  /** M3 注入 ProgressStore */
+  store: ProgressStore
 }

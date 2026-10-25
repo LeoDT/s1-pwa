@@ -1,11 +1,13 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import type { BoardGroup, ForumPage, ThreadPage } from '@shared/types'
+import type { BoardGroup, ForumPage, ProgressIndexRow, ThreadPage } from '@shared/types'
 import { parsePage, type ParsedPage } from '@/lib/parser/dom'
 import { assertKind } from '@/lib/parser/errors'
 import { parseBoardGroups } from '@/lib/parser/board'
 import { parseForumPage } from '@/lib/parser/forum'
 import { parseThreadPage } from '@/lib/parser/thread'
 import { loadBoards, type BoardEntry } from '@/lib/boards'
+import { useSession } from '@/features/auth/useSession'
+import { loadProgressIndex } from '@/lib/progress'
 import { proxyFetch, upstreamUrl } from '@/lib/proxy'
 
 async function request(url: string): Promise<ParsedPage> {
@@ -66,6 +68,19 @@ export function useThreadPage(tid: number, page: number) {
   return useQuery<ThreadPage>({
     queryKey: ['thread', tid, page],
     queryFn: () => fetchThreadPage(tid, page),
+    staleTime: 60 * 1000,
+  })
+}
+
+/** 列表徒章：本地镜像 ∪ 服务端索引；未登录时只用本地，不发 401 请求 */
+export function useProgressIndex() {
+  const session = useSession()
+  const signedIn = Boolean(session.data)
+
+  return useQuery<ProgressIndexRow[]>({
+    queryKey: ['progress-index', signedIn ? 'user' : 'guest'],
+    queryFn: () => loadProgressIndex(signedIn),
+    enabled: session.isSuccess,
     staleTime: 60 * 1000,
   })
 }

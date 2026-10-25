@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ThreadSummary } from '@shared/types'
-import { useBoards, useForumPages } from './queries'
+import { useBoards, useForumPages, useProgressIndex } from './queries'
 import { ThreadRow } from './ThreadRow'
 import { BoardTabs } from './BoardTabs'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/states'
@@ -11,6 +11,7 @@ import { getListState, markFromList, rememberListState } from '@/lib/navigation'
 import { usePullToRefresh, PULL_THRESHOLD } from '@/lib/usePullToRefresh'
 import { rememberFid } from './lastForum'
 import { useMediaQuery } from '@/lib/useMediaQuery'
+import { getProgress } from '@/lib/progress'
 
 interface ForumPaneProps {
   fid: number
@@ -23,6 +24,7 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   const queryClient = useQueryClient()
   const boards = useBoards()
   const forum = useForumPages(fid)
+  const progress = useProgressIndex()
 
   const wide = useMediaQuery('(min-width: 1024px)')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -99,8 +101,33 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
     rememberListState(fid, scrollTopRef.current)
     markFromList()
     // 大屏列表一直在左边，不需要堆历史；小屏 push 一次，保证系统返回能回列表
-    void navigate({ to: '/t/$tid', params: { tid: String(tid) }, replace: wide })
+    void openAtProgress(tid, wide)
   }
+
+  /** 有本地进度就续读（定位到上次楼层），否则从第 1 页开始 */
+  const openAtProgress = async (tid: number, replace: boolean) => {
+    const local = await getProgress(tid).catch(() => undefined)
+    // 镜像里没有时退回服务端索引的页码（跨设备、且不在最近 100 条内）
+    const fromServer = progress.data?.find((row) => row.tid === tid)
+    const page = local?.lastPage ?? fromServer?.lastPage ?? 1
+    const hash = local?.lastPid ? `pid${local.lastPid}` : undefined
+
+    if (page > 1) {
+      void navigate({
+        to: '/t/$tid/$page',
+        params: { tid: String(tid), page: String(page) },
+        hash,
+        replace,
+      })
+      return
+    }
+    void navigate({ to: '/t/$tid', params: { tid: String(tid) }, hash, replace })
+  }
+
+  const progressMap = useMemo(
+    () => new Map((progress.data ?? []).map((row) => [row.tid, row])),
+    [progress.data],
+  )
 
   const total = forum.data?.pages[0]?.totalPages ?? 1
   const loaded = forum.data?.pages.length ?? 0
@@ -140,14 +167,19 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
         {threads.length > 0 ? (
           <>
             <div className="divide-y divide-line">
-              {threads.map((thread) => (
-                <ThreadRow
-                  key={thread.tid}
-                  thread={thread}
-                  active={thread.tid === activeTid}
-                  onOpen={() => openThread(thread.tid)}
-                />
-              ))}
+              {threads.map((thread) => {
+                const entry = progressMap.get(thread.tid)
+                return (
+                  <ThreadRow
+                    key={thread.tid}
+                    thread={thread}
+                    active={thread.tid === activeTid}
+                    read={Boolean(entry)}
+                    newReplies={entry ? Math.max(0, thread.replies - entry.replies) : 0}
+                    onOpen={() => openThread(thread.tid)}
+                  />
+                )
+              })}
             </div>
 
             <div ref={sentinelRef} className="py-4 text-center text-meta text-muted">

@@ -1,8 +1,6 @@
 import type { CoreDeps } from './env'
 import { fail, json } from './http'
-
-const MOBILE_UA =
-  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+import { base64UrlEncode, HTML_ACCEPT, MOBILE_UA } from './upstream'
 
 const UPSTREAM_TIMEOUT_MS = 15_000
 const MAX_POST_BYTES = 16 * 1024
@@ -28,7 +26,7 @@ export function readTarget(url: URL): URL | null {
  * HTML 透传：不跟随上游重定向（3xx → JSON），不改写 body，
  * 只把 Set-Cookie 以 JS 可读的方式回给客户端。见 docs/architecture.md §4。
  */
-export async function handleProxy(request: Request, url: URL, _deps: CoreDeps): Promise<Response> {
+export async function handleProxy(request: Request, _deps: CoreDeps, url: URL): Promise<Response> {
   const target = readTarget(url)
   if (!target) return fail(400, 'bad_request', '缺少或非法的 u 参数')
   if (!isUpstreamHost(target.hostname)) return fail(403, 'forbidden_host', '不允许代理该地址')
@@ -42,7 +40,7 @@ export async function handleProxy(request: Request, url: URL, _deps: CoreDeps): 
   const headers = new Headers({
     'user-agent': MOBILE_UA,
     'accept-language': 'zh-CN,zh;q=0.9',
-    accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    accept: HTML_ACCEPT,
     'accept-encoding': 'gzip, br',
   })
 
@@ -190,11 +188,4 @@ function parseSetCookie(header: string): SerializableCookie | null {
   }
 
   return expires === undefined ? { name, value } : { name, value, expires }
-}
-
-function base64UrlEncode(text: string): string {
-  const bytes = new TextEncoder().encode(text)
-  let binary = ''
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }

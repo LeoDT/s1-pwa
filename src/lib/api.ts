@@ -27,6 +27,8 @@ export async function setAppToken(token: string | null): Promise<void> {
 
 type JsonInit = Omit<RequestInit, 'body'> & { json?: unknown; body?: BodyInit }
 
+export type { JsonInit }
+
 /** 同源 JSON API 调用：自动带访问令牌、统一错误包装。 */
 export async function apiFetch<T>(path: string, init: JsonInit = {}): Promise<T> {
   const { json: payload, headers: rawHeaders, ...rest } = init

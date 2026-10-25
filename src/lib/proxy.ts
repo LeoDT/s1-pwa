@@ -44,40 +44,13 @@ export async function proxyFetch(
   targetUrl: string,
   init?: ProxyPostInit,
 ): Promise<ProxyResult> {
-  const token = await getAppToken()
-
   let current = targetUrl
   for (let hop = 0; hop <= MAX_HOPS; hop += 1) {
-    const headers = new Headers()
-    if (token) headers.set('x-app-token', token)
-
-    const jar = await cookieHeader()
-    if (jar) headers.set('x-s1-cookie', jar)
-
-    if (init) headers.set('content-type', 'application/x-www-form-urlencoded')
-
-    const response = await fetch(
-      `/api/proxy?u=${encodeURIComponent(current)}`,
-      {
-        method: init ? 'POST' : 'GET',
-        headers,
-        body: init?.body,
-      },
-    )
-
-    const setCookieHeader = response.headers.get('x-s1-set-cookie')
-    if (setCookieHeader) await mergeJar(decodeSetCookies(setCookieHeader))
+    const response = await sendProxy(current, init)
 
     const contentType = response.headers.get('content-type') ?? ''
     if (contentType.includes('application/json')) {
-      const payload = (await response.json()) as ProxyEnvelope
-      if (!response.ok || payload.ok === false) {
-        throw new ApiError(
-          payload.code ?? `http_${response.status}`,
-          payload.message ?? '代理请求失败',
-          response.status,
-        )
-      }
+      const payload = await readEnvelope(response)
       if (!payload.redirect) {
         throw new ApiError('bad_response', '代理返回了无法识别的内容', response.status)
       }
@@ -97,6 +70,57 @@ export async function proxyFetch(
   }
 
   throw new ApiError('too_many_redirects', '重定向次数过多', 502)
+}
+
+/**
+ * 只走一跳：用于拿上游重定向的目标（goto=findpost → page#pid），
+ * 避免为了定位楼层而下载整页。上游直接返回 HTML 时返回 null。
+ */
+export async function proxyRedirect(
+  targetUrl: string,
+): Promise<{ status: number; url: string } | null> {
+  const response = await sendProxy(targetUrl)
+  const contentType = response.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    await response.body?.cancel().catch(() => undefined)
+    return null
+  }
+  const payload = await readEnvelope(response)
+  return payload.redirect ?? null
+}
+
+async function sendProxy(targetUrl: string, init?: ProxyPostInit): Promise<Response> {
+  const token = await getAppToken()
+  const headers = new Headers()
+  if (token) headers.set('x-app-token', token)
+
+  const jar = await cookieHeader()
+  if (jar) headers.set('x-s1-cookie', jar)
+
+  if (init) headers.set('content-type', 'application/x-www-form-urlencoded')
+
+  const response = await fetch(`/api/proxy?u=${encodeURIComponent(targetUrl)}`, {
+    method: init ? 'POST' : 'GET',
+    headers,
+    body: init?.body,
+  })
+
+  const setCookieHeader = response.headers.get('x-s1-set-cookie')
+  if (setCookieHeader) await mergeJar(decodeSetCookies(setCookieHeader))
+
+  return response
+}
+
+async function readEnvelope(response: Response): Promise<ProxyEnvelope> {
+  const payload = (await response.json()) as ProxyEnvelope
+  if (!response.ok || payload.ok === false) {
+    throw new ApiError(
+      payload.code ?? `http_${response.status}`,
+      payload.message ?? '代理请求失败',
+      response.status,
+    )
+  }
+  return payload
 }
 
 function decodeSetCookies(encoded: string): StoredCookie[] {

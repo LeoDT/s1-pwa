@@ -1,6 +1,7 @@
 import { handleApi } from '../core/index'
 import type { CoreEnv } from '../core/env'
 import { json } from '../core/http'
+import { D1ProgressStore, type D1Database } from './store'
 
 interface AssetsBinding {
   fetch: (request: Request) => Promise<Response>
@@ -8,6 +9,7 @@ interface AssetsBinding {
 
 export interface Env extends CoreEnv {
   ASSETS: AssetsBinding
+  DB: D1Database
 }
 
 export default {
@@ -16,7 +18,7 @@ export default {
 
     if (pathname === '/api' || pathname.startsWith('/api/')) {
       try {
-        return await handleApi(request, { env })
+        return await handleApi(request, { env, store: new D1ProgressStore(env.DB) })
       } catch (error) {
         console.error('api_error', error instanceof Error ? error.message : String(error))
         return json(

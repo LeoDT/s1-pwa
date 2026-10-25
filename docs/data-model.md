@@ -250,9 +250,9 @@ export interface ProgressStore {
 ```
 读帖 → 组件内维护 lastRead（IntersectionObserver 记录最靠下的可见楼层 pid/floor）
    │
-   ├─ 每 5s 节流（若发生变化）→ 入 outbox → flush()
+   ├─ 每 5s 节流（若发生变化）→ 写本地镜像 + 入 outbox → flush()
    ├─ 路由离开 / visibilitychange(hidden) → flush({keepalive:true})
-   └─ flush(): PUT /api/history/:tid → 成功则删除 outbox 记录并更新 progress 镜像
+   └─ flush(): PUT /api/history/:tid → 成功则删除 outbox 记录
                   失败（离线/5xx）→ 留在 outbox，下次 online / 启动重放
 ```
 

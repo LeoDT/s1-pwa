@@ -1,9 +1,7 @@
 import type { CoreDeps } from './env'
 import { fail } from './http'
 import { isUpstreamHost, readTarget } from './proxy'
-
-const MOBILE_UA =
-  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+import { MOBILE_UA } from './upstream'
 
 const MAX_BYTES = 12 * 1024 * 1024
 const MAX_HOPS = 4
@@ -12,7 +10,7 @@ const MAX_HOPS = 4
  * 图片代理：解决外链防盗链与混合内容，顺带把 S1 的登录态带过去（仅上游域）。
  * 见 docs/architecture.md §3.5 / §4.4。
  */
-export async function handleImage(request: Request, url: URL, _deps: CoreDeps): Promise<Response> {
+export async function handleImage(request: Request, _deps: CoreDeps, url: URL): Promise<Response> {
   const target = readTarget(url)
   if (!target) return fail(400, 'bad_request', '缺少或非法的 u 参数')
   if (!isPublicHost(target.hostname)) return fail(400, 'blocked_address', '不允许该地址')

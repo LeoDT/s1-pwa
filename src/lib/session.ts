@@ -4,6 +4,8 @@ import { parsePage, parseUid, type ParsedPage } from './parser/dom'
 import { loginErrorMessage, parseLoginForm } from './parser/login'
 import { clearJar } from './cookieJar'
 import { debug } from './log'
+import { clearPendingProgress } from './outbox'
+import { clearProgress } from './progress'
 import { proxyFetch, UPSTREAM_ROOT, upstreamUrl } from './proxy'
 
 const SESSION_KEY = 'session'
@@ -162,4 +164,7 @@ export async function logout(): Promise<void> {
   }
   await clearJar()
   await clearSession()
+  // 本地历史属于当前账号，退出时一并清掉，避免换账号后串数据
+  await clearProgress()
+  await clearPendingProgress()
 }

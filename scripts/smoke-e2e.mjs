@@ -44,8 +44,8 @@ try {
   // —— 小屏：列表 + 无限滚动
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 30_000 })
-  await page.waitForSelector('main .divide-y > button', { timeout: 40_000 })
-  const rows = await page.$$eval('main .divide-y > button', (items) => items.length)
+  await page.waitForSelector('main .divide-y > div > button', { timeout: 40_000 })
+  const rows = await page.$$eval('main .divide-y > div > button', (items) => items.length)
   const tabs = await page.$$eval('main nav button', (items) =>
     items.map((item) => item.textContent?.trim()).filter(Boolean),
   )
@@ -59,11 +59,11 @@ try {
     if (list) list.scrollTop = list.scrollHeight
   })
   await page.waitForFunction(
-    (previous) => document.querySelectorAll('main .divide-y > button').length > previous,
+    (previous) => document.querySelectorAll('main .divide-y > div > button').length > previous,
     { timeout: 40_000 },
     rows,
   )
-  const appended = await page.$$eval('main .divide-y > button', (items) => ({
+  const appended = await page.$$eval('main .divide-y > div > button', (items) => ({
     rows: items.length,
     unique: new Set(items.map((item) => item.textContent?.trim())).size,
   }))
@@ -90,7 +90,7 @@ try {
   // —— 大屏：双栏居中 + 左栏激活态
   await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 })
   await page.goto(`${baseUrl}/f/4`, { waitUntil: 'domcontentloaded', timeout: 30_000 })
-  await page.waitForSelector('main .divide-y > button', { timeout: 40_000 })
+  await page.waitForSelector('main .divide-y > div > button', { timeout: 40_000 })
   await sleep(500)
   const frame = await page.$eval('main > div', (el) => {
     const rect = el.getBoundingClientRect()
@@ -100,14 +100,14 @@ try {
       width: Math.round(rect.width),
     }
   })
-  const sidebarRows = await page.$$eval('main .divide-y > button', (items) => items.length)
+  const sidebarRows = await page.$$eval('main .divide-y > div > button', (items) => items.length)
   await page.screenshot({ path: path.join(shotDir, 'smoke-list-desktop.png') })
 
   // 点第一条 → 左栏该行应有激活态，正文 ≤ 800px
-  await page.click('main .divide-y > button')
+  await page.click('main .divide-y > div > button')
   await page.waitForSelector('article[id^="pid"]', { timeout: 40_000 })
   await sleep(800)
-  const active = await page.$$eval('main .divide-y > button[aria-current="true"]', (items) =>
+  const active = await page.$$eval('main .divide-y > div > button[aria-current="true"]', (items) =>
     items.map((item) => item.innerText.replace(/\s+/g, ' ').trim()),
   )
   const activeTitle = await page.$eval('main h1', (el) => el.textContent?.trim() ?? '')

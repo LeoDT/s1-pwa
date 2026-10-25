@@ -14,6 +14,8 @@ import { StatusPage } from '@/features/status/StatusPage'
 import { BrowseLayout, EmptySelection } from '@/features/browse/BrowseLayout'
 import { ForumPane } from '@/features/browse/ForumPane'
 import { ThreadPane } from '@/features/browse/ThreadPane'
+import { HistoryPane } from '@/features/history/HistoryPane'
+import { HistorySync } from '@/features/progress/HistorySync'
 import { getLastFid } from '@/features/browse/lastForum'
 import { useBoards } from '@/features/browse/queries'
 import { DEFAULT_BOARDS } from '@/lib/boards'
@@ -24,6 +26,7 @@ const rootRoute = createRootRoute({
     <ChromeProvider>
       <Shell>
         <Gate>
+          <HistorySync />
           <Outlet />
         </Gate>
       </Shell>
@@ -53,11 +56,21 @@ function ForumRoute() {
   )
 }
 
-function ThreadRoute() {
+function ThreadRoute({ fromHistory = false }: { fromHistory?: boolean }) {
   const params = useParams({ strict: false }) as { tid?: string; page?: string }
   const tid = Number.parseInt(params.tid ?? '', 10)
   const page = Number.parseInt(params.page ?? '1', 10) || 1
   if (!Number.isFinite(tid)) return <EmptyState text="帖子参数不正确" />
+
+  if (fromHistory) {
+    return (
+      <BrowseLayout
+        narrow="main"
+        sidebar={<HistoryPane activeTid={tid} />}
+        main={<ThreadPane tid={tid} page={page} fromHistory />}
+      />
+    )
+  }
 
   const sidebarFid = getLastFid() ?? DEFAULT_BOARDS[0]?.fid ?? 4
 
@@ -70,12 +83,29 @@ function ThreadRoute() {
   )
 }
 
+function HistoryRoute() {
+  return (
+    <BrowseLayout narrow="sidebar" sidebar={<HistoryPane />} main={<EmptySelection />} />
+  )
+}
+
 const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/', component: IndexRoute }),
   createRoute({ getParentRoute: () => rootRoute, path: '/f/$fid', component: ForumRoute }),
   createRoute({ getParentRoute: () => rootRoute, path: '/t/$tid', component: ThreadRoute }),
   createRoute({ getParentRoute: () => rootRoute, path: '/t/$tid/$page', component: ThreadRoute }),
   createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginPage }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/history', component: HistoryRoute }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/history/t/$tid',
+    component: () => <ThreadRoute fromHistory />,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/history/t/$tid/$page',
+    component: () => <ThreadRoute fromHistory />,
+  }),
   createRoute({ getParentRoute: () => rootRoute, path: '/debug', component: StatusPage }),
 ])
 

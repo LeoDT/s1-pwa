@@ -63,7 +63,7 @@ export function BoardTabs({
               onClick={() => onSelect(board.fid)}
               className={cn(
                 'relative shrink-0 snap-start whitespace-nowrap px-3 text-meta',
-                active ? 'font-medium text-heading' : 'text-text',
+                active ? 'font-medium text-accent-strong' : 'text-text',
               )}
             >
               {board.name}

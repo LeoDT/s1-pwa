@@ -88,3 +88,7 @@ export function idbAll<T>(store: StoreName): Promise<T[]> {
 export function idbKeys(store: StoreName): Promise<IDBValidKey[]> {
   return run<IDBValidKey[]>(store, 'readonly', (s) => s.getAllKeys())
 }
+
+export function idbClear(store: StoreName): Promise<void> {
+  return run<undefined>(store, 'readwrite', (s) => s.clear())
+}

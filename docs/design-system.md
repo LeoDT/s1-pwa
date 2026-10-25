@@ -197,19 +197,20 @@
 - 收起/展开：`transform: translateY(-100%)`，`transition: 180ms`；`prefers-reduced-motion` 时直接切换
 - 触控区 ≥ 44×44
 
-### 5.2 列表项 `ThreadRow`
+### 5.2 列表项 `ListRow`（板块列表 `ThreadRow` / 浏览历史 `HistoryPane` 共用）
 
 ```
 ┌────┐  标题第一行……（15/500）
 │159 │  标题第二行……（line-clamp: 2）
-│+12 │
+│+12 │  次级信息（浏览历史：板块 · 时间）
 └────┘
 ```
-- 徽章 40×40（有新增时 40×46）：`--color-panel-light` 底、`--color-line` 描边、`--radius-sm`，数字居中
+- 徽章 40×40（有新增时 40×46）：`--color-panel-light` 底、`--color-line` 描边、`--radius-sm`，数字居中；浏览历史徽章显示上次楼层
 - `+N`：11px `--color-flag-strong`，居中在数字下方
 - 已读：整行 `inset 3px 0 0 var(--color-accent-strong)`，徽章描边与数字转为 `--color-accent-strong`
 - 行间 1px `--color-line`；整行为 `<button>`，`:active` 背景 `--color-panel-light`
-- **激活态**（大屏左栏、当前打开的帖子）：`--color-panel-light` 底 + `inset 3px 0 0 var(--color-accent-strong)`，标题转 `--color-heading`，带 `aria-current="true"`
+- **激活态**（大屏左栏当前帖子、浏览历史当前帖子）：`--color-panel-light` 底 + `inset 3px 0 0 var(--color-accent-strong)`，标题与徽章数字转 `--color-accent-strong`，带 `aria-current="true"`
+- 板块条（`BoardTabs`）激活项同样用 `--color-accent-strong` 文字 + 底部 2px 主题色指示条
 
 ### 5.3 帖子 `PostCard`
 
