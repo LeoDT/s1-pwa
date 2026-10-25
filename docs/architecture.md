@@ -215,7 +215,8 @@ Referer: https://stage1st.com/2b/   （仅图片/附件）
 | 帖子页 | TanStack Query | 60s | 同页内返回不重新请求 |
 | 历史索引 | TanStack Query | 60s | 失败时回落到本地镜像 |
 | 图片 | Cache API | 1 年 immutable | LRU 上限 500MB，可手动清空 |
-| 页面 HTML | **不缓存** | — | 服务端零缓存（跨用户泄漏 + 状态分叉） |
+| 应用壳（HTML/JS/CSS/图标） | Service Worker precache | 随构建版本更新 | `vite-plugin-pwa` generateSW；`navigateFallback: /index.html`，只接管导航与静态资源，**`/api/*` 不进 SW** |
+| 上游页面 HTML | **不缓存** | — | 服务端零缓存（跨用户泄漏 + 状态分叉） |
 
 ## 6. 安全清单
 

@@ -3,6 +3,10 @@ import { ParseError } from './parser/errors'
 import { LoginError } from './session'
 
 const CODE_MESSAGES: Record<string, string> = {
+  bad_request: '请求参数不正确',
+  bad_response: '代理返回了无法识别的内容',
+  method_not_allowed: '请求方法不受支持',
+  not_found: '接口不存在',
   token_required: '请先在设置中填写访问令牌',
   token_invalid: '访问令牌无效，请在设置中更新',
   auth_required: '登录已过期，请重新登录',

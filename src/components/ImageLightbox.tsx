@@ -33,6 +33,8 @@ export function ImageLightbox({ url, alt = '', open, onClose }: ImageLightboxPro
         event.preventDefault()
         onClose()
       }}
+      aria-label="图片预览"
+      aria-modal="true"
       className="m-0 h-dvh max-h-none w-full max-w-none bg-transparent p-0 backdrop:bg-black/88"
     >
       <div className="flex h-full flex-col">
@@ -41,7 +43,7 @@ export function ImageLightbox({ url, alt = '', open, onClose }: ImageLightboxPro
             type="button"
             onClick={() => setActualSize((value) => !value)}
             title={actualSize ? '适应屏幕' : '原始尺寸'}
-            className="inline-flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-ui font-medium text-white/85 transition-colors duration-[var(--motion-press)] hover:bg-white/15 active:bg-white/20"
+            className="inline-flex size-11 items-center justify-center rounded-md px-2 text-ui font-medium text-white/85 transition-colors duration-[var(--motion-press)] hover:bg-white/15 active:bg-white/20"
           >
             {actualSize ? '1x' : '2x'}
           </button>
@@ -50,7 +52,7 @@ export function ImageLightbox({ url, alt = '', open, onClose }: ImageLightboxPro
             aria-label="关闭"
             title="关闭"
             onClick={onClose}
-            className="inline-flex size-10 items-center justify-center rounded-md text-white/85 transition-colors duration-[var(--motion-press)] hover:bg-white/15 active:bg-white/20"
+            className="inline-flex size-11 items-center justify-center rounded-md text-white/85 transition-colors duration-[var(--motion-press)] hover:bg-white/15 active:bg-white/20"
           >
             <X size={20} />
           </button>

@@ -9,6 +9,9 @@ import '@/styles/tokens.css'
 
 applyPrefs(getPrefs())
 void pruneImageCache().catch(() => undefined)
+// 图片缓存与阅读进度都在本地；申请持久化，降低被系统回收的概率。
+// 浏览器可能直接拒绝（尤其 Safari），失败不影响使用。
+if (navigator.storage?.persist) void navigator.storage.persist().catch(() => undefined)
 
 const queryClient = new QueryClient({
   defaultOptions: {

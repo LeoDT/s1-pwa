@@ -31,15 +31,18 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       tabIndex={-1}
       onClose={onClose}
       onCancel={onClose}
+      aria-labelledby="settings-title"
       className="m-0 mt-auto w-full max-w-none bg-transparent p-0 backdrop:bg-black/45 focus:outline-none sm:m-auto sm:max-w-md"
     >
       <div className="flex max-h-[80dvh] flex-col overflow-hidden rounded-t-lg bg-canvas sm:rounded-lg">
         <div className="flex shrink-0 items-center justify-between border-b border-line bg-panel px-4 py-3">
-          <h2 className="text-title font-semibold text-heading">设置</h2>
+          <h2 id="settings-title" className="text-title font-semibold text-heading">
+            设置
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-ui text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
+            className="inline-flex min-h-11 items-center rounded-md px-3 text-ui text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
           >
             关闭
           </button>
@@ -176,7 +179,7 @@ function ReadingSection() {
               type="button"
               onClick={() => savePrefs({ fontSize: size })}
               className={cn(
-                'inline-flex size-9 items-center justify-center rounded-md border text-ui transition-colors duration-[var(--motion-press)]',
+                'inline-flex size-11 items-center justify-center rounded-md border text-ui transition-colors duration-[var(--motion-press)]',
                 prefs.fontSize === size
                   ? 'border-accent-strong font-medium text-accent-strong'
                   : 'border-line text-text hover:bg-panel-light active:bg-panel-light',
@@ -197,6 +200,21 @@ function ReadingSection() {
           type="checkbox"
           checked={prefs.dataSaver}
           onChange={(event) => savePrefs({ dataSaver: event.target.checked })}
+          className="size-5 shrink-0 accent-[var(--color-accent-strong)]"
+        />
+      </label>
+
+      <label className="flex items-center justify-between gap-3 text-ui text-text">
+        <span>
+          横向滑动返回
+          <span className="mt-0.5 block text-meta text-muted">
+            详情页左右滑动回列表；与系统手势冲突时关闭
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          checked={prefs.edgeSwipe}
+          onChange={(event) => savePrefs({ edgeSwipe: event.target.checked })}
           className="size-5 shrink-0 accent-[var(--color-accent-strong)]"
         />
       </label>

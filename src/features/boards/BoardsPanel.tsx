@@ -205,7 +205,7 @@ function IconAction({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex size-9 items-center justify-center rounded-md text-muted transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light disabled:opacity-30"
+      className="inline-flex size-11 items-center justify-center rounded-md text-muted transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light disabled:opacity-30"
     >
       {children}
     </button>

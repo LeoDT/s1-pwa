@@ -144,7 +144,7 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
               onClick={() => {
                 if (window.confirm('清空全部阅读历史？此操作不可撤销。')) clear.mutate()
               }}
-              className="rounded-md px-2 py-1 text-meta text-danger transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light disabled:opacity-50"
+              className="inline-flex min-h-11 items-center rounded-md px-3 text-meta text-danger transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light disabled:opacity-50"
             >
               清空
             </button>
@@ -193,7 +193,7 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
                       title="删除"
                       disabled={remove.isPending}
                       onClick={() => remove.mutate(row.tid)}
-                      className="inline-flex size-8 items-center justify-center rounded-md text-muted transition-colors duration-[var(--motion-press)] hover:bg-panel hover:text-danger active:bg-panel"
+                      className="inline-flex size-11 items-center justify-center rounded-md text-muted transition-colors duration-[var(--motion-press)] hover:bg-panel hover:text-danger active:bg-panel"
                     >
                       <Trash2 size={15} />
                     </button>

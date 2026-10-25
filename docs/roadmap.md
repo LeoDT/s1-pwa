@@ -74,15 +74,16 @@
 
 **验收**：一屏 20+ 张图滚动流畅；二次进入零网络请求（Cache 命中）；附件可下载。
 
-## M5 打磨（0.5 天）
+## M5 打磨（0.5 天）✅（真机安装/离线待你实测）
 
-- [ ] manifest + 图标（512/192/maskable）+ SW（`vite-plugin-pwa`，app shell）
-- [ ] iOS 独立模式：safe-area、`100dvh`、边缘滑动（实测后决定开关默认值）
-- [ ] 正文字号 15/16/17/18 生效（**已接线**：`--post-font-size` 用 rem，设置项作用于阅读内容）
-- [ ] 无障碍抽查：焦点环、触控尺寸、对比度（design-system §1.3）
-- [ ] 错误文案统一（错误码 → 中文映射表）
+- [x] manifest + 图标（512/192/maskable）+ SW（`vite-plugin-pwa`，app shell）
+- [x] iOS 独立模式：safe-area、`100dvh`、边缘滑动（默认关闭，设置内可开启；见实现备注）
+- [x] 正文字号 15/16/17/18 生效（`--post-font-size` 用 rem，设置项作用于阅读内容）
+- [x] 无障碍抽查：焦点环、触控尺寸、对比度（design-system §1.3）
+- [x] 错误文案统一（错误码 → 中文映射表）
 
 **验收**：真机可安装、断网可打开壳、字号切换即时生效、键盘 Tab 可达。
+（本地已用 Chromium + 生产构建验证 manifest / SW / 离线壳 / 设置；iOS 主屏与真实断网仍需真机确认。）
 
 ## M6 部署与迁移预检（0.5 天）
 
@@ -134,6 +135,12 @@
 | 图片缓存 | Cache API 本身无 TTL：用 `imgMeta.lastUsed` 自己做 7 天过期 + 500MB LRU；启动时与新图入库后各跑一次 |
 | 上游抓取 | `/api/img` 与 `/api/file` 共用 `fetchUpstreamAsset()`：手动跟重定向、逐跳 SSRF 校验、大小上限、cookie 仅发上游域 |
 | 附件 | 经 `/api/file` 取 blob 后 `a[download]` 触发下载；文件名优先 `Content-Disposition`，兜底用帖子里的附件名 |
+| PWA 壳 | `vite-plugin-pwa` 用 `generateSW`：预缓存构建产物 + `navigateFallback: /index.html`；**`/api/*` 不经过 SW 缓存**（图片仍由 Cache API 自己管），断网时深链回壳、数据请求走现有错误态 |
+| PWA 图标 | 192/512（any）+ 512 maskable + iOS 180 `apple-touch-icon`；manifest `display: standalone`、theme/background 用设计令牌；`index.html` 只保留 favicon 与 apple-touch-icon 链接，manifest link 由插件注入 |
+| 持久化存储 | 启动时调用 `navigator.storage.persist()`（失败/被拒绝忽略），降低 Cache/IDB 被系统回收的概率 |
+| 滑动返回 | `edgeSwipe` 偏好已接线，默认 **false**（避免与 iOS 原生边缘手势叠加）；设置 → 阅读内可开关，真机确认后再决定是否调整默认值 |
+| 无障碍 | 图标按钮（历史删除、字号档位、板块排序/删除、灯箱、详情刷新）统一到 44px；设置抽屉补 `aria-labelledby`，灯箱补 `aria-label`/`aria-modal`；全局 `:focus-visible` 沿用设计令牌 |
+| 错误文案 | 补齐 `bad_request` / `bad_response` / `method_not_allowed` / `not_found`；`upstream_*` / `http_*` 仍优先展示服务端具体原因 |
 
 ## 验收清单（手动，真机）
 

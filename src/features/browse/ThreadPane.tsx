@@ -12,6 +12,7 @@ import { locatePid } from '@/lib/locate'
 import { consumeFromList } from '@/lib/navigation'
 import { useCollapsingHeader } from '@/lib/useCollapsingHeader'
 import { useMediaQuery } from '@/lib/useMediaQuery'
+import { usePrefs } from '@/lib/usePrefs'
 import { useSwipeBack } from '@/lib/useSwipeBack'
 import { PostCard } from './PostCard'
 import { getLastFid } from './lastForum'
@@ -33,6 +34,7 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
   const [highlighted, setHighlighted] = useState<number | null>(null)
 
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { edgeSwipe } = usePrefs()
   const narrow = useMediaQuery('(max-width: 1023px)')
   // 只有小屏详情页的顶栏是浮层，需要给内容留出高度
   useCollapsingHeader(scrollRef, narrow)
@@ -61,7 +63,7 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
     })
   }, [fromHistory, listFid, navigate, router])
 
-  useSwipeBack(backToList)
+  useSwipeBack(backToList, edgeSwipe)
 
   const targetPid = /^#?pid(\d+)$/.exec(hash ?? '')?.[1]
   const highlightPid = targetPid ? Number.parseInt(targetPid, 10) : null
@@ -261,7 +263,7 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
             aria-label="刷新"
             title="刷新"
             onClick={() => void query.refetch()}
-            className="absolute right-1 top-1/2 hidden size-10 -translate-y-1/2 items-center justify-center rounded-md text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light lg:inline-flex"
+            className="absolute right-1 top-1/2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-md text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light lg:inline-flex"
           >
             <RefreshCw size={16} className={cn(query.isFetching && 'animate-spin')} />
           </button>
