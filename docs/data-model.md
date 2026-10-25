@@ -197,7 +197,7 @@ export interface ProgressStore {
 |---|---|---|
 | 400 | `bad_request` / `blocked_address` | 内部错误提示 |
 | 401 | `token_required` / `token_invalid` | 打开访问令牌设置 |
-| 401 | `auth_required` | 「登录已过期」横幅 → 登录页 |
+| 401 | `auth_required` | 「登录已过期」提示 → 设置 → 账号内就地登录 |
 | 403 | `forbidden_host` | 内部错误提示 |
 | 413/415 | `too_large` / `not_image` | 图片/附件提示 |
 | 502 | `upstream_error` / `upstream_blocked` | toast + 重试 |

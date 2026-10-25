@@ -1,8 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { History, Settings } from 'lucide-react'
 import { SettingsSheet } from '@/features/settings/SettingsSheet'
-import { useHeaderHidden, useSetHeaderHidden } from './chrome'
+import { useHeaderHidden, useSetHeaderHidden, useSettingsOpen, useSetSettingsOpen } from './chrome'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
 
@@ -10,7 +10,8 @@ import { cn } from '@/lib/utils'
 const WORDMARK = 'Stage1st'
 
 export function Shell({ children }: { children: ReactNode }) {
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsOpen = useSettingsOpen()
+  const setSettingsOpen = useSetSettingsOpen()
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const headerHidden = useHeaderHidden()

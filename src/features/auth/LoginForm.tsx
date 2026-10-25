@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { LogIn } from 'lucide-react'
+import type { Session } from '@shared/types'
 import { fetchLoginPage, submitLogin, type LoginInput } from '@/lib/session'
 import { errorMessage } from '@/lib/errors'
 
@@ -35,8 +34,11 @@ function useLoginLock(markBlocked: boolean) {
   return { blockedUntil, remainingMinutes }
 }
 
-export function LoginPage() {
-  const navigate = useNavigate()
+/**
+ * S1 登录表单，嵌在设置的「账号」区块里（docs/design-system.md §5.8）。
+ * 成功后由调用方收起；不负责路由，也不假设自己在一个独立页面上。
+ */
+export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const queryClient = useQueryClient()
   const loginPage = useQuery({
     queryKey: ['login-page'],
@@ -63,11 +65,14 @@ export function LoginPage() {
     onError: (error) => {
       setThrottled(/次数过多|稍后再试|频繁/.test(errorMessage(error)))
     },
-    onSuccess: (session) => {
-      // 立刻写入会话缓存，避免首页命中「未登录」的旧缓存
+    onSuccess: (session: Session) => {
+      // 立刻写入会话缓存，避免账号区块在探针回来前闪回「未登录」
       queryClient.setQueryData(['session'], session)
-      void queryClient.invalidateQueries({ queryKey: ['local-session'] })
-      void navigate({ to: '/' })
+      onSuccess()
+      // 换身份 = 换 cookie，下游缓存全部作废；登录页表单本身与身份无关，留着
+      void queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== 'login-page',
+      })
     },
   })
 
@@ -76,19 +81,14 @@ export function LoginPage() {
 
   return (
     <form
-      className="mx-auto mt-4 w-full max-w-sm space-y-4"
+      className="space-y-3"
       onSubmit={(event) => {
         event.preventDefault()
         mutation.mutate(values)
       }}
     >
-      <div className="flex items-center gap-2 text-heading">
-        <LogIn size={20} />
-        <h2 className="text-title font-semibold">用 S1 账号登录</h2>
-      </div>
-      <p className="text-ui leading-relaxed text-muted">
-        凭证只保存在这台设备（IndexedDB），服务端仅做转发，不落盘。
-        账号若设置过安全提问，必须选对问题并填写答案，否则会计入失败次数。
+      <p className="text-meta leading-relaxed text-muted">
+        凭证只存本机（服务端仅转发，不落盘）。账号若设置过安全提问，必须选对问题并填写答案，否则会计入失败次数。
       </p>
 
       {loginPage.isPending ? <p className="text-ui text-muted">正在读取登录页…</p> : null}

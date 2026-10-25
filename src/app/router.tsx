@@ -9,7 +9,6 @@ import {
 import { Shell } from './shell'
 import { Gate } from './gate'
 import { ChromeProvider } from './chrome'
-import { LoginPage } from '@/features/auth/LoginPage'
 import { StatusPage } from '@/features/status/StatusPage'
 import { BrowseLayout, EmptySelection } from '@/features/browse/BrowseLayout'
 import { ForumPane } from '@/features/browse/ForumPane'
@@ -94,7 +93,6 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/f/$fid', component: ForumRoute }),
   createRoute({ getParentRoute: () => rootRoute, path: '/t/$tid', component: ThreadRoute }),
   createRoute({ getParentRoute: () => rootRoute, path: '/t/$tid/$page', component: ThreadRoute }),
-  createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/history', component: HistoryRoute }),
   createRoute({
     getParentRoute: () => rootRoute,

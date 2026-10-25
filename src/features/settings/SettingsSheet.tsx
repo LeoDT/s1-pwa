@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { LogOut, ShieldCheck, Trash2 } from 'lucide-react'
+import { LogIn, LogOut, ShieldCheck, Trash2 } from 'lucide-react'
+import { LoginForm } from '@/features/auth/LoginForm'
+import { useSession } from '@/features/auth/useSession'
 import { BoardsPanel } from '@/features/boards/BoardsPanel'
 import { getAppToken, setAppToken } from '@/lib/api'
 import { fetchConfig } from '@/lib/config'
 import { errorMessage } from '@/lib/errors'
 import { clearImageCache, imageCacheStats } from '@/lib/imageStore'
-import { getSession, logout } from '@/lib/session'
+import { logout } from '@/lib/session'
 import { savePrefs } from '@/lib/prefs'
 import { usePrefs } from '@/lib/usePrefs'
 import { cn } from '@/lib/utils'
@@ -48,10 +50,10 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           </button>
         </div>
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <AccountSection active={open} />
           <BoardsPanel active={open} />
           <ReadingSection />
           <AccessTokenSection />
-          <AccountSection />
           <StorageSection active={open} />
           <AboutSection />
         </div>
@@ -112,39 +114,78 @@ function AccessTokenSection() {
   )
 }
 
-function AccountSection() {
+function AccountSection({ active }: { active: boolean }) {
   const queryClient = useQueryClient()
-  const session = useQuery({ queryKey: ['local-session'], queryFn: getSession })
+  const session = useSession()
+  const [editing, setEditing] = useState(false)
 
-  const mutation = useMutation({
+  // 收起抽屉时一并收起表单，已输入的凭证不留在内存里
+  useEffect(() => {
+    if (!active) setEditing(false)
+  }, [active])
+
+  const logoutMutation = useMutation({
     mutationFn: logout,
     onSuccess: async () => {
       await queryClient.invalidateQueries()
     },
   })
 
+  const account = session.data
+
   return (
     <section className="space-y-2">
-      <h3 className="text-ui font-medium text-muted">账号</h3>
-      <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-ui">
-        <ShieldCheck size={18} className="text-accent-strong" />
-        <span className="text-text">
-          {session.data ? `已登录（uid ${session.data.uid}）` : '未登录'}
-        </span>
+      <div className="flex min-h-8 items-center justify-between gap-2">
+        <h3 className="text-ui font-medium text-muted">账号</h3>
+        {editing ? (
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="inline-flex min-h-11 items-center rounded-md px-3 text-ui text-muted transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
+          >
+            取消
+          </button>
+        ) : null}
       </div>
-      {session.data ? (
-        <button
-          type="button"
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending}
-          className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-ui text-danger transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
-        >
-          <LogOut size={16} />
-          退出登录
-        </button>
-      ) : null}
-      {mutation.isError ? (
-        <p className="text-meta text-danger">{errorMessage(mutation.error)}</p>
+
+      {session.isPending ? <p className="text-ui text-muted">正在检查登录状态…</p> : null}
+
+      {account ? (
+        <>
+          <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-ui">
+            <ShieldCheck size={18} className="text-accent-strong" />
+            <span className="text-text">已登录（uid {account.uid}）</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-ui text-danger transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
+          >
+            <LogOut size={16} />
+            退出登录
+          </button>
+        </>
+      ) : editing ? (
+        <LoginForm onSuccess={() => setEditing(false)} />
+      ) : (
+        <>
+          <p className="text-ui leading-relaxed text-muted">
+            未登录：帖子照常看，但不记录阅读历史。
+          </p>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-ui text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
+          >
+            <LogIn size={16} />
+            登录 S1 账号
+          </button>
+        </>
+      )}
+
+      {logoutMutation.isError ? (
+        <p className="text-meta text-danger">{errorMessage(logoutMutation.error)}</p>
       ) : null}
     </section>
   )

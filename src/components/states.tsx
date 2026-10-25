@@ -42,7 +42,15 @@ export function EmptyState({ text, action }: { text: string; action?: ReactNode 
   )
 }
 
-export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export function ErrorState({
+  message,
+  onRetry,
+  action,
+}: {
+  message: string
+  onRetry?: () => void
+  action?: ReactNode
+}) {
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
       <AlertCircle size={22} className="text-danger" />
@@ -56,6 +64,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
           重试
         </button>
       ) : null}
+      {action}
     </div>
   )
 }
