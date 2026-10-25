@@ -16,7 +16,7 @@ Stage1st（Discuz X3.5）只读阅读器 PWA：用 S1 账号登录、按板块�
 | M3 阅读进度 | ✅ D1、身份探针、楼层定位、历史列表、离线补写 |
 | M4 图片与附件 | ✅ `/api/img`、`/api/file`、灯箱、省流量模式、缓存统计/清理 |
 | M5 PWA 打磨 | ✅ manifest / Service Worker / 离线壳 / 无障碍 / 表情缓存不过期 |
-| M6 部署 | ⏳ 预检脚本、迁移与文档已就绪；实际建库/secret/deploy 需 Cloudflare 登录 |
+| M6 部署 | 🟡 已首次部署（Worker + D1）；`HISTORY_SECRET` 已配置，待 `ACCESS_TOKEN` 与真机验收 |
 
 ## 环境要求
 
@@ -125,6 +125,7 @@ curl https://<worker>.workers.dev/api/config
 | 历史接口 500，或日志 `服务端未配置 HISTORY_SECRET` | 本地 `.dev.vars` 未填/未重启；线上执行 `wrangler secret put HISTORY_SECRET` |
 | 部署前提示 `database_id 仍是占位 UUID` | 先 `wrangler d1 create s1-progress`，把真实 id 填回 `wrangler.jsonc` |
 | `wrangler deploy` 报未登录 | `pnpm exec wrangler login`，或设置 `CLOUDFLARE_API_TOKEN` |
+| 部署时 `assets-upload-session` 返回 500 / code 10013 | 新建 Worker 首次带静态资源部署可能遇到 Cloudflare 侧 API 故障。先用**无 assets 的临时配置**部署同名 Worker，再正常 `pnpm run deploy`；若持续则等 Cloudflare 状态恢复 |
 | 登录返回 `S1 拒绝了这次请求（Discuz 安全校验）` / 503「含有非法字符」 | Discuz `_xss_check()`：登录 POST 的 query 缺 `formhash` 时会把 body 解码两次后扫 `( ) ' " < >`。客户端已把 `formhash` 放进 query 规避；若仍出现，看 worker 日志里的 `upstream_5xx` 一行（含上游 URL，不含密码） |
 | 登录提示「密码错误次数过多，请 15 分钟后重新登录」 | S1 按 IP 锁定 15 分钟。别连续重试；确认**安全提问**选对（选错同样计入失败） |
 | 502 `upstream_blocked` / 403 验证页 | S1 触发风控或 Cloudflare 限流：等待一段时间/换网络，别高频刷新；Worker 日志的 `upstream_5xx` 会带上游 URL 与错误页摘要（不含凭证） |

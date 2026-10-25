@@ -85,16 +85,18 @@
 **验收**：真机可安装、断网可打开壳、字号切换即时生效、键盘 Tab 可达。
 （本地已用 Chromium + 生产构建验证 manifest / SW / 离线壳 / 设置；iOS 主屏与真实断网仍需真机确认。）
 
-## M6 部署与迁移预检（0.5 天）⏳（代码/预检/文档完成，待 Cloudflare 登录）
+## M6 部署与迁移预检（0.5 天）🟡（已首次部署，待 ACCESS_TOKEN / 真机）
 
-- [ ] `wrangler d1 create s1-progress` + `d1 migrations apply s1-progress --remote`（需 `wrangler login`）
-- [ ] `pnpm run deploy` 首次部署，然后 `wrangler secret put ACCESS_TOKEN` + `HISTORY_SECRET`
-- [ ] `/api/health` 自检
+- [x] `wrangler d1 create s1-progress` + `d1 migrations apply s1-progress --remote`
+- [x] `pnpm run deploy` 首次部署（Workers + Static Assets + D1）
+- [x] `HISTORY_SECRET` 已设置
+- [ ] `ACCESS_TOKEN` 待设置（用户自行执行）
+- [x] `/api/health` 返回 ok；PWA manifest / SW / 离线壳已在生产 URL 冒烟通过
 - [x] 迁移预检：`pnpm preflight`（`server/core` 平台耦合 / 占位 `database_id` / 构建产物 / `.dev.vars`）
 - [x] 本地空库迁移验证（`d1 migrations apply s1-progress --local --persist-to .pi/tmp/d1-fresh`）
 - [x] README 部署步骤 + 常见问题（登录过期、被限流、换域名、SW 更新、`HISTORY_SECRET`）
 
-**验收**：真实部署后 `/api/health` 正常、访问令牌生效、登录与跨设备历史可用。
+**验收**：设置 `ACCESS_TOKEN` 后 `/api/config` 的 `authRequired=true`，再验登录、跨设备历史与真机安装。
 
 ## 实现备注（与设计的偏差记录）
 
@@ -142,6 +144,7 @@
 | 迁移方式 | 用 `d1 migrations apply s1-progress --remote`（有 `d1_migrations` 记录，可重复执行），不再手工 `d1 execute --file` |
 | 部署命令 | 文档统一 `pnpm run deploy`，避免 `pnpm deploy` 与 pnpm 自身 deploy 命令混淆；`deploy` 内先 build + preflight |
 | 首次部署顺序 | 先 `pnpm run deploy` 让 Worker 存在，再 `wrangler secret put`（会立即创建并部署新版本）；避免对全新 Worker 直接 `secret put` 的平台差异 |
+| 首次静态资源部署 | 全新 Worker 直接部署 assets 时遇到过 `assets-upload-session` 500（code 10013）；先用无 assets 的临时配置部署同名 Worker，再正常 deploy 即成功 |
 | 部署预检 | `scripts/preflight.mjs`：检查占位 `database_id`、`server/core` 平台耦合、`dist/index.html`/`sw.js`/manifest、迁移文件、`.dev.vars` 未被 git 跟踪 |
 | 本地 D1 | 空库迁移在 `.pi/tmp/d1-fresh` 验证通过（`progress` + `idx_progress_recent` + `d1_migrations`） |
 | PWA 本地验证 | Vite dev 不注册 SW；必须 `pnpm build` 后用 wrangler 托管 `dist`，且每次构建后重启 wrangler（assets 清单启动时固定） |
