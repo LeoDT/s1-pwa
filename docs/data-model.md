@@ -19,7 +19,7 @@ cookie (X-S1-Cookie) ──探针──► uid ──HMAC-SHA256(HISTORY_SECRET)
 ## 2. D1 表结构
 
 ```sql
--- migrations/0001_init.sql
+-- 应用 0001_init.sql 与 0002_nullable_replies.sql 后的结构
 CREATE TABLE IF NOT EXISTS progress (
   user_key    TEXT    NOT NULL,
   tid         INTEGER NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS progress (
   last_floor  INTEGER,            -- 该楼层号（首楼=1），仅展示用
   last_page   INTEGER,            -- 该楼层所在页
   total_pages INTEGER,            -- 当时的总页数
-  replies     INTEGER NOT NULL DEFAULT 0,  -- 当时看到的回复数（新增回复 = 列表回复数 - 此值）
+  replies     INTEGER,           -- 阅读回复数快照；NULL 表示未知，0 是真实零回复
   updated_at  INTEGER NOT NULL,   -- 客户端时钟（ms），用于 LWW
   PRIMARY KEY (user_key, tid)
 ) WITHOUT ROWID;
@@ -53,10 +53,12 @@ ON CONFLICT(user_key, tid) DO UPDATE SET
   last_floor  = COALESCE(excluded.last_floor, progress.last_floor),
   last_page   = COALESCE(excluded.last_page, progress.last_page),
   total_pages = COALESCE(excluded.total_pages, progress.total_pages),
-  replies     = excluded.replies,
+  replies     = COALESCE(excluded.replies, progress.replies),
   updated_at  = excluded.updated_at
 WHERE excluded.updated_at >= progress.updated_at;
 ```
+
+`0002_nullable_replies.sql` 保留旧记录（包括无法判断来源的 0），只允许今后的未知计数使用 NULL。部署新版本前需应用该迁移；未知更新不覆盖已有有效回复数。
 
 容量估算：单用户 1 万帖 ≈ 2MB，远低于 D1 免费额度（5GB）。保留策略：`GET /api/history?limit=` 限制读取；不做自动清理（可选 `prune` 任务，v1 不做）。
 
@@ -73,7 +75,7 @@ export interface ProgressRow {
   lastFloor: number | null;
   lastPage: number | null;
   totalPages: number | null;
-  replies: number;
+  replies: number | null;
   updatedAt: number;
 }
 
@@ -162,6 +164,8 @@ export interface ProgressStore {
 }
 ```
 
+`replies` 可为非负计数或 `null`；缺失视为未知，真实 `0` 不等于未知。新增未知记录存 NULL，未知更新保留已有有效计数。
+
 响应：
 
 ```json
@@ -242,10 +246,10 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 |---|---|---|
 | `['config']` | 会话 | 手动刷新 |
 | `['boards-src']` | 10min | 设置里展开「添加板块」 |
-| `['forum', fid, page]` | 30s | 下拉/刷新按钮、切换板块 |
+| `['forum', fid]`（无限分页） | 会话，`staleTime/gcTime: Infinity` | 仅下拉/刷新按钮；首次无缓存与追加页正常请求 |
 | `['thread', tid, page]` | 60s | 刷新按钮 |
-| `['history']` | 60s | 写入进度后 `invalidate` |
-| `['history-index']` | 60s | 同上 |
+| `['history', uid]` | 60s | 显式刷新、历史增删后 `invalidate` |
+| `['progress-index', 'user'或'guest']` | 60s | 写入进度后 `invalidate` |
 | `['locate', tid, pid]` | 会话（Map） | 必要时手动清 |
 
 ### 6.2 写入流程
@@ -270,14 +274,16 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 newCount = max(0, row.replies(列表) - progress[tid].replies(上次阅读快照))
 ```
 
-`progress` 镜像缺失（未登录/无历史）→ 不显示徽章着色与 `+N`。
+`progress` 镜像缺失（未登录/无历史）→ 不显示徽章着色与 `+N`。计数或基准未知时不显示 `+N`，但已有历史仍显示已读标记。本地事务与索引合并保留已知计数，不让未知值抹除基准。
+
+从无计数页开始阅读时，可暂用旧快照；本次阅读首次获得可靠计数后建立新基准，之后不随刷新变化。历史错误 0 不批量猜测修正，再次获得可靠计数时更新该帖基准。
 
 ## 7. 上游与本地字段映射
 
 | DTO 字段 | 来源 | 备注 |
 |---|---|---|
-| `ThreadPage.replies` | 首楼 `.mtime em` 第二个数字（`dm-chat-s` 后） | 与列表徽章同指标 |
-| `ThreadSummary.replies` | 列表项 `i.dm-chat-s` 后文本 | |
+| `ThreadPage.replies` | 首楼 `dm-chat-s` 后的数字，或“全部回复”控件总数 | 支持千位分隔；无法确认时为 `null`，与列表徽章同指标 |
+| `ThreadSummary.replies` | 列表项 `i.dm-chat-s` 后文本 | 与帖子页共用计数解析；未知为 `null`，徽章显示 `—` |
 | `ProgressRow.replies` | 进入帖子时取 `ThreadPage.replies` | 快照语义见 overview D10 |
 | `ProgressRow.lastPid/lastFloor` | 当前视口最下方已读楼层 | |
 | `ProgressRow.totalPages` | `.pg span[title^="共"]` | |

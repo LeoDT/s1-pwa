@@ -4,6 +4,7 @@ import { getAppToken } from '@/lib/api'
 import { fetchConfig } from '@/lib/config'
 import { errorMessage } from '@/lib/errors'
 import { TokenForm } from '@/features/auth/TokenForm'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
 
 /**
  * 全局前置检查：拿到部署能力（是否需要令牌）与本机令牌。
@@ -12,8 +13,10 @@ import { TokenForm } from '@/features/auth/TokenForm'
 export function Gate({ children }: { children: ReactNode }) {
   const config = useQuery({ queryKey: ['config'], queryFn: fetchConfig, staleTime: 10 * 60 * 1000 })
   const token = useQuery({ queryKey: ['app-token'], queryFn: getAppToken })
+  const showPending = useDeferredLoading(config.isPending || token.isPending)
 
   if (config.isPending || token.isPending) {
+    if (!showPending) return null
     return (
       <div className="mt-10 space-y-2">
         <div className="h-4 w-1/3 animate-pulse rounded bg-panel-light" />

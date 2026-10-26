@@ -117,6 +117,10 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 
 首楼识别：`floor === 1`（不依赖 `pione` 类）。
 
+回复数按 `dm-chat-s` 标识后的 `em` 读取，缺失时回退到 `.viewthread > .txtlist > .mtit.cl` 的“全部回复”直接控件；不从正文文本推断。支持 `18,194` 等千位分隔计数，真实 0 保留，缺失或非法值为 `null`。
+
+正文与独立 HTML 块首尾的空白、无用 `<br>` 会清理并丢弃空块；清理可沿包装层递归，但只处理整体边界，保留正文内部换行和 `pre/code` 内容。
+
 被屏蔽帖：`.message` 里**只有一个不含 `blockquote` 的 `div.quote`**，内容为 `提示: 作者被禁止或删除 内容自动屏蔽` → `Post.hidden = true`、`blocks = []`。
 （不能只看文字：正常楼层引用被屏蔽帖时也会出现同样文字；楼号也可能照常存在，所以不能靠 `floor` 判断。）
 
@@ -133,11 +137,13 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 |---|---|
 | `pid` / `tid` | 第一个 `a[href*="goto=findpost"]` 的 `pid=` / `ptid=`；没有则为纯引用 |
 | `header` | 该 `a` 的文本（`用户名 发表于 时间`） |
-| `html` | `blockquote` 内容去掉首个 `<font size=2>` 包裹后剩余部分 |
+| `html` | `blockquote` 内容去掉头部链接/包装后剩余部分，并清理首尾空白与 `<br>` |
 
 实测 27 个引用块中 23 个带 `pid`（无 `pid` 的多为「作者被禁止或删除」）。**不带 `pid` 的引用不可点**，不显示可点击样式与箭头。
 
 ### 6.2 图片
+
+正文中的交互图片不会保留在上游外层链接或跳帖按钮内；混排时仅文字部分保留链接。原图、重试、省流量加载和灯箱各自处理交互，避免嵌套链接取消原图打开。
 
 | 情况 | 取哪个地址 |
 |---|---|
@@ -225,7 +231,7 @@ export interface PageInfo { page: number; totalPages: number }
 export interface Board { fid: number; name: string; threads?: number; today?: number }
 export interface BoardGroup { name: string; boards: Board[] }
 
-export interface ThreadSummary { tid: number; title: string; replies: number; typeTag?: string }
+export interface ThreadSummary { tid: number; title: string; replies: number | null; typeTag?: string }
 
 export interface ForumPage extends PageInfo {
   fid: number
@@ -237,7 +243,7 @@ export interface ThreadPage extends PageInfo {
   tid: number
   fid: number
   title: string
-  replies: number          // 首楼 dm-chat-s 的数字
+  replies: number | null   // dm-chat-s 或“全部回复”总数；无法确认时为 null
   opUid: number | null
   posts: Post[]
 }

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { D1ProgressStore, missingTableHint, type D1Database, type D1PreparedStatement } from '../server/cf/store'
 import type { ProgressRow } from '../shared/types'
 
-/** 用真实的 SQLite 跑 migrations/0001_init.sql，验证 SQL 与字段映射 */
+/** 用真实 SQLite 跑全部迁移，验证 SQL 与字段映射 */
 class SqliteStatement implements D1PreparedStatement {
   constructor(
     private readonly statement: StatementSync,
@@ -35,9 +35,8 @@ class SqliteD1 implements D1Database {
   }
 }
 
-const MIGRATION = readFileSync(
-  path.join(import.meta.dirname, '../migrations/0001_init.sql'),
-  'utf8',
+const MIGRATIONS = ['0001_init.sql', '0002_nullable_replies.sql'].map((file) =>
+  readFileSync(path.join(import.meta.dirname, `../migrations/${file}`), 'utf8'),
 )
 
 function row(overrides: Partial<ProgressRow> = {}): ProgressRow {
@@ -60,7 +59,7 @@ let store: D1ProgressStore
 
 beforeEach(() => {
   const db = new DatabaseSync(':memory:')
-  db.exec(MIGRATION)
+  for (const migration of MIGRATIONS) db.exec(migration)
   store = new D1ProgressStore(new SqliteD1(db))
 })
 
@@ -76,6 +75,14 @@ describe('D1ProgressStore', () => {
     await store.upsert('user-a', row({ replies: 500, updatedAt: 1000 }))
 
     expect((await store.list('user-a', 50, 0))[0]?.replies).toBe(600)
+  })
+
+  it('允许未知 null 和真实零，且较新的 null 回复数不抹掉已知快照', async () => {
+    await store.upsert('user-a', row({ replies: 0, updatedAt: 1000 }))
+    await store.upsert('user-a', row({ replies: null, updatedAt: 2000 }))
+    expect((await store.list('user-a', 50, 0))[0]?.replies).toBe(0)
+    await store.upsert('user-a', row({ tid: 43, replies: null, updatedAt: 3000 }))
+    expect((await store.list('user-a', 50, 0)).find((item) => item.tid === 43)?.replies).toBeNull()
   })
 
   it('LWW：新写入的 null 定位字段保留旧值（COALESCE）', async () => {
@@ -131,6 +138,18 @@ describe('D1ProgressStore', () => {
     await store.clear('user-a')
     expect(await store.list('user-a', 50, 0)).toEqual([])
     expect(await store.list('user-b', 50, 0)).toHaveLength(1)
+  })
+})
+
+describe('nullable replies migration', () => {
+  it('preserves historical rows (including zero) while allowing new unknown nulls', () => {
+    const db = new DatabaseSync(':memory:')
+    db.exec(MIGRATIONS[0]!)
+    db.prepare(`INSERT INTO progress (user_key, tid, replies, updated_at) VALUES ('u', 1, 0, 1)`).run()
+    db.exec(MIGRATIONS[1]!)
+    expect(db.prepare('SELECT replies FROM progress WHERE tid = 1').get()).toEqual({ replies: 0 })
+    db.prepare(`INSERT INTO progress (user_key, tid, replies, updated_at) VALUES ('u', 2, NULL, 2)`).run()
+    expect(db.prepare('SELECT replies FROM progress WHERE tid = 2').get()).toEqual({ replies: null })
   })
 })
 

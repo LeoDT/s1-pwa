@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { Post, ProgressRow, ThreadPage } from '@shared/types'
 import { useSession } from '@/features/auth/useSession'
 import { flushProgress, queueProgress } from '@/lib/outbox'
+import { getProgress } from '@/lib/progress'
 
 /** 本地落盘节拍：只受 IDB 制约，用来把崩溃丢失窗口压到 1s 级 */
 const PERSIST_INTERVAL_MS = 1000
@@ -18,6 +19,7 @@ interface ReadingPosition {
   pid: number
   floor: number | null
   page: number
+  tid: number
 }
 
 export function useReadingProgress(
@@ -32,9 +34,31 @@ export function useReadingProgress(
   const forumNameRef = useRef(forumName)
   const positionRef = useRef<ReadingPosition | null>(null)
   /** 进入帖子时的回复数快照，本次阅读内不随刷新变化（data-model §7） */
-  const entryRepliesRef = useRef<{ tid: number; replies: number } | null>(null)
+  const entryRepliesRef = useRef<{ tid: number; replies: number | null } | null>(null)
+  const observedRepliesRef = useRef<{ tid: number; replies: number | null } | null>(null)
   /** 已落盘的签名，楼层/页码没变就不重复写 */
   const savedRef = useRef<string | null>(null)
+  const visitGenerationRef = useRef(0)
+  const visitRef = useRef<{ tid: number; generation: number } | null>(null)
+
+  useEffect(() => {
+    if (data?.tid === undefined) return
+    const visit = { tid: data.tid, generation: ++visitGenerationRef.current }
+    visitRef.current = visit
+    if (data.replies === null) {
+      // Tie the lookup to the visit lifecycle; StrictMode's second setup gets a fresh valid lookup.
+      void getProgress(data.tid).then((row) => {
+        if (visitRef.current?.generation !== visit.generation || dataRef.current?.tid !== data.tid) return
+        if (observedRepliesRef.current?.tid === data.tid && observedRepliesRef.current.replies === null &&
+          entryRepliesRef.current?.tid === data.tid && entryRepliesRef.current.replies === null && row?.replies != null) {
+          entryRepliesRef.current = { tid: data.tid, replies: row.replies }
+        }
+      }).catch(() => undefined)
+    }
+    return () => {
+      if (visitRef.current?.generation === visit.generation) visitRef.current = null
+    }
+  }, [data?.tid])
 
   useEffect(() => {
     dataRef.current = data
@@ -43,8 +67,17 @@ export function useReadingProgress(
 
   useEffect(() => {
     if (!data) return
-    if (entryRepliesRef.current?.tid !== data.tid) {
-      entryRepliesRef.current = { tid: data.tid, replies: data.replies }
+    const tid = data.tid
+    if (entryRepliesRef.current?.tid !== tid) {
+      entryRepliesRef.current = { tid, replies: data.replies }
+      observedRepliesRef.current = { tid, replies: data.replies }
+      positionRef.current = null
+      savedRef.current = null
+    } else if (observedRepliesRef.current?.replies === null && data.replies !== null) {
+      // Reliable count observed during this visit supersedes an older cached fallback.
+      observedRepliesRef.current = { tid, replies: data.replies }
+      entryRepliesRef.current = { tid, replies: data.replies }
+      savedRef.current = null
     }
   }, [data])
 
@@ -67,12 +100,13 @@ export function useReadingProgress(
           best = posts[index] ?? null
         }
       }
-      if (best) positionRef.current = { pid: best.pid, floor: best.floor, page: data.page }
+      if (best && dataRef.current?.tid === data.tid) positionRef.current = { pid: best.pid, floor: best.floor, page: data.page, tid: data.tid }
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
+          if (dataRef.current?.tid !== data.tid) return
           const pid = Number(entry.target.id.slice(3))
           if (entry.isIntersecting) visible.add(pid)
           else visible.delete(pid)
@@ -86,9 +120,9 @@ export function useReadingProgress(
     for (const element of elements) observer.observe(element)
 
     // 翻到新页时先以首楼为锚点，避免把上一页的位置写到新页上
-    if (positionRef.current?.page !== data.page) {
+    if (positionRef.current?.tid !== data.tid || positionRef.current.page !== data.page) {
       const first = posts[0]
-      positionRef.current = first ? { pid: first.pid, floor: first.floor, page: data.page } : null
+      positionRef.current = first ? { pid: first.pid, floor: first.floor, page: data.page, tid: data.tid } : null
     }
 
     return () => observer.disconnect()
@@ -101,7 +135,7 @@ export function useReadingProgress(
     const current = dataRef.current
     const position = positionRef.current
     const snapshot = entryRepliesRef.current
-    if (!current || !position || !snapshot) return false
+    if (!current || !position || position.tid !== current.tid || !snapshot || snapshot.tid !== current.tid) return false
 
     const row: ProgressRow = {
       tid: current.tid,
@@ -116,15 +150,16 @@ export function useReadingProgress(
       updatedAt: Date.now(),
     }
 
-    const signature = `${row.lastPid}|${row.lastPage}|${row.replies}|${row.totalPages}|${row.title}`
+    const signature = `${row.tid}|${row.lastPid}|${row.lastPage}|${row.replies}|${row.totalPages}|${row.title}`
     if (savedRef.current === signature) return false
 
+    const tid = row.tid
     try {
       await queueProgress(row)
     } catch {
       return false // IDB 不可用：下个节拍再试
     }
-    savedRef.current = signature
+    if (dataRef.current?.tid === tid && positionRef.current?.tid === tid) savedRef.current = signature
     return true
   }, [signedIn])
 

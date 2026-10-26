@@ -51,6 +51,21 @@ describe('阅读进度落地', () => {
     expect((await idbGet<ProgressRow>('outbox', 1))?.updatedAt).toBe(200)
   })
 
+  it('未知计数不覆盖镜像中的已知回复数', async () => {
+    await queueProgress(row(7, 10))
+    await queueProgress(row(7, 20))
+    await queueProgress({ ...row(7, 30), replies: null })
+    expect((await idbGet<ProgressRow>('progress', 7))?.replies).toBe(0)
+    expect((await idbGet<ProgressRow>('outbox', 7))?.replies).toBe(0)
+  })
+
+  it('即使 outbox 已清空，旧时间戳写入也不能覆盖较新的镜像', async () => {
+    await queueProgress(row(8, 200))
+    await queueProgress(row(8, 100))
+    expect((await idbGet<ProgressRow>('progress', 8))?.updatedAt).toBe(200)
+    expect((await idbGet<ProgressRow>('outbox', 8))?.updatedAt).toBe(200)
+  })
+
   it('flushProgress 按 updatedAt 升序发送并清空 outbox', async () => {
     await queueProgress(row(2, 200))
     await queueProgress(row(1, 100))

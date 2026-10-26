@@ -100,7 +100,7 @@ async function readProgressRow(request: Request, tid: number): Promise<ProgressR
     lastFloor: nullableInt(body.lastFloor),
     lastPage: nullableInt(body.lastPage),
     totalPages: nullableInt(body.totalPages),
-    replies: int(body.replies) ?? 0,
+    replies: nullableInt(body.replies),
     updatedAt,
   }
 }

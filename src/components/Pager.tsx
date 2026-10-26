@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { ToolbarButton } from '@/components/ToolbarButton'
 import { cn } from '@/lib/utils'
 
 interface PagerProps {
@@ -20,7 +21,7 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
   }
 
   return (
-    <div className={cn('flex items-center justify-center gap-2 text-ui text-text', className)}>
+    <div className={cn('flex flex-wrap items-center justify-center gap-x-0 gap-y-0 text-ui text-text sm:gap-x-1', className)}>
       <PagerButton label="第一页" disabled={page <= 1} onClick={() => go(1)}>
         <ChevronsLeft size={18} />
       </PagerButton>
@@ -47,18 +48,16 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
           className="w-16 rounded-md border border-line bg-canvas px-2 py-1 text-center tnum"
         />
       ) : (
-        <button
+        <ToolbarButton
           type="button"
           onClick={() => {
             setDraft(String(page))
             setEditing(true)
           }}
-          className="group inline-flex h-11 items-center px-1"
+          className="px-1"
         >
-          <span className="inline-flex h-9 items-center rounded-md px-2 tnum transition-colors duration-[var(--motion-press)] group-hover:bg-panel-light group-active:bg-panel-light">
-            {page} / {totalPages}
-          </span>
-        </button>
+          <span className="whitespace-nowrap px-2 tnum">{page} / {totalPages}</span>
+        </ToolbarButton>
       )}
 
       <PagerButton label="下一页" disabled={page >= totalPages} onClick={() => go(page + 1)}>
@@ -88,17 +87,14 @@ function PagerButton({
   children: React.ReactNode
 }) {
   return (
-    <button
+    <ToolbarButton
       type="button"
       aria-label={label}
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="group inline-flex size-11 items-center justify-center disabled:opacity-40"
     >
-      <span className="flex size-9 items-center justify-center rounded-md transition-colors duration-[var(--motion-press)] group-hover:bg-panel-light group-active:bg-panel-light">
-        {children}
-      </span>
-    </button>
+      {children}
+    </ToolbarButton>
   )
 }

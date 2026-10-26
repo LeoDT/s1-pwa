@@ -15,12 +15,30 @@ const STORE = 'outbox'
 export async function queueProgress(row: ProgressRow): Promise<void> {
   await idbTransact([PROGRESS_STORE, STORE], 'readwrite', (tx) => {
     const outbox = tx.objectStore(STORE)
-    const request = outbox.get(row.tid)
-    request.onsuccess = () => {
-      const pending = request.result as ProgressRow | undefined
-      if (pending && pending.updatedAt > row.updatedAt) return
-      tx.objectStore(PROGRESS_STORE).put(row, row.tid)
-      outbox.put(row, row.tid)
+    const pendingRequest = outbox.get(row.tid)
+    const progressStore = tx.objectStore(PROGRESS_STORE)
+    const mirrorRequest = progressStore.get(row.tid)
+    let pending: ProgressRow | undefined
+    let mirror: ProgressRow | undefined
+    let ready = 0
+    const commitIfReady = () => {
+      ready += 1
+      if (ready !== 2) return
+      const newest = [pending, mirror].filter((value): value is ProgressRow => value !== undefined)
+        .reduce<ProgressRow | undefined>((latest, value) => !latest || value.updatedAt > latest.updatedAt ? value : latest, undefined)
+      if (newest && newest.updatedAt > row.updatedAt) return
+      const knownReplies = [mirror?.replies, pending?.replies].find((value) => value != null)
+      const safeRow = row.replies === null && knownReplies != null ? { ...row, replies: knownReplies } : row
+      progressStore.put(safeRow, row.tid)
+      outbox.put(safeRow, row.tid)
+    }
+    pendingRequest.onsuccess = () => {
+      pending = pendingRequest.result as ProgressRow | undefined
+      commitIfReady()
+    }
+    mirrorRequest.onsuccess = () => {
+      mirror = mirrorRequest.result as ProgressRow | undefined
+      commitIfReady()
     }
   })
 }

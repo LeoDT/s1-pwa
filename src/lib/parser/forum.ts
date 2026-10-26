@@ -1,5 +1,5 @@
 import type { ForumPage } from '@shared/types'
-import { intOf, parsePageInfo, textOf, type ParsedPage } from './dom'
+import { countOf, parsePageInfo, textOf, type ParsedPage } from './dom'
 import { FORUM_LIST } from './selectors'
 
 /** 板块帖子列表页（forum.php?mod=forumdisplay） */
@@ -19,7 +19,7 @@ export function parseForumPage(page: ParsedPage): ForumPage {
       {
         tid,
         title,
-        replies: intOf(item.querySelector(FORUM_LIST.replies)) ?? 0,
+        replies: countOf(item.querySelector(FORUM_LIST.replies)),
         typeTag: typeTag === '' ? undefined : typeTag,
       },
     ]

@@ -32,7 +32,7 @@
     -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC",
     "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
 
-  /* 字号四档（rem；根字号固定 16，所以 0.75/0.875/1/1.25 = 12/14/16/20）
+  /* 字号四档（rem；默认根字号 16 时为 12/14/16/20，尊重浏览器字号设置）
      见 docs/design-system.md §2 */
   --text-meta: 0.75rem;
   --text-ui: 0.875rem;
@@ -49,7 +49,7 @@
     color-scheme: light;
     --post-font-size: 1rem;
     --header-h: 48px;
-    --bar-h: 48px;
+    --bar-h: max(3rem, 44px);
     /* 大屏浏览框架：左栏 420 + 正文 900（常用显示器更宽，整框居中） */
     --frame-w: 1320px;
 

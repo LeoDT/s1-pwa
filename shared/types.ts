@@ -23,7 +23,7 @@ export interface BoardGroup {
 export interface ThreadSummary {
   tid: number
   title: string
-  replies: number
+  replies: number | null
   typeTag?: string
 }
 
@@ -73,8 +73,8 @@ export interface ThreadPage extends PageInfo {
   tid: number
   fid: number
   title: string
-  /** 首楼 dm-chat-s 的数字 */
-  replies: number
+  /** dm-chat-s 或“全部回复”总数；无法确认时为 null */
+  replies: number | null
   opUid: number | null
   posts: Post[]
 }
@@ -103,7 +103,7 @@ export interface ProgressRow {
   lastPage: number | null
   totalPages: number | null
   /** 上次打开时看到的回复数（快照） */
-  replies: number
+  replies: number | null
   updatedAt: number
 }
 

@@ -58,9 +58,12 @@ export function useForumPages(fid: number) {
     initialPageParam: 1,
     queryFn: ({ pageParam }) => fetchForumPage(fid, pageParam),
     getNextPageParam: (last: ForumPage) => (last.page < last.totalPages ? last.page + 1 : undefined),
-    staleTime: 30 * 1000,
-    // 没有刷新按钮，靠回到前台/窗口聚焦时自动重取
-    refetchOnWindowFocus: true,
+    // Board lists are session-cached; users refresh explicitly.
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   })
 }
 

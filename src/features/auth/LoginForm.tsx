@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Session } from '@shared/types'
 import { fetchLoginPage, submitLogin, type LoginInput } from '@/lib/session'
 import { errorMessage } from '@/lib/errors'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
 
 const LOCK_KEY = 's1r:loginBlockedUntil'
 const LOCK_MS = 15 * 60 * 1000
@@ -56,6 +57,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 
   const [throttled, setThrottled] = useState(false)
   const lock = useLoginLock(throttled)
+  const showLoginPagePending = useDeferredLoading(loginPage.isPending)
 
   const mutation = useMutation({
     mutationFn: async (input: LoginInput) => {
@@ -76,6 +78,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     },
   })
 
+  const showMutationPending = useDeferredLoading(mutation.isPending)
   const question = loginPage.data?.form.question ?? []
   const needsAnswer = values.questionid !== undefined && values.questionid !== '0'
 
@@ -91,7 +94,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
         凭证只存本机（服务端仅转发，不落盘）。账号若设置过安全提问，必须选对问题并填写答案，否则会计入失败次数。
       </p>
 
-      {loginPage.isPending ? <p className="text-ui text-muted">正在读取登录页…</p> : null}
+      {showLoginPagePending ? <p className="text-ui text-muted">正在读取登录页…</p> : null}
 
       {loginPage.isError ? (
         <div className="space-y-2 rounded-md border border-line bg-panel-light p-3">
@@ -184,7 +187,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             }
             className="w-full rounded-md bg-accent-strong px-3 py-2.5 text-body font-medium text-on-accent active:opacity-90 disabled:opacity-50"
           >
-            {mutation.isPending ? '登录中…' : '登录'}
+            {showMutationPending ? '登录中…' : '登录'}
           </button>
         </>
       ) : null}

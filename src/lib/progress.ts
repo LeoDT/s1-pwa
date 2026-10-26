@@ -6,9 +6,14 @@
 import type { ProgressIndexRow, ProgressRow } from '@shared/types'
 import { apiFetch, type JsonInit } from './api'
 import { cookieHeader } from './cookieJar'
-import { idbAll, idbClear, idbDel, idbGet, idbSet } from './db'
+import { idbAll, idbClear, idbDel, idbGet, idbSet, idbTransact } from './db'
 
 export const PROGRESS_STORE = 'progress'
+
+/** Delta is known only when both counts are reliable; zero is a valid count. */
+export function getNewReplies(current: number | null | undefined, baseline: number | null | undefined): number | null {
+  return current == null || baseline == null ? null : Math.max(0, current - baseline)
+}
 const STORE = PROGRESS_STORE
 const HISTORY_PAGE_SIZE = 100
 
@@ -33,10 +38,29 @@ export async function clearProgress(): Promise<void> {
 }
 
 /** 按 updatedAt 合并，本地较新的记录不被服务端旧数据覆盖 */
-export async function mergeProgress(rows: ProgressRow[]): Promise<void> {
+export async function mergeProgress(
+  rows: ProgressRow[],
+  shouldContinue: () => boolean = () => true,
+): Promise<void> {
   for (const row of rows) {
-    const current = await getProgress(row.tid)
-    if (!current || row.updatedAt > current.updatedAt) await saveProgress(row)
+    if (!shouldContinue()) return
+    await idbTransact([STORE], 'readwrite', (tx) => {
+      const store = tx.objectStore(STORE)
+      const request = store.get(row.tid)
+      request.onsuccess = () => {
+        if (!shouldContinue()) return
+        const current = request.result as ProgressRow | undefined
+        if (!current || row.updatedAt > current.updatedAt) {
+          const merged = row.replies == null && current?.replies != null
+            ? { ...row, replies: current.replies }
+            : row
+          store.put(merged, row.tid)
+        } else if (current.replies == null && row.replies != null) {
+          // Retain the newer reading position/time but backfill a known count from older data.
+          store.put({ ...current, replies: row.replies }, row.tid)
+        }
+      }
+    })
   }
 }
 
@@ -65,7 +89,11 @@ export async function loadProgressIndex(includeServer = true): Promise<ProgressI
     const server = await fetchHistoryIndex()
     for (const row of server) {
       const current = merged.get(row.tid)
-      if (!current || row.updatedAt > current.updatedAt) merged.set(row.tid, row)
+      if (!current || row.updatedAt > current.updatedAt) {
+        merged.set(row.tid, row.replies == null && current?.replies != null ? { ...row, replies: current.replies } : row)
+      } else if (current.replies == null && row.replies != null) {
+        merged.set(row.tid, { ...current, replies: row.replies })
+      }
     }
   } catch {
     // 本地优先：服务端不可用不影响徽章显示

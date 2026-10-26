@@ -6,6 +6,7 @@ import { fetchForumPage, useBoardTree, useBoards } from '@/features/browse/queri
 import { ErrorState, ListSkeleton } from '@/components/states'
 import { errorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
 
 /**
  * 常用板块管理：勾选/排序/移除（见 docs/overview.md D04）。
@@ -17,9 +18,12 @@ export function BoardsPanel({ active }: { active: boolean }) {
   const [adding, setAdding] = useState(false)
   const tree = useBoardTree(active && adding)
   const [busy, setBusy] = useState(false)
+  const showBoardsPending = useDeferredLoading(boards.isPending)
+  const showTreePending = useDeferredLoading(adding && tree.isPending)
   const [manualFid, setManualFid] = useState('')
   const [manualError, setManualError] = useState<string | null>(null)
   const [addingManual, setAddingManual] = useState(false)
+  const showManualPending = useDeferredLoading(addingManual)
 
   const persist = async (next: BoardEntry[]) => {
     setBusy(true)
@@ -58,7 +62,7 @@ export function BoardsPanel({ active }: { active: boolean }) {
         </button>
       </div>
 
-      {boards.isPending ? <ListSkeleton rows={3} /> : null}
+      {showBoardsPending ? <ListSkeleton rows={3} /> : null}
 
       {!boards.isPending && current.length === 0 ? (
         <p className="text-meta text-muted">还没有板块，从下面「添加板块」里挑几个。</p>
@@ -107,7 +111,7 @@ export function BoardsPanel({ active }: { active: boolean }) {
 
       {adding ? (
         <div className="space-y-3 pt-1">
-          {tree.isPending ? <ListSkeleton rows={2} /> : null}
+          {showTreePending ? <ListSkeleton rows={2} /> : null}
           {tree.isError ? (
             <ErrorState message={errorMessage(tree.error)} onRetry={() => void tree.refetch()} />
           ) : null}
@@ -177,7 +181,7 @@ export function BoardsPanel({ active }: { active: boolean }) {
                 disabled={addingManual || manualFid === ''}
                 className="rounded-md bg-accent-strong px-3 py-2 text-ui font-medium text-on-accent disabled:opacity-50"
               >
-                {addingManual ? '校验中…' : '添加'}
+                {showManualPending ? '校验中…' : '添加'}
               </button>
             </div>
             {manualError ? <p className="text-meta text-danger">{manualError}</p> : null}

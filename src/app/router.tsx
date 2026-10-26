@@ -19,6 +19,7 @@ import { getLastFid } from '@/features/browse/lastForum'
 import { useBoards } from '@/features/browse/queries'
 import { DEFAULT_BOARDS } from '@/lib/boards'
 import { ListSkeleton, EmptyState } from '@/components/states'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -35,7 +36,8 @@ const rootRoute = createRootRoute({
 
 function IndexRoute() {
   const boards = useBoards()
-  if (boards.isPending) return <ListSkeleton rows={5} />
+  const showPending = useDeferredLoading(boards.isPending)
+  if (boards.isPending) return showPending ? <ListSkeleton rows={5} /> : null
   const first = boards.data?.[0]
   if (!first) return <EmptyState text="还没有常用板块，去「设置 → 常用板块」添加" />
   return <Navigate to="/f/$fid" params={{ fid: String(first.fid) }} replace />

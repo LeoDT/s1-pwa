@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { LogIn, Trash2 } from 'lucide-react'
@@ -15,9 +15,13 @@ import { markFromList } from '@/lib/navigation'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { PULL_THRESHOLD, usePullToRefresh } from '@/lib/usePullToRefresh'
 import { cn } from '@/lib/utils'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
+import { useListRefresh } from '@/lib/useListRefresh'
 import {
   clearProgress,
   clearServerHistory,
+  fetchHistory,
+  mergeProgress,
   deleteServerProgress,
   loadProgress,
   removeProgress,
@@ -59,31 +63,41 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
   const wide = useMediaQuery('(min-width: 1024px)')
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [refreshing, setRefreshing] = useState(false)
+  const accountId = session.data?.uid ?? 'unknown'
+  const identity = String(accountId)
 
   // 未登录时历史接口必然 401，直接用引导代替请求
   const guest = session.isSuccess && session.data === null
 
   const history = useQuery<ProgressRow[]>({
-    queryKey: ['history'],
+    queryKey: ['history', accountId],
     queryFn: loadHistory,
     staleTime: 60 * 1000,
     enabled: !guest && session.isSuccess,
   })
 
-  const refresh = useCallback(async () => {
-    const element = scrollRef.current
-    setRefreshing(true)
+  const fetchLatestHistory = useCallback(async () => {
     try {
-      await queryClient.resetQueries({ queryKey: ['history'] })
-      if (element) element.scrollTop = 0
-    } finally {
-      setRefreshing(false)
+      return await fetchHistory(50)
+    } catch (error) {
+      if (isAuthError(error)) throw error
+      return loadProgress()
     }
-  }, [queryClient])
+  }, [])
+  const commitHistory = useCallback(async (rows: ProgressRow[], isCurrent: () => boolean) => {
+    await mergeProgress(rows, isCurrent)
+    if (!isCurrent()) return
+    queryClient.setQueryData(['history', accountId], rows)
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+  }, [accountId, queryClient])
+  const { refresh, refreshing, error: refreshError } = useListRefresh(
+    ['history', accountId], identity, fetchLatestHistory, commitHistory,
+  )
 
   const pullState = usePullToRefresh(scrollRef, refresh)
   const pull = pullState.pull
+  const deferredRefreshing = useDeferredLoading(refreshing || pullState.refreshing)
+  const deferredPending = useDeferredLoading(history.isPending)
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['history'] })
@@ -149,8 +163,8 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
           className="flex items-center justify-center overflow-hidden text-meta text-muted"
           style={{ height: pull }}
         >
-          {pull > 0 || refreshing || pullState.refreshing
-            ? refreshing || pullState.refreshing
+          {pull > 0 || deferredRefreshing
+            ? deferredRefreshing
               ? '刷新中…'
               : pull >= PULL_THRESHOLD
                 ? '松开刷新'
@@ -185,7 +199,11 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
           <>
             {error ? <p className="px-4 py-2 text-meta text-danger">{errorMessage(error)}</p> : null}
 
-            {history.isPending ? <ListSkeleton rows={6} /> : null}
+            {deferredPending ? <ListSkeleton rows={6} /> : null}
+
+            {refreshError ? (
+              <p className="px-4 py-2 text-meta text-danger">刷新失败：{errorMessage(refreshError)}</p>
+            ) : null}
 
             {history.isError ? (
               <ErrorState

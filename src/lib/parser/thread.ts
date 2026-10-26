@@ -1,5 +1,5 @@
 import type { Attachment, Post, PostBlock, QuoteBlock, ThreadPage } from '@shared/types'
-import { intOf, parsePageInfo, resolveUrl, textOf, type ParsedPage } from './dom'
+import { countOf, intOf, parsePageInfo, resolveUrl, textOf, type ParsedPage } from './dom'
 import { extractTid } from './forum'
 import { THREAD } from './selectors'
 
@@ -20,7 +20,7 @@ export function parseThreadPage(page: ParsedPage): ThreadPage {
     tid,
     fid: Number.isFinite(fid) ? fid : 0,
     title: textOf(doc.querySelector('.header h2')),
-    replies: readReplies(postElements[0] ?? null) ?? 0,
+    replies: readReplies(postElements[0] ?? null, doc),
     opUid: posts[0]?.authorUid ?? null,
     page: parsePageInfo(page).page,
     totalPages: parsePageInfo(page).totalPages,
@@ -28,13 +28,17 @@ export function parseThreadPage(page: ParsedPage): ThreadPage {
   }
 }
 
-function readReplies(firstPost: Element | null): number | null {
-  if (!firstPost) return null
-  const counters = Array.from(
-    firstPost.querySelectorAll(`${THREAD.viewsAndReplies} em`),
-  ).map((element) => textOf(element))
-  const replies = Number.parseInt(counters.at(-1) ?? '', 10)
-  return Number.isFinite(replies) ? replies : null
+function readReplies(firstPost: Element | null, doc: Document): number | null {
+  // The reply icon is the most reliable marker on the first page.
+  const count = countOf(firstPost?.querySelector(THREAD.replyCount))
+  if (count !== null) return count
+
+  // The reliable later-page total is the direct .mtit control under .txtlist, not quoted/body text.
+  const totalControl = Array.from(doc.querySelectorAll(THREAD.repliesTotal)).find((control) =>
+    Array.from(control.childNodes).some((node) => node.nodeType === Node.TEXT_NODE && /全部回复/.test(node.textContent ?? '')),
+  )
+  const total = Array.from(totalControl?.children ?? []).find((child) => child.tagName === 'EM')
+  return countOf(total)
 }
 
 function parsePost(element: Element, base: string): Post {
@@ -143,6 +147,7 @@ function collectAttachments(body: Element, base: string): Attachment[] {
 
 /** 把 .message 拆成「引用块」与「普通 HTML 块」的序列 */
 function splitBlocks(body: Element): PostBlock[] {
+  trimEdges(body)
   const blocks: PostBlock[] = []
   let buffer: Node[] = []
 
@@ -150,8 +155,11 @@ function splitBlocks(body: Element): PostBlock[] {
     if (buffer.length === 0) return
     const container = document.createElement('div')
     for (const node of buffer) container.append(node.cloneNode(true))
-    const html = container.innerHTML.trim()
-    if (html !== '') blocks.push({ kind: 'html', html })
+    trimEdges(container)
+    const html = container.innerHTML
+    if (container.textContent?.trim() || container.querySelector('img, video, iframe, svg, table, hr, pre, code, input')) {
+      blocks.push({ kind: 'html', html })
+    }
     buffer = []
   }
 
@@ -182,13 +190,43 @@ function parseQuote(element: Element): QuoteBlock {
     else anchor.remove()
   }
 
+  trimEdges(quote)
+
   return {
     kind: 'quote',
     pid: Number.isFinite(pid) ? pid : undefined,
     tid: Number.isFinite(tid) ? tid : undefined,
     header: header === '' ? undefined : header,
-    html: quote.innerHTML.trim(),
+    html: quote.innerHTML,
   }
+}
+
+/** Follow each outer boundary without trimming the opposite side of nested wrappers. */
+function trimEdges(element: Element): void {
+  const protectedTags = /^(PRE|CODE|HR)$/
+  const isWhitespace = (node: Node) => node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()
+  const isBreak = (node: Node) => node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === 'BR'
+
+  const trimDirection = (parent: Element, leading: boolean): void => {
+    while (true) {
+      const node = leading ? parent.firstChild : parent.lastChild
+      if (!node) return
+      if (isWhitespace(node) || isBreak(node)) {
+        node.remove()
+        continue
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return
+      const child = node as Element
+      if (protectedTags.test(child.tagName)) return
+      trimDirection(child, leading)
+      if (child.hasChildNodes() || /^(IMG|INPUT|VIDEO|SVG|TABLE)$/.test(child.tagName)) return
+      child.remove()
+    }
+  }
+
+  // Each pass follows only that side's boundary; interior breaks in a wrapper survive.
+  trimDirection(element, true)
+  trimDirection(element, false)
 }
 
 export type { Post, ThreadPage }

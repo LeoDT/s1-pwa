@@ -23,13 +23,13 @@ interface ProgressDbRow {
   last_floor: number | null
   last_page: number | null
   total_pages: number | null
-  replies: number
+  replies: number | null
   updated_at: number
 }
 
 interface ProgressIndexDbRow {
   tid: number
-  replies: number
+  replies: number | null
   last_floor: number | null
   last_page: number | null
   updated_at: number
@@ -48,7 +48,7 @@ ON CONFLICT(user_key, tid) DO UPDATE SET
   last_floor  = COALESCE(excluded.last_floor, progress.last_floor),
   last_page   = COALESCE(excluded.last_page, progress.last_page),
   total_pages = COALESCE(excluded.total_pages, progress.total_pages),
-  replies     = excluded.replies,
+  replies     = COALESCE(excluded.replies, progress.replies),
   updated_at  = excluded.updated_at
 WHERE excluded.updated_at >= progress.updated_at`
 

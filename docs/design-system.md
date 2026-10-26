@@ -67,7 +67,7 @@
 
 不加载 web font（避免 FOIT 与体积）。数字统一 `font-variant-numeric: tabular-nums`。
 
-**字号只有四档，全部用 rem**（根字号固定 16px，所以渲染值就是 12/14/16/20）：
+**字号只有四档，全部用 rem**（默认根字号 16px 时渲染为 12/14/16/20，尊重浏览器字号设置）：
 
 | 令牌 | rem | px | 用途 |
 |---|---|---|---|
@@ -90,12 +90,12 @@
 | 设置分组标题 | 14/1.4 | 500 | `--color-muted` |
 | 按钮/表单 | 14/1.4 | 500 | — |
 
-**为什么用 rem**：设置里的正文字号写成 `--post-font-size: <n>/16 rem`，只缩放阅读内容（UI 尺寸不变）；同时浏览器默认字号/最小字号对 rem 生效（px 不会），上游 `<font size>` 也按 rem 映射。根字号保持 16px，所以 px→rem 不改变现有渲染。
+**为什么用 rem**：设置里的正文字号写成 `--post-font-size: <n>/16 rem`，只缩放阅读内容（UI 尺寸不变）；同时浏览器默认字号/最小字号对 rem 生效（px 不会），上游 `<font size>` 也按 rem 映射。默认根字号为 16px 时，px→rem 不改变现有渲染；应用不强制覆盖浏览器默认字号。
 
 正文行宽：容器 `max-width: 800px`，左右 `padding: 0 16px`（小屏）/`0 24px`（大屏），16px 下约 42–45 汉字/行。
 
 **不做的两件事**（taste-skill app-screen 规则对照后的决定）：
-1. 不把上游正文里的连续空 `<br>` 归一——保留作者原始留白。
+1. 不把正文内部的连续空 `<br>` 归一——保留作者原始留白；仅清理正文/引用/独立 HTML 块边缘的无用空白与 `<br>`。
 2. 不做入场动画（见 §6）。
 
 ## 3. 间距 / 圆角 / 描边 / 阴影
@@ -119,7 +119,7 @@
 | `lg` | ≥ 1024 | **双栏**：左 420px 列表 + 右内容（≤900px 居中） |
 | `xl` | ≥ 1440 | 同上，**整个框居中限宽**：`--frame-w: 1320px`（420 + 900），左右留白相等 |
 
-固定高度：顶栏 48（小屏）/ 52（大屏）；底部条 48 + `env(safe-area-inset-bottom)`；帖子页页码条 44。
+顶栏高度为 48px。底栏内容最小高度 `max(3rem, 44px)`，安全区单独占位；字号增大或分页换行时自然增高，不用固定高度裁切按钮。
 
 ### 4.2 小屏线框
 
@@ -230,7 +230,7 @@
 
 ### 5.4 引用块 `QuoteBlock`
 
-- `background: color-mix(in srgb, var(--color-panel-light) 70%, transparent)`、左 3px `--color-line`、`--radius-sm`、`padding: 10px 12px`、`margin-bottom: 10px`
+- 无大面积背景，左侧 2px 淡分隔线；左内边距 12px、上下 4px、下外边距 8px。头部与引文间距 4px，解析时清理头部遗留空行。
 - 头部一行 12px `--color-muted`，有 pid 时渲染为按钮：hover 下划线 `--color-flag-strong`，右侧加 `↗` 图标
 - 超过 8 行折叠，底部「展开」；引用内图片不加载，显示 `[图片]` 占位 chip
 - 无 pid（如"作者被禁止或删除"）→ 不可点，纯文本
@@ -242,7 +242,7 @@
 - 省流量模式：显示「图片 · 点击加载」chip（`--color-panel-light` 底，min-h 64）
 - 灯箱：全屏 `rgba(0,0,0,.88)`，图片 `object-fit: contain`，提供 `1x / 2x`（2x = 原始尺寸 + 容器可拖动滚动），`Esc`/点击空白/右上 X 关闭
 - 灯箱是**应用级单例**：状态在 `src/lib/lightbox.ts`（模块级 store + `useSyncExternalStore`），`main.tsx` 里只挂一份 `<ImageLightbox />`（portal 到 `body`），消费 `{ url, alt }`
-- 它不属于任何内容节点：正文图常被上游 `<a target="_blank">` 包着，挂在 `ProxyImage` 里会落进那个 `<a>`（`<a>` 不能嵌可交互内容，且点关闭会激活成外链），还会退化成每张图各一个 `<dialog>`。`ProxyImage` 只负责 `openLightbox(url, alt)`
+- 它不属于任何内容节点：正文图常被上游 `<a>` 包着，正文渲染时先拆开图片与外层交互元素，混排文字保留原链接。`ProxyImage` 的原图、重试、省流量加载和灯箱入口不嵌在链接/按钮中；灯箱仍为应用级单例。
 
 ### 5.6 分页条 `Pager`
 
@@ -250,12 +250,13 @@
 - 列表页**没有页码条**：无限滚动 + 末尾「加载更多（n / N 页）」/「已全部加载（N 页）」/「加载失败，点击重试」
 - `«` `‹` `3 / 15` `›` `»`：首/末页 + 上/下一页，中间数字可点开数字输入；首末页按钮在边界 `disabled`
 - 首/末页按钮 `disabled` + 40% 透明；`共 N 页` 用 `--color-muted`
+- 与底栏刷新共用 `ToolbarButton`：点击区至少 `max(2.75rem, 44px)`，hover/active 反馈在内缩区域绘制。刷新按钮参与正常 flex 分配，极窄宽度下分页换行，不靠裁切隐藏溢出。
 
 ### 5.7 板块条 `BoardTabs`（小屏）
 
 - 横向滚动 + `scroll-snap-type: x proximity`，`scrollbar-width: none`
-- 每项 `padding: 0 14px; height: 48px`；active：`--color-accent-strong` 文字 + 2px `--color-accent-strong` 下划线
-- 右侧固定渐隐遮罩提示可滚动；最右为「管理」入口（仅 `--color-muted` 图标）
+- 每项 `flex: 1 0 auto; padding: 0 12px`，空间充足时填满可用宽度，放不下时保留内容宽度并横滚；active：主题色文字 + 2px 下划线。
+- 大屏右侧独立刷新按钮；管理入口在设置中。
 
 ### 5.8 Sheet / 设置
 
@@ -267,6 +268,8 @@
 - 抽屉是 flex 列：标题栏固定，只有内容区滚动（滚动条不覆盖标题）
 
 ### 5.9 状态类组件
+
+瞬时 loading（骨架、刷新旋转、加载更多与表单等待文案）统一延迟 200ms 显示，快速请求不显示。busy/disabled 使用真实状态立即生效；图片占位不属于页面 loading 切换。
 
 | 组件 | 规格 |
 |---|---|
@@ -378,4 +381,4 @@
 }
 ```
 
-正文字号：`PostCard` 正文用 `text-[length:var(--post-font-size)]`，根字号固定 16px，设置只影响阅读内容（15–18px）。
+正文字号：`PostCard` 正文用 `text-[length:var(--post-font-size)]`，默认根字号为 16px 时，设置对应阅读内容 15–18px；浏览器字号偏好仍然生效。

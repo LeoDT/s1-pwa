@@ -111,7 +111,11 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
         <span className="relative flex min-h-[120px] w-full items-center justify-center rounded-sm border border-line bg-panel-light">
           <button
             type="button"
-            onClick={() => setState({ status: 'loading' })}
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              setState({ status: 'loading' })
+            }}
             className="inline-flex items-center gap-2 text-ui text-muted"
           >
             <ImageOff size={16} />

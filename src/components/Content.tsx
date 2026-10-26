@@ -51,8 +51,11 @@ function renderNode(
   key: number,
   base: string,
   onOpenPost: (tid: number, pid: number) => void,
+  textLink?: (children: ReactNode) => ReactNode,
 ): ReactNode {
-  if (node.nodeType === Node.TEXT_NODE) return <Fragment key={key}>{node.textContent}</Fragment>
+  if (node.nodeType === Node.TEXT_NODE) {
+    return <Fragment key={key}>{textLink ? textLink(node.textContent) : node.textContent}</Fragment>
+  }
   if (node.nodeType !== Node.ELEMENT_NODE) return null
 
   const element = node as Element
@@ -82,7 +85,7 @@ function renderNode(
   if (VOID_TAGS.has(tag)) return createElement(tag, { key })
 
   const children = Array.from(element.childNodes).map((child, index) =>
-    renderNode(child, index, base, onOpenPost),
+    renderNode(child, index, base, onOpenPost, textLink),
   )
 
   if (tag === 'font') {
@@ -145,55 +148,49 @@ function ContentLink({ element, base, onOpenPost }: ContentLinkProps) {
   const navigate = useNavigate()
   const href = element.getAttribute('href')
   const target = classifyLink(href, base)
+  const imageFreeChildren = !containsInteractiveImage(element)
+  const linkText = imageFreeChildren
+    ? undefined
+    : (content: ReactNode) => renderLink(target, href, content, onOpenPost, navigate)
   const children = Array.from(element.childNodes).map((child, index) =>
-    renderNode(child, index, base, onOpenPost),
+    renderNode(child, index, base, onOpenPost, linkText),
   )
 
   if (target.kind === 'drop') return <span>{children}</span>
+  if (!imageFreeChildren) return <>{children}</>
 
+  return renderLink(target, href, children, onOpenPost, navigate)
+}
+
+function containsInteractiveImage(element: Element): boolean {
+  return Array.from(element.querySelectorAll('img')).some((image) => !image.hasAttribute('smilieid'))
+}
+
+function renderLink(
+  target: LinkTarget,
+  href: string | null,
+  children: ReactNode,
+  onOpenPost: (tid: number, pid: number) => void,
+  navigate: ReturnType<typeof useNavigate>,
+): ReactNode {
   if (target.kind === 'external') {
+    return <a href={target.href} target="_blank" rel="noopener noreferrer" className="text-link underline decoration-line underline-offset-2 hover:text-link-hover">{children}</a>
+  }
+  if (target.kind === 'post') {
+    return <button type="button" onClick={() => onOpenPost(target.tid, target.pid)} className="text-left text-link underline decoration-line underline-offset-2 hover:text-link-hover">{children}</button>
+  }
+  if (target.kind === 'thread' || target.kind === 'forum') {
     return (
       <a
-        href={target.href}
-        target="_blank"
-        rel="noopener noreferrer"
+        href={href ?? undefined}
+        onClick={(event) => {
+          event.preventDefault()
+          if (target.kind === 'thread') void navigate({ to: '/t/$tid', params: { tid: String(target.tid) } })
+          else void navigate({ to: '/f/$fid', params: { fid: String(target.fid) } })
+        }}
         className="text-link underline decoration-line underline-offset-2 hover:text-link-hover"
-      >
-        {children}
-      </a>
+      >{children}</a>
     )
   }
-
-  if (target.kind === 'post') {
-    return (
-      <button
-        type="button"
-        onClick={() => onOpenPost(target.tid, target.pid)}
-        className="text-left text-link underline decoration-line underline-offset-2 hover:text-link-hover"
-      >
-        {children}
-      </button>
-    )
-  }
-
-  const handleClick = (link: Extract<LinkTarget, { kind: 'thread' | 'forum' }>) => {
-    if (link.kind === 'thread') {
-      void navigate({ to: '/t/$tid', params: { tid: String(link.tid) } })
-    } else {
-      void navigate({ to: '/f/$fid', params: { fid: String(link.fid) } })
-    }
-  }
-
-  return (
-    <a
-      href={href ?? undefined}
-      onClick={(event) => {
-        event.preventDefault()
-        handleClick(target)
-      }}
-      className="text-link underline decoration-line underline-offset-2 hover:text-link-hover"
-    >
-      {children}
-    </a>
-  )
+  return <span>{children}</span>
 }

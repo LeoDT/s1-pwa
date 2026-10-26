@@ -62,7 +62,7 @@ describe('帖子页', () => {
     expect(thread.fid).toBe(51)
     expect(thread.title).toContain('S1 NUX')
     expect(thread.totalPages).toBe(15)
-    expect(thread.replies).toBeGreaterThan(500)
+    expect(thread.replies).toBe(580)
   })
 
   it('楼层：首楼 = 1，其余为数字或不连续缺省', () => {

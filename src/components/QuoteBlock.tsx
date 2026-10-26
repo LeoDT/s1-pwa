@@ -19,8 +19,8 @@ export function QuoteBlock({ quote, base, onOpenPost }: QuoteBlockProps) {
   const clickable = quote.pid !== undefined && quote.tid !== undefined
 
   return (
-    <div className="mb-2 rounded-sm border-l-[3px] border-line bg-panel-light/70 px-3 py-2">
-      <div className="mb-1 flex items-start gap-1 text-meta text-muted">
+    <div className="mb-2 border-l-2 border-line/70 pl-3 py-1">
+      <div className="mb-1 flex items-start gap-1 text-meta text-muted/80">
         {clickable ? (
           <button
             type="button"

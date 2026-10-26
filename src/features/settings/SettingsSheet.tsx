@@ -12,6 +12,7 @@ import { logout } from '@/lib/session'
 import { savePrefs } from '@/lib/prefs'
 import { usePrefs } from '@/lib/usePrefs'
 import { cn } from '@/lib/utils'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
 
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -132,6 +133,7 @@ function AccountSection({ active }: { active: boolean }) {
   })
 
   const account = session.data
+  const showSessionPending = useDeferredLoading(session.isPending)
 
   return (
     <section className="space-y-2">
@@ -148,7 +150,7 @@ function AccountSection({ active }: { active: boolean }) {
         ) : null}
       </div>
 
-      {session.isPending ? <p className="text-ui text-muted">正在检查登录状态…</p> : null}
+      {showSessionPending ? <p className="text-ui text-muted">正在检查登录状态…</p> : null}
 
       {account ? (
         <>

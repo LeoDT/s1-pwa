@@ -23,6 +23,7 @@ class MemoryStore implements ProgressStore {
       lastFloor: row.lastFloor ?? current?.lastFloor ?? null,
       lastPage: row.lastPage ?? current?.lastPage ?? null,
       totalPages: row.totalPages ?? current?.totalPages ?? null,
+      replies: row.replies ?? current?.replies ?? null,
     })
   }
 
@@ -143,6 +144,18 @@ describe('history API', () => {
     const removed = await api('/api/history/42', { method: 'DELETE' })
     expect(removed.status).toBe(200)
     expect(store.rows.size).toBe(0)
+  })
+
+  it('replies missing/null are unknown, zero is valid, and unknown updates preserve known count', async () => {
+    const { api, store } = boot()
+    await api('/api/history/42', jsonInit({ ...validBody, replies: 0 }))
+    expect([...store.rows.values()].find((row) => row.tid === 42)?.replies).toBe(0)
+    await api('/api/history/42', jsonInit({ ...validBody, replies: null, updatedAt: validBody.updatedAt + 1 }))
+    expect([...store.rows.values()].find((row) => row.tid === 42)?.replies).toBe(0)
+    await api('/api/history/43', jsonInit({ ...validBody, replies: undefined }))
+    expect([...store.rows.values()].find((row) => row.tid === 43)?.replies).toBeNull()
+    const index = await api('/api/history/index')
+    expect(((await index.json()) as { items: ProgressIndexRow[] }).items.find((item) => item.tid === 43)?.replies).toBeNull()
   })
 
   it('PUT 的 updatedAt 缺失时返回 400', async () => {

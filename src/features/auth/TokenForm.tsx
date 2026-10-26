@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { KeyRound } from 'lucide-react'
 import { setAppToken } from '@/lib/api'
 import { errorMessage } from '@/lib/errors'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
 
 /**
  * 部署启用了 ACCESS_TOKEN 而本机还没填写时的引导页。
@@ -19,6 +20,8 @@ export function TokenForm() {
       await queryClient.invalidateQueries({ queryKey: ['config'] })
     },
   })
+
+  const showMutationPending = useDeferredLoading(mutation.isPending)
 
   return (
     <form
@@ -55,7 +58,7 @@ export function TokenForm() {
         disabled={mutation.isPending || token.trim() === ''}
         className="w-full rounded-md bg-accent-strong px-3 py-2 text-body font-medium text-on-accent active:opacity-90 disabled:opacity-50"
       >
-        {mutation.isPending ? '保存中…' : '保存并继续'}
+        {showMutationPending ? '保存中…' : '保存并继续'}
       </button>
     </form>
   )

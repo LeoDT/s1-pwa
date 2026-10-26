@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
 import { RefreshCw } from 'lucide-react'
+import { BottomBar } from '@/components/BottomBar'
 import { Pager } from '@/components/Pager'
+import { ToolbarButton } from '@/components/ToolbarButton'
 import { ErrorState, PostSkeleton } from '@/components/states'
 import { useBoards, useThreadPage } from './queries'
 import { useReadingProgress } from './useReadingProgress'
@@ -11,6 +13,7 @@ import { errorMessage } from '@/lib/errors'
 import { locatePid } from '@/lib/locate'
 import { consumeFromList } from '@/lib/navigation'
 import { useCollapsingHeader } from '@/lib/useCollapsingHeader'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { usePrefs } from '@/lib/usePrefs'
 import { useSwipeBack } from '@/lib/useSwipeBack'
@@ -29,6 +32,8 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
   const navigate = useNavigate()
   const router = useRouter()
   const query = useThreadPage(tid, page)
+  const showPending = useDeferredLoading(query.isPending)
+  const showRefreshing = useDeferredLoading(query.isFetching)
   const boards = useBoards()
   const hash = useRouterState({ select: (state) => state.location.hash })
   const [highlighted, setHighlighted] = useState<number | null>(null)
@@ -211,15 +216,15 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
   useReadingProgress(scrollRef, data, boardName)
 
   return (
-    <div className="relative h-full min-h-0 bg-canvas">
+    <div className="flex h-full min-h-0 flex-col bg-canvas">
       <div
         ref={scrollRef}
-        className="h-full overflow-y-auto overscroll-contain pb-[calc(var(--bar-h)+env(safe-area-inset-bottom))]"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         style={
           narrow ? { paddingTop: 'calc(var(--header-h) + env(safe-area-inset-top))' } : undefined
         }
       >
-        {query.isPending ? <PostSkeleton /> : null}
+        {showPending ? <PostSkeleton /> : null}
 
         {query.isError ? (
           <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
@@ -251,22 +256,25 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
       </div>
 
       {data ? (
-        <div className="absolute inset-x-0 bottom-0 z-20 flex h-[calc(var(--bar-h)+env(safe-area-inset-bottom))] items-center border-t border-line bg-panel pb-[env(safe-area-inset-bottom)]">
-          <Pager
-            page={data.page}
-            totalPages={data.totalPages}
-            onChange={goPage}
-            className="w-full"
-          />
-          <button
-            type="button"
-            aria-label="刷新"
-            title="刷新"
-            onClick={() => void query.refetch()}
-            className="absolute right-1 top-1/2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-md text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light lg:inline-flex"
-          >
-            <RefreshCw size={16} className={cn(query.isFetching && 'animate-spin')} />
-          </button>
+        <div className="z-20 shrink-0">
+          <BottomBar>
+            <Pager
+              page={data.page}
+              totalPages={data.totalPages}
+              onChange={goPage}
+              className="min-w-0 flex-1"
+            />
+            <ToolbarButton
+              type="button"
+              aria-label="刷新"
+              title="刷新"
+              disabled={query.isFetching}
+              onClick={() => void query.refetch()}
+              className="hidden px-1 text-text lg:inline-flex"
+            >
+              <RefreshCw size={16} className={cn(showRefreshing && 'animate-spin')} />
+            </ToolbarButton>
+          </BottomBar>
         </div>
       ) : null}
     </div>

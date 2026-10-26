@@ -1,6 +1,9 @@
 import { useLayoutEffect, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
+import { BottomBar } from '@/components/BottomBar'
+import { ToolbarButton } from '@/components/ToolbarButton'
 import type { BoardEntry } from '@/lib/boards'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
 import { cn } from '@/lib/utils'
 
 /**
@@ -30,6 +33,7 @@ export function BoardTabs({
   refreshing = false,
 }: BoardTabsProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const showRefreshing = useDeferredLoading(refreshing)
 
   useLayoutEffect(() => {
     const element = scrollRef.current
@@ -39,53 +43,56 @@ export function BoardTabs({
   return (
     <nav
       aria-label="常用板块"
-      className="absolute inset-x-0 bottom-0 z-20 flex h-[calc(var(--bar-h)+env(safe-area-inset-bottom))] items-stretch border-t border-line bg-panel pb-[env(safe-area-inset-bottom)]"
+      className="absolute inset-x-0 bottom-0 z-20"
     >
-      <div
-        ref={scrollRef}
-        onScroll={(event) => {
-          rememberedScrollLeft = event.currentTarget.scrollLeft
-        }}
-        onWheel={(event) => {
-          // 桌面没有横滑手势：滚轮在板块条上直接横向滚动（不改页面滚动）
-          const element = event.currentTarget
-          if (element.scrollWidth <= element.clientWidth) return
-          element.scrollLeft += event.deltaY
-        }}
-        className="board-tabs-scroll flex min-w-0 flex-1 snap-x snap-proximity items-stretch overflow-x-auto"
-      >
-        {boards.map((board) => {
-          const active = board.fid === activeFid
-          return (
-            <button
-              key={board.fid}
-              type="button"
-              onClick={() => onSelect(board.fid)}
-              className={cn(
-                'relative shrink-0 snap-start whitespace-nowrap px-3 text-meta',
-                active ? 'font-medium text-accent-strong' : 'text-text',
-              )}
-            >
-              {board.name}
-              {active ? (
-                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-accent-strong" />
-              ) : null}
-            </button>
-          )
-        })}
-      </div>
-
-      {onRefresh ? (
-        <button
-          type="button"
-          aria-label="刷新"
-          title="刷新"
-          onClick={() => void onRefresh()}
-          className="hidden shrink-0 items-center justify-center border-l border-line px-3 text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light lg:inline-flex"
+      <BottomBar>
+        <div
+          ref={scrollRef}
+          onScroll={(event) => {
+            rememberedScrollLeft = event.currentTarget.scrollLeft
+          }}
+          onWheel={(event) => {
+            // 桌面没有横滑手势：滚轮在板块条上直接横向滚动（不改页面滚动）
+            const element = event.currentTarget
+            if (element.scrollWidth <= element.clientWidth) return
+            element.scrollLeft += event.deltaY
+          }}
+          className="board-tabs-scroll flex min-w-0 flex-1 snap-x snap-proximity items-stretch overflow-x-auto"
         >
-          <RefreshCw size={16} className={cn(refreshing && 'animate-spin')} />
-        </button>
-      ) : null}
+          {boards.map((board) => {
+            const active = board.fid === activeFid
+            return (
+              <button
+                key={board.fid}
+                type="button"
+                onClick={() => onSelect(board.fid)}
+                className={cn(
+                  'relative flex-[1_0_auto] snap-start whitespace-nowrap px-3 text-meta',
+                  active ? 'font-medium text-accent-strong' : 'text-text',
+                )}
+              >
+                {board.name}
+                {active ? (
+                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-accent-strong" />
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+
+        {onRefresh ? (
+          <ToolbarButton
+            type="button"
+            aria-label="刷新"
+            title="刷新"
+            disabled={refreshing}
+            onClick={() => void onRefresh()}
+            className="hidden border-l border-line px-3 text-text lg:inline-flex"
+          >
+            <RefreshCw size={16} className={cn(showRefreshing && 'animate-spin')} />
+          </ToolbarButton>
+        ) : null}
+      </BottomBar>
     </nav>
   )
 }

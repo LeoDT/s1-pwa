@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ThreadSummary } from '@shared/types'
-import { useBoards, useForumPages, useProgressIndex } from './queries'
+import { fetchForumPage, useBoards, useForumPages, useProgressIndex } from './queries'
 import { ThreadRow } from './ThreadRow'
 import { BoardTabs } from './BoardTabs'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/states'
@@ -11,7 +11,10 @@ import { getListState, markFromList, rememberListState } from '@/lib/navigation'
 import { usePullToRefresh, PULL_THRESHOLD } from '@/lib/usePullToRefresh'
 import { rememberFid } from './lastForum'
 import { useMediaQuery } from '@/lib/useMediaQuery'
-import { getProgress } from '@/lib/progress'
+import { getNewReplies, getProgress } from '@/lib/progress'
+import { useDeferredLoading } from '@/lib/useDeferredLoading'
+import { useSession } from '@/features/auth/useSession'
+import { useListRefresh } from '@/lib/useListRefresh'
 
 interface ForumPaneProps {
   fid: number
@@ -25,6 +28,8 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   const boards = useBoards()
   const forum = useForumPages(fid)
   const progress = useProgressIndex()
+  const session = useSession()
+  const identity = `${fid}:${session.data?.uid ?? 'unknown'}`
 
   const wide = useMediaQuery('(min-width: 1024px)')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -32,21 +37,20 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   const scrollTopRef = useRef(0)
   const restoredRef = useRef(false)
 
-  const [refreshing, setRefreshing] = useState(false)
-  const refresh = useCallback(async () => {
-    const element = scrollRef.current
+  const fetchFirstPage = useCallback(() => fetchForumPage(fid, 1), [fid])
+  const commitFirstPage = useCallback((firstPage: Awaited<ReturnType<typeof fetchForumPage>>) => {
+    queryClient.setQueryData(['forum', fid], { pages: [firstPage], pageParams: [1] })
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
     scrollTopRef.current = 0
-    setRefreshing(true)
-    try {
-      // 刷新 = 回到第一页（丢弃已追加的页）
-      await queryClient.resetQueries({ queryKey: ['forum', fid] })
-      if (element) element.scrollTop = 0
-    } finally {
-      setRefreshing(false)
-    }
   }, [fid, queryClient])
+  const { refresh, refreshing, error: refreshError, isBusy } = useListRefresh(
+    ['forum', fid], identity, fetchFirstPage, commitFirstPage,
+  )
   const pullState = usePullToRefresh(scrollRef, refresh)
   const pull = pullState.pull
+  const deferredRefreshing = useDeferredLoading(refreshing || pullState.refreshing)
+  const deferredPending = useDeferredLoading(forum.isPending)
+  const deferredNextPage = useDeferredLoading(forum.isFetchingNextPage)
 
   if (forum.data) rememberFid(fid)
 
@@ -88,14 +92,14 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return
-        if (forum.isFetchingNextPage) return
+        if (isBusy() || forum.isFetchingNextPage) return
         void forum.fetchNextPage()
       },
       { root, rootMargin: '600px 0px' },
     )
     observer.observe(target)
     return () => observer.disconnect()
-  }, [forum.hasNextPage, forum.isFetchingNextPage, forum.fetchNextPage])
+  }, [forum.hasNextPage, forum.isFetchingNextPage, forum.fetchNextPage, isBusy, refreshing])
 
   const openThread = (tid: number) => {
     rememberListState(fid, scrollTopRef.current)
@@ -145,8 +149,8 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
           className="flex items-center justify-center overflow-hidden text-meta text-muted"
           style={{ height: pull }}
         >
-          {pull > 0 || refreshing || pullState.refreshing
-            ? refreshing || pullState.refreshing
+          {pull > 0 || deferredRefreshing
+            ? deferredRefreshing
               ? '刷新中…'
               : pull >= PULL_THRESHOLD
                 ? '松开刷新'
@@ -154,7 +158,11 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
             : null}
         </div>
 
-        {forum.isPending ? <ListSkeleton /> : null}
+        {deferredPending ? <ListSkeleton /> : null}
+
+        {refreshError ? (
+          <p className="px-4 py-2 text-meta text-danger">刷新失败：{errorMessage(refreshError)}</p>
+        ) : null}
 
         {forum.isError ? (
           <ErrorState message={errorMessage(forum.error)} onRetry={() => void forum.refetch()} />
@@ -175,7 +183,7 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
                     thread={thread}
                     active={thread.tid === activeTid}
                     read={Boolean(entry)}
-                    newReplies={entry ? Math.max(0, thread.replies - entry.replies) : 0}
+                    newReplies={getNewReplies(thread.replies, entry?.replies) ?? 0}
                     onOpen={() => openThread(thread.tid)}
                   />
                 )
@@ -186,17 +194,23 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
               {forum.isFetchNextPageError ? (
                 <button
                   type="button"
-                  onClick={() => void forum.fetchNextPage()}
+                  disabled={refreshing}
+                  onClick={() => {
+                    if (!isBusy()) void forum.fetchNextPage()
+                  }}
                   className="text-ui text-link underline decoration-line underline-offset-2"
                 >
                   第 {loaded + 1} 页加载失败，点击重试
                 </button>
-              ) : forum.isFetchingNextPage ? (
+              ) : deferredNextPage ? (
                 '加载中…'
               ) : forum.hasNextPage ? (
                 <button
                   type="button"
-                  onClick={() => void forum.fetchNextPage()}
+                  disabled={refreshing}
+                  onClick={() => {
+                    if (!isBusy()) void forum.fetchNextPage()
+                  }}
                   className="text-ui text-link"
                 >
                   加载更多（{loaded} / {total} 页）
@@ -213,7 +227,7 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
         boards={boards.data ?? []}
         activeFid={fid}
         onRefresh={refresh}
-        refreshing={refreshing}
+        refreshing={refreshing || pullState.refreshing}
         onSelect={(next) =>
           void navigate({ to: '/f/$fid', params: { fid: String(next) }, replace: true })
         }

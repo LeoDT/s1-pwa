@@ -57,6 +57,13 @@ export function intOf(element: Element | null | undefined): number | null {
   return digits === '' ? null : Number.parseInt(digits, 10)
 }
 
+export function countOf(element: Element | null | undefined): number | null {
+  const raw = textOf(element)
+  if (!/^(?:\d+|\d{1,3}(?:[,\s]\d{3})+)$/.test(raw)) return null
+  const count = Number(raw.replace(/[,\s]/g, ''))
+  return Number.isSafeInteger(count) ? count : null
+}
+
 /** 从页面内联脚本里取登录 uid，0 表示游客 */
 export function parseUid(html: string): number {
   const match = DISCUZ_UID_RE.exec(html)

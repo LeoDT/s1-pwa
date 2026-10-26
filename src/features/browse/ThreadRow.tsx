@@ -26,7 +26,7 @@ export function ThreadRow({
       active={active}
       read={read}
       badgeAccent={read || active}
-      badgeLabel={`${thread.replies} 条回复${newReplies > 0 ? `，${newReplies} 条新增` : ''}`}
+      badgeLabel={thread.replies === null ? '回复数未知' : `${thread.replies} 条回复${newReplies > 0 ? `，${newReplies} 条新增` : ''}`}
       title={thread.title}
       onOpen={onOpen}
       badge={
@@ -37,7 +37,7 @@ export function ThreadRow({
               read || active ? 'text-accent-strong' : 'text-text',
             )}
           >
-            {thread.replies}
+            {thread.replies ?? '—'}
           </span>
           {newReplies > 0 ? (
             <span className="text-meta font-medium tnum text-flag-strong">+{newReplies}</span>
