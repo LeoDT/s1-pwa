@@ -1,5 +1,6 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import type { BoardGroup, ForumPage, ProgressIndexRow, ThreadPage } from '@shared/types'
+import { useEffect } from 'react'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { BoardGroup, ForumPage, ProgressIndexRow, ProgressVersion, ThreadPage } from '@shared/types'
 import { parsePage, type ParsedPage } from '@/lib/parser/dom'
 import { assertKind } from '@/lib/parser/errors'
 import { parseBoardGroups } from '@/lib/parser/board'
@@ -7,7 +8,7 @@ import { parseForumPage } from '@/lib/parser/forum'
 import { parseThreadPage } from '@/lib/parser/thread'
 import { loadBoards, type BoardEntry } from '@/lib/boards'
 import { useSession } from '@/features/auth/useSession'
-import { loadProgressIndex } from '@/lib/progress'
+import { createProgressVersion, loadProgressIndex, subscribeProgress } from '@/lib/progress'
 import { proxyFetch, upstreamUrl } from '@/lib/proxy'
 
 async function request(url: string): Promise<ParsedPage> {
@@ -15,7 +16,11 @@ async function request(url: string): Promise<ParsedPage> {
   return parsePage(result.html, result.url)
 }
 
-export async function fetchForumPage(fid: number, page: number): Promise<ForumPage> {
+export type ObservedForumPage = ForumPage & { observation: ProgressVersion }
+export type ObservedThreadPage = ThreadPage & { observation: ProgressVersion }
+
+export async function fetchForumPage(fid: number, page: number): Promise<ObservedForumPage> {
+  const observation = createProgressVersion()
   const parsed = await request(
     upstreamUrl('forum.php', {
       mod: 'forumdisplay',
@@ -25,10 +30,11 @@ export async function fetchForumPage(fid: number, page: number): Promise<ForumPa
     }),
   )
   assertKind(parsed, 'forumdisplay')
-  return parseForumPage(parsed)
+  return { ...parseForumPage(parsed), observation }
 }
 
-export async function fetchThreadPage(tid: number, page: number): Promise<ThreadPage> {
+export async function fetchThreadPage(tid: number, page: number): Promise<ObservedThreadPage> {
+  const observation = createProgressVersion()
   const parsed = await request(
     upstreamUrl('forum.php', {
       mod: 'viewthread',
@@ -38,7 +44,7 @@ export async function fetchThreadPage(tid: number, page: number): Promise<Thread
     }),
   )
   assertKind(parsed, 'viewthread')
-  return parseThreadPage(parsed)
+  return { ...parseThreadPage(parsed), observation }
 }
 
 export async function fetchBoardTree(): Promise<BoardGroup[]> {
@@ -68,21 +74,26 @@ export function useForumPages(fid: number) {
 }
 
 export function useThreadPage(tid: number, page: number) {
-  return useQuery<ThreadPage>({
+  return useQuery<ObservedThreadPage>({
     queryKey: ['thread', tid, page],
     queryFn: () => fetchThreadPage(tid, page),
     staleTime: 60 * 1000,
   })
 }
 
-/** 列表徒章：本地镜像 ∪ 服务端索引；未登录时只用本地，不发 401 请求 */
+/** Lightweight list index is local-only; no server request is needed for list markers. */
 export function useProgressIndex() {
   const session = useSession()
-  const signedIn = Boolean(session.data)
+  const accountId = session.data?.uid
+
+  const client = useQueryClient()
+  useEffect(() => subscribeProgress(() => {
+    void client.invalidateQueries({ queryKey: ['progress-index'] })
+  }), [client])
 
   return useQuery<ProgressIndexRow[]>({
-    queryKey: ['progress-index', signedIn ? 'user' : 'guest'],
-    queryFn: () => loadProgressIndex(signedIn),
+    queryKey: ['progress-index', accountId ?? 'guest'],
+    queryFn: () => loadProgressIndex(),
     enabled: session.isSuccess,
     staleTime: 60 * 1000,
   })

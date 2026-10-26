@@ -92,25 +92,34 @@ export interface Session {
   username?: string
 }
 
-/** 服务端历史记录行（D1 progress 表） */
+export interface ProgressVersion {
+  at: number
+  id: string
+}
+
+export interface ReplyObservation extends ProgressVersion {
+  replies: number
+}
+
+export interface ReadingPosition extends ProgressVersion {
+  pid: number
+  floor: number | null
+  page: number
+  totalPages: number
+}
+
 export interface ProgressRow {
   tid: number
   fid: number
   forumName: string
   title: string
-  lastPid: number | null
-  lastFloor: number | null
-  lastPage: number | null
-  totalPages: number | null
-  /** 上次打开时看到的回复数（快照） */
-  replies: number | null
-  updatedAt: number
+  metadataVersion: ProgressVersion | null
+  openedAt: number
+  read: ReplyObservation | null
+  position: ReadingPosition | null
 }
 
-export type ProgressIndexRow = Pick<
-  ProgressRow,
-  'tid' | 'replies' | 'lastFloor' | 'lastPage' | 'updatedAt'
->
+export type ProgressIndexRow = Pick<ProgressRow, 'tid' | 'openedAt' | 'read'>
 
 export interface AppConfig {
   authRequired: boolean

@@ -133,13 +133,13 @@ GET /api/proxy?u=…/forum.php?mod=redirect&goto=findpost&ptid=1826103&pid=43400
 ### 3.6 阅读进度写入
 
 ```
-进入帖子：记 { tid, fid, title, replies, totalPages }（内存 + 队列）
-每 1s（位置变化时）：一个 IDB 事务写 progress 镜像 + outbox（离线也成功）
-每 5s / 离开 / 切后台：PUT /api/history/:tid  （头：X-S1-Cookie、X-App-Token）
-                          {…, lastPid, lastFloor, lastPage, updatedAt}
-页面隐藏时：fetch(url, { keepalive: true })（自定义头可用，sendBeacon 不行）
-离线/失败：写入 IDB outbox，下次 online / 启动时按 updatedAt 顺序重放
-并发：服务端按 updatedAt last-write-wins（多设备同帖会互相覆盖，可接受）
+列表请求开始时记录该次观察，缓存快照保持不变，直到显式刷新或无限滚动追加。
+进入帖子时立即以列表观察写 openedAt（早于帖子加载）；成功取得帖子内容后以可靠回复数更新 read 基线。
+位置实际变化时更新 position；read、position、元数据各自带 at + UUID id，并独立合并。位置写入不更新 `metadataVersion`。
+先提交本地 IDB progress/outbox 事务，再通知 UI；不等待远端。后台同步读取服务端并合并字段组，再上传。
+每帖一条 `{accountId, row}` outbox；上传前检查 owner 与 session，读 cookie 后再检查账号。成功仅在本地整份 payload 未变化时确认删除。
+切换 uid 时原子保存 session/`readingOwner` 并清空本地 progress/outbox；expired session 时仍以 owner 识别旧账号。凭证、板块、图片、偏好不受影响。
+单帖移除/清空在同一事务同步删除 progress 与 outbox。时间戳来自对应网络请求开始时；读缓存或上传/重试不生成新事件。
 ```
 
 ## 4. 代理契约
@@ -150,6 +150,7 @@ GET /api/proxy?u=…/forum.php?mod=redirect&goto=findpost&ptid=1826103&pid=43400
 |---|---|---|
 | `X-App-Token` | 部署开启时 | 常数时间比较，失败 401 `token_invalid` |
 | `X-S1-Cookie` | 历史接口必需；代理接口已登录时必带 | 形如 `a=b; c=d`，仅转发给白名单上游 |
+| `X-Reading-Schema` | 所有 `/api/history*` 必需 | 固定为 `2`；旧版/缺失返回 409，响应 JSON 带 `schemaVersion: 2` |
 
 客户端 UA、`Accept-Encoding`、`Accept-Language` 一律覆盖为固定值：
 

@@ -1,89 +1,83 @@
-/**
- * 进度落地：一次事务写本地镜像（progress）+ 待发送队列（outbox），再逐条 PUT；
- * 失败保留，等联网/下次启动重放。见 docs/data-model.md §5.1 / §6.2。
- */
-import type { ProgressRow } from '@shared/types'
-import { idbAll, idbClear, idbDel, idbTransact } from './db'
-import { PROGRESS_STORE, putServerProgress } from './progress'
+import type { ProgressRow, Session } from '@shared/types'
+import { emptyProgress, mergeProgressRows, progressUpdatedAt, sameProgress } from '@shared/progress'
+import { idbAll, idbGet, idbTransact } from './db'
+import { putServerProgress } from './historyApi'
+import { notifyProgress, progressGeneration } from './progressEvents'
 
 const STORE = 'outbox'
+const PROGRESS_STORE = 'progress'
 
-/**
- * 本地落盘，不碰网络，离线也必然成功。同一 tid 只保留 updatedAt 最新的一条，
- * 镜像与队列在同一个事务里写，避免出现「镜像已更新但队列没写」的半截状态。
- */
-export async function queueProgress(row: ProgressRow): Promise<void> {
-  await idbTransact([PROGRESS_STORE, STORE], 'readwrite', (tx) => {
+interface PendingProgress {
+  accountId: number
+  row: ProgressRow
+}
+
+export async function queueProgress(row: ProgressRow, accountId?: number): Promise<ProgressRow | undefined> {
+  const generation = progressGeneration()
+  let result: ProgressRow | undefined
+  let changed = false
+  await idbTransact([PROGRESS_STORE, STORE, 'kv'], 'readwrite', (tx) => {
     const outbox = tx.objectStore(STORE)
+    const progress = tx.objectStore(PROGRESS_STORE)
+    const mirrorRequest = progress.get(row.tid)
     const pendingRequest = outbox.get(row.tid)
-    const progressStore = tx.objectStore(PROGRESS_STORE)
-    const mirrorRequest = progressStore.get(row.tid)
-    let pending: ProgressRow | undefined
-    let mirror: ProgressRow | undefined
+    const sessionRequest = tx.objectStore('kv').get('session')
     let ready = 0
-    const commitIfReady = () => {
-      ready += 1
-      if (ready !== 2) return
-      const newest = [pending, mirror].filter((value): value is ProgressRow => value !== undefined)
-        .reduce<ProgressRow | undefined>((latest, value) => !latest || value.updatedAt > latest.updatedAt ? value : latest, undefined)
-      if (newest && newest.updatedAt > row.updatedAt) return
-      const knownReplies = [mirror?.replies, pending?.replies].find((value) => value != null)
-      const safeRow = row.replies === null && knownReplies != null ? { ...row, replies: knownReplies } : row
-      progressStore.put(safeRow, row.tid)
-      outbox.put(safeRow, row.tid)
+    const commit = () => {
+      if (++ready !== 3 || generation !== progressGeneration()) return
+      const session = sessionRequest.result as Session | undefined
+      if (!session || (accountId !== undefined && session.uid !== accountId)) return
+      const mirror = mirrorRequest.result as ProgressRow | undefined
+      const pendingItem = pendingRequest.result as PendingProgress | undefined
+      const pending = pendingItem?.accountId === session.uid ? pendingItem.row : undefined
+      result = mergeProgressRows(mergeProgressRows(mirror ?? emptyProgress(row.tid), pending ?? emptyProgress(row.tid)), row)
+      changed = !mirror || !sameProgress(mirror, result)
+      if (changed) progress.put(result, row.tid)
+      if (changed || (pending && !sameProgress(pending, result))) {
+        outbox.put({ accountId: session.uid, row: result } satisfies PendingProgress, row.tid)
+      }
     }
-    pendingRequest.onsuccess = () => {
-      pending = pendingRequest.result as ProgressRow | undefined
-      commitIfReady()
-    }
-    mirrorRequest.onsuccess = () => {
-      mirror = mirrorRequest.result as ProgressRow | undefined
-      commitIfReady()
-    }
+    mirrorRequest.onsuccess = commit
+    pendingRequest.onsuccess = commit
+    sessionRequest.onsuccess = commit
   })
+  if (changed && generation === progressGeneration()) notifyProgress()
+  return result
 }
 
-export function pendingProgress(): Promise<ProgressRow[]> {
-  return idbAll<ProgressRow>(STORE)
+export async function pendingProgress(): Promise<ProgressRow[]> {
+  return (await idbAll<PendingProgress>(STORE)).map((item) => item.row)
 }
 
-export async function removePendingProgress(tid: number): Promise<void> {
-  await idbDel(STORE, tid)
-}
-
-export async function clearPendingProgress(): Promise<void> {
-  await idbClear(STORE)
-}
-
-/**
- * 按 updatedAt 升序重放；遇到失败立即停下并返回已发送条数，保持顺序
- * （服务端 LWW 依赖时间单调）。keepalive 用于页面隐藏/卸载时的兜底，
- * body 很小，不受 64KB 限制。
- */
-export async function flushProgress(options: { keepalive?: boolean } = {}): Promise<number> {
-  const rows = (await pendingProgress()).sort((a, b) => a.updatedAt - b.updatedAt)
-
+export async function flushProgress(options: { keepalive?: boolean; shouldContinue?: () => boolean } = {}): Promise<number> {
+  const generation = progressGeneration()
+  const isCurrent = () => generation === progressGeneration() && (options.shouldContinue?.() ?? true)
+  const items = (await idbAll<PendingProgress>(STORE)).sort((a, b) => progressUpdatedAt(a.row) - progressUpdatedAt(b.row))
   let sent = 0
-  for (const row of rows) {
+  for (const item of items) {
+    if (!isCurrent()) break
+    const session = await idbGet<Session>('kv', 'session')
+    if (!isCurrent()) break
+    if (session?.uid !== item.accountId) continue
     try {
-      await putServerProgress(row, options.keepalive ?? false)
+      await putServerProgress(item.row, options.keepalive ?? false, item.accountId)
     } catch {
-      return sent
+      break
     }
-    await removePendingIfCurrent(row)
+    if (!isCurrent()) break
+    await removePendingIfCurrent(item)
     sent += 1
   }
   return sent
 }
 
-/** 只删仍是这一版的行：PUT 期间可能有更新的本地写入，不能连带删掉 */
-function removePendingIfCurrent(row: ProgressRow): Promise<void> {
-  return idbTransact([STORE], 'readwrite', (tx) => {
+async function removePendingIfCurrent(item: PendingProgress): Promise<void> {
+  await idbTransact([STORE], 'readwrite', (tx) => {
     const store = tx.objectStore(STORE)
-    const request = store.get(row.tid)
+    const request = store.get(item.row.tid)
     request.onsuccess = () => {
-      const current = request.result as ProgressRow | undefined
-      if (current?.updatedAt === row.updatedAt) store.delete(row.tid)
+      const current = request.result as PendingProgress | undefined
+      if (current?.accountId === item.accountId && sameProgress(current.row, item.row)) store.delete(item.row.tid)
     }
   })
 }

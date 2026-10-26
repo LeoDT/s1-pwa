@@ -11,21 +11,22 @@ import { syncHistoryMirror } from '@/lib/progress'
 export function HistorySync() {
   const queryClient = useQueryClient()
   const session = useSession()
-  const signedIn = Boolean(session.data)
+  const uid = session.data?.uid
 
   useEffect(() => {
-    if (!signedIn) return
+    if (uid == null) return
 
     let active = true
 
     const sync = async () => {
       try {
-        await flushProgress()
+        await flushProgress({ shouldContinue: () => active })
       } catch {
         // 未登录/离线：继续尝试同步镜像
       }
+      if (!active) return
       try {
-        await syncHistoryMirror()
+        await syncHistoryMirror(100, () => active)
       } catch {
         // 未登录/离线：本地镜像照常可用
       }
@@ -40,7 +41,7 @@ export function HistorySync() {
       active = false
       window.removeEventListener('online', onOnline)
     }
-  }, [queryClient, signedIn])
+  }, [queryClient, uid])
 
   return null
 }

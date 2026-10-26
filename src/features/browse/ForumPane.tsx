@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ThreadSummary } from '@shared/types'
-import { fetchForumPage, useBoards, useForumPages, useProgressIndex } from './queries'
+import { fetchForumPage, useBoards, useForumPages, useProgressIndex, type ObservedForumPage } from './queries'
 import { ThreadRow } from './ThreadRow'
 import { BoardTabs } from './BoardTabs'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/states'
@@ -11,7 +11,7 @@ import { getListState, markFromList, rememberListState } from '@/lib/navigation'
 import { usePullToRefresh, PULL_THRESHOLD } from '@/lib/usePullToRefresh'
 import { rememberFid } from './lastForum'
 import { useMediaQuery } from '@/lib/useMediaQuery'
-import { getNewReplies, getProgress } from '@/lib/progress'
+import { getNewReplies, getProgress, recordThreadOpened } from '@/lib/progress'
 import { useDeferredLoading } from '@/lib/useDeferredLoading'
 import { useSession } from '@/features/auth/useSession'
 import { useListRefresh } from '@/lib/useListRefresh'
@@ -30,6 +30,9 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   const progress = useProgressIndex()
   const session = useSession()
   const identity = `${fid}:${session.data?.uid ?? 'unknown'}`
+  const accountRef = useRef(session.data?.uid)
+  accountRef.current = session.data?.uid
+  const openGenerationRef = useRef(0)
 
   const wide = useMediaQuery('(min-width: 1024px)')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -57,12 +60,12 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   // 同一帖子可能同时出现在置顶/下一页，按 tid 去重
   const threads = useMemo(() => {
     const seen = new Set<number>()
-    const rows: ThreadSummary[] = []
+    const rows: Array<ThreadSummary & { observation: ObservedForumPage['observation']; fid: number; forumName: string }> = []
     for (const page of forum.data?.pages ?? []) {
       for (const thread of page.threads) {
         if (seen.has(thread.tid)) continue
         seen.add(thread.tid)
-        rows.push(thread)
+        rows.push({ ...thread, observation: page.observation, fid: page.fid, forumName: page.name })
       }
     }
     return rows
@@ -101,20 +104,30 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
     return () => observer.disconnect()
   }, [forum.hasNextPage, forum.isFetchingNextPage, forum.fetchNextPage, isBusy, refreshing])
 
-  const openThread = (tid: number) => {
+  const openThread = (thread: typeof threads[number]) => {
     rememberListState(fid, scrollTopRef.current)
     markFromList()
     // 大屏列表一直在左边，不需要堆历史；小屏 push 一次，保证系统返回能回列表
-    void openAtProgress(tid, wide)
+    void openAtProgress(thread, wide)
   }
 
-  /** 有本地进度就续读（定位到上次楼层），否则从第 1 页开始 */
-  const openAtProgress = async (tid: number, replace: boolean) => {
+  /** Entering records the list's observation (including an unknown count) before navigation. */
+  const openAtProgress = async (thread: typeof threads[number], replace: boolean) => {
+    const generation = ++openGenerationRef.current
+    const accountId = session.data?.uid
+    if (session.data) {
+      await recordThreadOpened(
+        { tid: thread.tid, fid: thread.fid, forumName: thread.forumName, title: thread.title },
+        { ...thread.observation, replies: thread.replies },
+        session.data.uid,
+      ).catch(() => undefined)
+    }
+    if (generation !== openGenerationRef.current || accountRef.current !== accountId) return
+    const tid = thread.tid
     const local = await getProgress(tid).catch(() => undefined)
-    // 镜像里没有时退回服务端索引的页码（跨设备、且不在最近 100 条内）
-    const fromServer = progress.data?.find((row) => row.tid === tid)
-    const page = local?.lastPage ?? fromServer?.lastPage ?? 1
-    const hash = local?.lastPid ? `pid${local.lastPid}` : undefined
+    if (generation !== openGenerationRef.current || accountRef.current !== accountId) return
+    const page = local?.position?.page ?? 1
+    const hash = local?.position?.pid ? `pid${local.position.pid}` : undefined
 
     if (page > 1) {
       void navigate({
@@ -182,9 +195,9 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
                     key={thread.tid}
                     thread={thread}
                     active={thread.tid === activeTid}
-                    read={Boolean(entry)}
-                    newReplies={getNewReplies(thread.replies, entry?.replies) ?? 0}
-                    onOpen={() => openThread(thread.tid)}
+                    read={Boolean(entry && entry.openedAt > 0)}
+                    newReplies={getNewReplies(thread.replies, entry?.read?.replies) ?? 0}
+                    onOpen={() => openThread(thread)}
                   />
                 )
               })}

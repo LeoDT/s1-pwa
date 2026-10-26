@@ -1,11 +1,11 @@
 import type { LoginForm, Session } from '@shared/types'
-import { idbDel, idbGet, idbSet } from './db'
+import { idbDel, idbGet, idbTransact } from './db'
 import { parsePage, parseUid, type ParsedPage } from './parser/dom'
 import { loginErrorMessage, parseLoginForm } from './parser/login'
 import { clearJar } from './cookieJar'
 import { debug } from './log'
-import { clearPendingProgress } from './outbox'
 import { clearProgress } from './progress'
+import { invalidateProgressOperations, notifyProgress } from './progressEvents'
 import { proxyFetch, UPSTREAM_ROOT, upstreamUrl } from './proxy'
 
 const SESSION_KEY = 'session'
@@ -43,10 +43,32 @@ export async function getSession(): Promise<Session | null> {
 }
 
 export async function saveSession(session: Session): Promise<void> {
-  await idbSet('kv', SESSION_KEY, session)
+  let reset = false
+  await idbTransact(['kv', 'progress', 'outbox'], 'readwrite', (tx) => {
+    const kv = tx.objectStore('kv')
+    const current = kv.get(SESSION_KEY)
+    const owner = kv.get('readingOwner')
+    let ready = 0
+    const commit = () => {
+      if (++ready !== 2) return
+      const previousUid = (current.result as Session | undefined)?.uid ?? (owner.result as number | undefined)
+      if (previousUid !== undefined && previousUid !== session.uid) {
+        invalidateProgressOperations()
+        tx.objectStore('progress').clear()
+        tx.objectStore('outbox').clear()
+        reset = true
+      }
+      kv.put(session, SESSION_KEY)
+      kv.put(session.uid, 'readingOwner')
+    }
+    current.onsuccess = commit
+    owner.onsuccess = commit
+  })
+  if (reset) notifyProgress()
 }
 
 export async function clearSession(): Promise<void> {
+  invalidateProgressOperations()
   await idbDel('kv', SESSION_KEY)
 }
 
@@ -166,5 +188,4 @@ export async function logout(): Promise<void> {
   await clearSession()
   // 本地历史属于当前账号，退出时一并清掉，避免换账号后串数据
   await clearProgress()
-  await clearPendingProgress()
 }

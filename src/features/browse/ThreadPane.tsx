@@ -7,6 +7,7 @@ import { ToolbarButton } from '@/components/ToolbarButton'
 import { ErrorState, PostSkeleton } from '@/components/states'
 import { useBoards, useThreadPage } from './queries'
 import { useReadingProgress } from './useReadingProgress'
+import { useThreadReadState } from './useThreadReadState'
 import { DEFAULT_BOARDS } from '@/lib/boards'
 import { downloadAttachment } from '@/lib/attachments'
 import { errorMessage } from '@/lib/errors'
@@ -213,6 +214,7 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
 
   const data = query.data
   const boardName = boards.data?.find((board) => board.fid === data?.fid)?.name
+  useThreadReadState(tid, data, boardName)
   useReadingProgress(scrollRef, data, boardName)
 
   return (

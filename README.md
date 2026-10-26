@@ -5,6 +5,8 @@ Stage1st（Discuz X3.5）只读阅读器 PWA：用 S1 账号登录、按板块�
 
 设计文档见 [`docs/`](./docs/)：总览 / 架构 / 设计系统 / 数据模型 / 解析规范 / 路线图。
 
+> **破坏性阅读状态升级：** reading schema 2 会清空全部旧阅读历史与位置。客户端 `s1read` IndexedDB 升至 v2 仅重置 `progress`/`outbox`，保留登录凭证、session、偏好、板块和图片。部署前先应用 `migrations/0003_reading_state.sql`（只重建 D1 `progress`，不影响其它数据），再提供新 Worker/UI；旧客户端历史 API 会收到 409，需更新客户端。`0001`/`0002` 保留作迁移审计记录。
+
 ## 当前进度
 
 | 里程碑 | 状态 |

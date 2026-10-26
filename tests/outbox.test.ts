@@ -1,99 +1,114 @@
-// fake-indexeddb 必须先于 ./db 求值，jsdom 本身没有 IndexedDB
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ProgressRow } from '@shared/types'
-import { STORE_NAMES, idbClear, idbGet } from '@/lib/db'
+import { STORE_NAMES, idbClear, idbGet, idbSet } from '@/lib/db'
 import { flushProgress, pendingProgress, queueProgress } from '@/lib/outbox'
-import { putServerProgress } from '@/lib/progress'
+import { putServerProgress } from '@/lib/historyApi'
+import { observation, position, progressRow } from './progress-fixtures'
 
-vi.mock('@/lib/progress', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/progress')>()
-  return { ...actual, putServerProgress: vi.fn() }
-})
-
+vi.mock('@/lib/historyApi', () => ({ putServerProgress: vi.fn() }))
 const put = vi.mocked(putServerProgress)
 
-function row(tid: number, updatedAt: number): ProgressRow {
-  return {
-    tid,
-    fid: 6,
-    forumName: '测试板块',
-    title: `帖子 ${tid}`,
-    lastPid: tid * 10,
-    lastFloor: 1,
-    lastPage: 1,
-    totalPages: 1,
-    replies: 0,
-    updatedAt,
-  }
-}
+beforeEach(async () => {
+  put.mockReset()
+  put.mockResolvedValue(undefined)
+  await Promise.all(STORE_NAMES.map((store) => idbClear(store)))
+  await idbSet('kv', 'session', { uid: 7 })
+})
 
-describe('阅读进度落地', () => {
-  beforeEach(async () => {
-    put.mockReset()
-    put.mockResolvedValue(undefined)
-    await Promise.all(STORE_NAMES.map((store) => idbClear(store)))
+describe('progress outbox', () => {
+  it('persists merged progress locally and in outbox, merging event groups independently', async () => {
+    await queueProgress(progressRow({ read: observation(10, 'read', 0) }))
+    await queueProgress(progressRow({ position: position(20, 'position', 9) }))
+    expect(await idbGet('progress', 50)).toMatchObject({ read: observation(10, 'read', 0), position: position(20, 'position', 9) })
+    expect(await idbGet('outbox', 50)).toEqual({ accountId: 7, row: await idbGet('progress', 50) })
   })
 
-  it('queueProgress 一次写入镜像与 outbox', async () => {
-    const value = row(1, 100)
-    await queueProgress(value)
-
-    expect(await idbGet<ProgressRow>('progress', 1)).toEqual(value)
-    expect(await idbGet<ProgressRow>('outbox', 1)).toEqual(value)
-  })
-
-  it('较旧的写入不覆盖较新的', async () => {
-    await queueProgress(row(1, 200))
-    await queueProgress(row(1, 100))
-
-    expect((await idbGet<ProgressRow>('progress', 1))?.updatedAt).toBe(200)
-    expect((await idbGet<ProgressRow>('outbox', 1))?.updatedAt).toBe(200)
-  })
-
-  it('未知计数不覆盖镜像中的已知回复数', async () => {
-    await queueProgress(row(7, 10))
-    await queueProgress(row(7, 20))
-    await queueProgress({ ...row(7, 30), replies: null })
-    expect((await idbGet<ProgressRow>('progress', 7))?.replies).toBe(0)
-    expect((await idbGet<ProgressRow>('outbox', 7))?.replies).toBe(0)
-  })
-
-  it('即使 outbox 已清空，旧时间戳写入也不能覆盖较新的镜像', async () => {
-    await queueProgress(row(8, 200))
-    await queueProgress(row(8, 100))
-    expect((await idbGet<ProgressRow>('progress', 8))?.updatedAt).toBe(200)
-    expect((await idbGet<ProgressRow>('outbox', 8))?.updatedAt).toBe(200)
-  })
-
-  it('flushProgress 按 updatedAt 升序发送并清空 outbox', async () => {
-    await queueProgress(row(2, 200))
-    await queueProgress(row(1, 100))
-
-    await expect(flushProgress()).resolves.toBe(2)
-    expect(put.mock.calls.map(([sent]) => sent.tid)).toEqual([1, 2])
+  it('uses explicit account id as a same-transaction session guard only when supplied', async () => {
+    await idbSet('kv', 'session', { uid: 7 })
+    await expect(queueProgress(progressRow(), 8)).resolves.toBeUndefined()
+    expect(await idbGet('progress', 50)).toBeUndefined()
     expect(await pendingProgress()).toEqual([])
-    // 镜像保留，供离线着色/续读
-    expect(await idbGet<ProgressRow>('progress', 1)).toBeTruthy()
+    await expect(queueProgress(progressRow(), 7)).resolves.toMatchObject({ tid: 50 })
+    expect(await idbGet('progress', 50)).toMatchObject({ tid: 50 })
+    await expect(queueProgress(progressRow({ tid: 51 }), 8)).resolves.toBeUndefined()
+    expect(await idbGet('progress', 51)).toBeUndefined()
+    await expect(queueProgress(progressRow({ tid: 51 }))).resolves.toMatchObject({ tid: 51 })
   })
 
-  it('发送失败时立即停下并保留队列', async () => {
+  it('orders sends by aggregate progress timestamp and passes keepalive to historyApi', async () => {
+    await queueProgress(progressRow({ tid: 1, openedAt: 30 }))
+    await queueProgress(progressRow({ tid: 2, read: observation(10, 'read', 0) }))
+    expect(await flushProgress({ keepalive: true })).toBe(2)
+    expect(put.mock.calls.map(([row]) => row.tid)).toEqual([2, 1])
+    expect(put).toHaveBeenCalledWith(expect.anything(), true, 7)
+    expect(await pendingProgress()).toEqual([])
+  })
+
+  it('requires a current account even when no expected uid was passed', async () => {
+    await idbClear('kv')
+    await expect(queueProgress(progressRow())).resolves.toBeUndefined()
+    expect(await idbGet('progress', 50)).toBeUndefined()
+    expect(await idbGet('outbox', 50)).toBeUndefined()
+  })
+
+  it('does not send an old owner item after an account switch and leaves it queued', async () => {
+    const queued = progressRow({ metadataVersion: { at: 1, id: 'metadata' } })
+    await queueProgress(queued)
+    await idbSet('kv', 'session', { uid: 8 })
+    expect(await flushProgress()).toBe(0)
+    expect(put).not.toHaveBeenCalled()
+    expect(await pendingProgress()).toEqual([queued])
+    expect(await idbGet('outbox', 50)).toEqual({ accountId: 7, row: queued })
+  })
+
+  it('returns zero and keeps pending items when the server PUT throws', async () => {
+    await queueProgress(progressRow({ tid: 1 }))
+    await queueProgress(progressRow({ tid: 2 }))
     put.mockRejectedValueOnce(new Error('offline'))
-    await queueProgress(row(1, 100))
-    await queueProgress(row(2, 200))
-
-    await expect(flushProgress()).resolves.toBe(0)
-    expect((await pendingProgress()).map((item) => item.tid).sort()).toEqual([1, 2])
+    expect(await flushProgress()).toBe(0)
+    expect((await pendingProgress()).map((row) => row.tid).sort()).toEqual([1, 2])
   })
 
-  it('PUT 期间产生的更新版本不会被连带删除', async () => {
-    await queueProgress(row(1, 100))
-    put.mockImplementationOnce(async (sent) => {
-      // 模拟发送过程中用户又往下滚了：outbox 出现更新的版本
-      await queueProgress({ ...sent, updatedAt: sent.updatedAt + 100 })
-    })
+  it('does not mutate source event timestamps while retrying failed PUTs', async () => {
+    const record = progressRow({ read: observation(77, 'fixed-read', 4), position: position(85, 'fixed-position', 9) })
+    await queueProgress(record)
+    put.mockRejectedValueOnce(new Error('offline'))
+    expect(await flushProgress()).toBe(0)
+    expect(await flushProgress()).toBe(1)
+    expect(put.mock.calls[0]![0]).toEqual(put.mock.calls[1]![0])
+    expect(put.mock.calls[1]![0]).toMatchObject({ read: record.read, position: record.position })
+  })
 
-    await expect(flushProgress()).resolves.toBe(1)
-    expect((await pendingProgress()).map((item) => item.updatedAt)).toEqual([200])
+  it('does not start a send when its active sync guard is already invalid', async () => {
+    await queueProgress(progressRow())
+    expect(await flushProgress({ shouldContinue: () => false })).toBe(0)
+    expect(put).not.toHaveBeenCalled()
+    expect(await pendingProgress()).toHaveLength(1)
+  })
+
+  it('does not acknowledge an item after its active sync guard is invalidated', async () => {
+    const queued = progressRow({ metadataVersion: { at: 1, id: 'metadata' } })
+    await queueProgress(queued)
+    let current = true
+    put.mockImplementationOnce(async () => { current = false })
+    expect(await flushProgress({ shouldContinue: () => current })).toBe(0)
+    expect(await pendingProgress()).toEqual([queued])
+    expect(put).toHaveBeenCalledWith(queued, false, 7)
+  })
+
+  it('preserves a concurrent change even when aggregate max timestamp is unchanged', async () => {
+    const initial = progressRow({ read: observation(90, 'read-a', 0), position: position(100, 'position-a', 1) })
+    await queueProgress(initial)
+    put.mockImplementationOnce(async (sent) => {
+      await queueProgress(progressRow({ position: position(100, 'position-z', 2) }), 7)
+      expect(sent.tid).toBe(50)
+    })
+    expect(await flushProgress()).toBe(1)
+    expect(await pendingProgress()).toMatchObject([{ position: position(100, 'position-z', 2) }])
+    expect(await idbGet('outbox', 50)).toEqual({
+      accountId: 7,
+      row: expect.objectContaining({ position: position(100, 'position-z', 2) }),
+    })
   })
 })

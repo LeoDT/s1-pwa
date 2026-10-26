@@ -1,8 +1,9 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { LogIn, Trash2 } from 'lucide-react'
 import type { ProgressRow } from '@shared/types'
+import { progressUpdatedAt } from '@shared/progress'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/states'
 import { useSetSettingsOpen } from '@/app/chrome'
 import { useSession } from '@/features/auth/useSession'
@@ -25,9 +26,8 @@ import {
   deleteServerProgress,
   loadProgress,
   removeProgress,
-  syncHistoryMirror,
+  subscribeProgress,
 } from '@/lib/progress'
-import { clearPendingProgress, removePendingProgress } from '@/lib/outbox'
 
 const AUTH_CODES = new Set(['auth_required', 'token_required', 'token_invalid'])
 
@@ -35,14 +35,9 @@ function isAuthError(error: unknown): boolean {
   return error instanceof ApiError && AUTH_CODES.has(error.code)
 }
 
-/** 离线时退回本地镜像；登录失效仍以错误提示引导重新登录 */
+/** History reads are local-only; remote synchronization is owned by the app-level sync service. */
 async function loadHistory(): Promise<ProgressRow[]> {
-  try {
-    return await syncHistoryMirror(50)
-  } catch (error) {
-    if (isAuthError(error)) throw error
-    return loadProgress()
-  }
+  return loadProgress()
 }
 
 interface HistoryPaneProps {
@@ -66,6 +61,10 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
   const accountId = session.data?.uid ?? 'unknown'
   const identity = String(accountId)
 
+  useEffect(() => subscribeProgress(() => {
+    void queryClient.invalidateQueries({ queryKey: ['history', accountId] })
+  }), [accountId, queryClient])
+
   // 未登录时历史接口必然 401，直接用引导代替请求
   const guest = session.isSuccess && session.data === null
 
@@ -87,7 +86,9 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
   const commitHistory = useCallback(async (rows: ProgressRow[], isCurrent: () => boolean) => {
     await mergeProgress(rows, isCurrent)
     if (!isCurrent()) return
-    queryClient.setQueryData(['history', accountId], rows)
+    const local = await loadProgress()
+    if (!isCurrent()) return
+    queryClient.setQueryData(['history', accountId], local)
     if (scrollRef.current) scrollRef.current.scrollTop = 0
   }, [accountId, queryClient])
   const { refresh, refreshing, error: refreshError } = useListRefresh(
@@ -108,7 +109,6 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
     mutationFn: async (tid: number) => {
       await deleteServerProgress(tid)
       await removeProgress(tid)
-      await removePendingProgress(tid)
     },
     onSuccess: invalidate,
   })
@@ -117,7 +117,6 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
     mutationFn: async () => {
       await clearServerHistory()
       await clearProgress()
-      await clearPendingProgress()
     },
     onSuccess: invalidate,
   })
@@ -138,8 +137,8 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
 
   const open = (row: ProgressRow) => {
     markFromList()
-    const page = row.lastPage ?? 1
-    const hash = row.lastPid ? `pid${row.lastPid}` : undefined
+    const page = row.position?.page ?? 1
+    const hash = row.position?.pid ? `pid${row.position.pid}` : undefined
 
     if (page > 1) {
       void navigate({
@@ -226,7 +225,7 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
                       key={row.tid}
                       active={active}
                       badgeAccent={active}
-                      badgeLabel={row.lastFloor ? `读到第 ${row.lastFloor} 楼` : '未记录楼层'}
+                      badgeLabel={row.position?.floor ? `读到第 ${row.position.floor} 楼` : '未记录楼层'}
                       badge={
                         <span
                           className={cn(
@@ -234,11 +233,11 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
                             active ? 'text-accent-strong' : 'text-text',
                           )}
                         >
-                          {row.lastFloor ?? '—'}
+                          {row.position?.floor ?? '—'}
                         </span>
                       }
                       title={row.title || '（无标题）'}
-                      meta={[row.forumName, formatWhen(row.updatedAt)].filter(Boolean).join(' · ')}
+                      meta={[row.forumName, formatWhen(progressUpdatedAt(row))].filter(Boolean).join(' · ')}
                       onOpen={() => open(row)}
                       action={
                         <button

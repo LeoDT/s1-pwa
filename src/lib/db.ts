@@ -1,9 +1,9 @@
 /**
  * IndexedDB 封装。库名与 store 名称见 docs/data-model.md §5.1。
- * 所有 store 使用显式 key（非自增），因此升级时只需补建缺失的 store。
+ * 所有 store 使用显式 key（非自增）。阅读数据升级不影响凭证与偏好。
  */
 const DB_NAME = 's1read'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export const STORE_NAMES = [
   'kv',
@@ -23,14 +23,26 @@ function openDb(): Promise<IDBDatabase> {
   dbPromise ??= new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result
+      if (event.oldVersion < 2) {
+        for (const name of ['progress', 'outbox']) {
+          if (db.objectStoreNames.contains(name)) db.deleteObjectStore(name)
+        }
+      }
       for (const name of STORE_NAMES) {
         if (!db.objectStoreNames.contains(name)) db.createObjectStore(name)
       }
     }
 
-    request.onsuccess = () => resolve(request.result)
+    request.onsuccess = () => {
+      const db = request.result
+      db.onversionchange = () => {
+        db.close()
+        dbPromise = null
+      }
+      resolve(db)
+    }
     request.onerror = () => reject(request.error ?? new Error('无法打开本地数据库'))
     request.onblocked = () => reject(new Error('本地数据库被其他标签页占用，请关闭后重试'))
   })

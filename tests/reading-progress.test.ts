@@ -4,10 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { ThreadPage } from '@shared/types'
 
-const mocks = vi.hoisted(() => ({ queue: vi.fn(async (_row: unknown) => {}), get: vi.fn(async (_tid: number) => undefined) }))
+const mocks = vi.hoisted(() => ({ record: vi.fn(async (_metadata: unknown, _position: unknown) => {}), version: vi.fn(() => ({ at: 100, id: 'version' })) }))
 vi.mock('@/features/auth/useSession', () => ({ useSession: () => ({ data: { uid: 7 } }) }))
-vi.mock('@/lib/outbox', () => ({ queueProgress: mocks.queue, flushProgress: vi.fn(async () => 0) }))
-vi.mock('@/lib/progress', () => ({ getProgress: mocks.get }))
+vi.mock('@/lib/outbox', () => ({ flushProgress: vi.fn(async () => 0) }))
+vi.mock('@/lib/progress', () => ({ recordReadingPosition: mocks.record, createProgressVersion: mocks.version }))
 import { useReadingProgress } from '@/features/browse/useReadingProgress'
 
 function page(tid: number, replies: number | null, pid: number): ThreadPage {
@@ -24,7 +24,7 @@ class Observer {
   fire(target: Element) { this.callback([{ target, isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver) }
 }
 
-describe('useReadingProgress reply baseline and thread isolation', () => {
+describe('useReadingProgress position observations', () => {
   beforeAll(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true })
   let root: Root | undefined
   let host: HTMLDivElement | undefined
@@ -32,7 +32,7 @@ describe('useReadingProgress reply baseline and thread isolation', () => {
   afterEach(async () => {
     if (root) await act(async () => root!.unmount())
     client?.clear(); host?.remove(); root = undefined; host = undefined; client = undefined
-    vi.unstubAllGlobals(); mocks.queue.mockClear(); mocks.get.mockReset()
+    vi.unstubAllGlobals(); mocks.record.mockClear(); mocks.version.mockClear()
   })
   function mount(initial: ThreadPage) {
     vi.stubGlobal('IntersectionObserver', Observer)
@@ -52,39 +52,32 @@ describe('useReadingProgress reply baseline and thread isolation', () => {
     return { setData, scroll }
   }
 
-  it('unknown page -> cached baseline -> reliable page uses newly observed count', async () => {
-    mocks.get.mockResolvedValue({ replies: 580 })
-    const { setData } = mount(page(11, null, 110))
-    await act(async () => Promise.resolve())
+  it('records position observations without coupling reply counts into the position write', async () => {
+    const { setData } = mount(page(11, 18194, 110))
     act(() => setData(page(11, 18194, 111)))
+    act(() => {
+      const article = document.createElement('article'); article.id = 'pid111'
+      Observer.instances.at(-1)?.fire(article)
+    })
     await act(async () => root!.unmount())
     root = undefined
-    expect(mocks.queue).toHaveBeenCalledWith(expect.objectContaining({ tid: 11, replies: 18194 }))
-  })
-
-  it('an A→B→A visit ignores the first A fallback even when it resolves last', async () => {
-    const pending: Array<(row: { replies: number } | undefined) => void> = []
-    mocks.get.mockImplementation(() => new Promise((resolve) => pending.push(resolve)))
-    const { setData } = mount(page(11, null, 110))
-    await act(async () => Promise.resolve())
-    act(() => setData(page(22, null, 220)))
-    await act(async () => Promise.resolve())
-    act(() => setData(page(11, null, 111)))
-    await act(async () => Promise.resolve())
-    expect(pending).toHaveLength(3)
-    await act(async () => { pending[2]?.({ replies: 600 }); await Promise.resolve() })
-    await act(async () => { pending[0]?.({ replies: 580 }); await Promise.resolve() })
-    await act(async () => root!.unmount())
-    root = undefined
-    expect(mocks.queue).toHaveBeenCalledWith(expect.objectContaining({ tid: 11, replies: 600 }))
+    expect(mocks.record).toHaveBeenCalledWith(
+      expect.objectContaining({ tid: 11, fid: 6, title: 't11' }),
+      expect.objectContaining({ pid: 111, floor: 1, page: 1, totalPages: 1, at: 100, id: 'version' }),
+      7,
+    )
+    expect(mocks.record).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ replies: 18194 }))
   })
 
   it('switching threads on the same page resets the position to the new thread', async () => {
-    mocks.get.mockResolvedValue(undefined)
     const { setData } = mount(page(11, 0, 110))
     act(() => setData(page(22, 9, 220)))
     await act(async () => root!.unmount())
     root = undefined
-    expect(mocks.queue).toHaveBeenCalledWith(expect.objectContaining({ tid: 22, lastPid: 220, replies: 9 }))
+    expect(mocks.record).toHaveBeenCalledWith(
+      expect.objectContaining({ tid: 22 }),
+      expect.objectContaining({ pid: 220, page: 1 }),
+      7,
+    )
   })
 })

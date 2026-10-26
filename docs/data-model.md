@@ -16,80 +16,55 @@ cookie (X-S1-Cookie) ──探针──► uid ──HMAC-SHA256(HISTORY_SECRET)
 - 换账号：cookie 变 ⇒ uid 变 ⇒ 分区自动隔离。
 - 探针结果在 isolate 内存 LRU 缓存（key = `sha256(cookie)`，TTL 10 分钟，容量 100）。
 
-## 2. D1 表结构
+## 2. D1 表结构（reading schema 2）
+
+`migrations/0001` 与 `0002` 是保留的审计历史；新结构由 `migrations/0003_reading_state.sql` 建立。它只 DROP/rebuild `progress`，有意清空全部旧阅读记录，其他 D1 数据不动。
 
 ```sql
--- 应用 0001_init.sql 与 0002_nullable_replies.sql 后的结构
-CREATE TABLE IF NOT EXISTS progress (
-  user_key    TEXT    NOT NULL,
-  tid         INTEGER NOT NULL,
-  fid         INTEGER NOT NULL DEFAULT 0,
-  forum_name  TEXT    NOT NULL DEFAULT '',
-  title       TEXT    NOT NULL DEFAULT '',
-  last_pid    INTEGER,            -- 上次阅读楼层 pid（定位锚点）
-  last_floor  INTEGER,            -- 该楼层号（首楼=1），仅展示用
-  last_page   INTEGER,            -- 该楼层所在页
-  total_pages INTEGER,            -- 当时的总页数
-  replies     INTEGER,           -- 阅读回复数快照；NULL 表示未知，0 是真实零回复
-  updated_at  INTEGER NOT NULL,   -- 客户端时钟（ms），用于 LWW
+CREATE TABLE progress (
+  user_key             TEXT NOT NULL,
+  tid                  INTEGER NOT NULL,
+  fid                  INTEGER NOT NULL DEFAULT 0,
+  forum_name           TEXT NOT NULL DEFAULT '',
+  title                TEXT NOT NULL DEFAULT '',
+  metadata_at          INTEGER,
+  metadata_id          TEXT,
+  opened_at            INTEGER NOT NULL DEFAULT 0,
+  read_at              INTEGER,
+  read_id              TEXT,
+  read_replies         INTEGER,
+  position_at          INTEGER,
+  position_id          TEXT,
+  position_pid         INTEGER,
+  position_floor       INTEGER,
+  position_page        INTEGER,
+  position_total_pages INTEGER,
   PRIMARY KEY (user_key, tid)
 ) WITHOUT ROWID;
-
-CREATE INDEX IF NOT EXISTS idx_progress_recent
-  ON progress (user_key, updated_at DESC);
+CREATE INDEX idx_progress_recent ON progress
+  (user_key, MAX(opened_at, COALESCE(read_at, 0), COALESCE(position_at, 0)) DESC);
 ```
 
-写入（LWW：仅当客户端时间更新时才覆盖）：
+`openedAt` 表示最近一次进入帖子的时刻；`read` 和 `position` 是两个独立事件组。标题与板块信息另按 `metadataVersion: {at,id}|null` 合并，使用实际取得帖子/板块元数据的网络请求版本；仅保存位置不能刷新元数据版本或改写标题、fid、forumName，也不按标题文本新旧比较。元数据、read、position 各自按 `(at, id)` 比较：较新的毫秒时间胜出，同毫秒按规范小写 UUID `id` 字典序决定，保证多设备合并确定性。数据观察的 `at` 在发起对应网络请求时生成；读缓存、上传、重试不得生成新时间/ID。位置事件只在观察到位置变化时生成时间/ID；`openedAt` 在进入时独立更新。客户端时钟偏差仍可能影响跨设备新旧判断。
 
-```sql
-INSERT INTO progress (user_key, tid, fid, forum_name, title, last_pid, last_floor,
-                      last_page, total_pages, replies, updated_at)
-VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)
-ON CONFLICT(user_key, tid) DO UPDATE SET
-  fid         = excluded.fid,
-  forum_name  = excluded.forum_name,
-  title       = excluded.title,
-  last_pid    = COALESCE(excluded.last_pid, progress.last_pid),
-  last_floor  = COALESCE(excluded.last_floor, progress.last_floor),
-  last_page   = COALESCE(excluded.last_page, progress.last_page),
-  total_pages = COALESCE(excluded.total_pages, progress.total_pages),
-  replies     = COALESCE(excluded.replies, progress.replies),
-  updated_at  = excluded.updated_at
-WHERE excluded.updated_at >= progress.updated_at;
-```
-
-`0002_nullable_replies.sql` 保留旧记录（包括无法判断来源的 0），只允许今后的未知计数使用 NULL。部署新版本前需应用该迁移；未知更新不覆盖已有有效回复数。
-
-容量估算：单用户 1 万帖 ≈ 2MB，远低于 D1 免费额度（5GB）。保留策略：`GET /api/history?limit=` 限制读取；不做自动清理（可选 `prune` 任务，v1 不做）。
+列表/历史排序按派生时间 `max(openedAt, read.at, position.at)`，不是一个可写的全局 `updatedAt`。
 
 ## 3. 存储接口（迁移 seam）
 
 ```ts
-// server/core/store.ts
 export interface ProgressRow {
-  tid: number;
-  fid: number;
-  forumName: string;
-  title: string;
-  lastPid: number | null;
-  lastFloor: number | null;
-  lastPage: number | null;
-  totalPages: number | null;
-  replies: number | null;
-  updatedAt: number;
-}
-
-export interface ProgressStore {
-  upsert(userKey: string, row: ProgressRow): Promise<void>;
-  list(userKey: string, limit: number, offset: number): Promise<ProgressRow[]>;
-  index(userKey: string, limit: number): Promise<Pick<ProgressRow, 'tid'|'replies'|'lastFloor'|'lastPage'|'updatedAt'>[]>;
-  remove(userKey: string, tid: number): Promise<void>;
-  clear(userKey: string): Promise<void>;
+  tid: number; fid: number; forumName: string; title: string;
+  metadataVersion: { at: number; id: string } | null;
+  openedAt: number;
+  read: { replies: number; at: number; id: string } | null;
+  position: {
+    pid: number; floor: number | null; page: number;
+    totalPages: number; at: number; id: string;
+  } | null;
 }
 ```
 
-- `server/cf/store.ts` → `D1ProgressStore`（`db.prepare(...).bind(...).run()/all()`）
-- 迁 Node 时 → `SqliteProgressStore`（`better-sqlite3`，API 同形）
+`ProgressStore` 提供按用户列出/索引、upsert、单条删除与清空；服务端 `index` 用于后台补齐已读状态，本地列表查询不直接请求它。索引类型是 `Pick<ProgressRow, 'tid'|'openedAt'|'read'>`。D1 持久化层将嵌套事件映射到上面的列。
 
 ## 4. API 契约
 
@@ -138,49 +113,47 @@ export interface ProgressStore {
 
 附件下载：host 同上（实际只会是上游），不限 `Content-Type`，≤ 50MB，`Cache-Control: no-store`，透出 `Content-Disposition`。客户端取回 blob 后触发浏览器下载，避免直连上游掉登录态。
 
-### 4.6 历史接口（均需 `X-S1-Cookie`）
+### 4.6 历史接口（均需 `X-S1-Cookie` 与 `X-Reading-Schema: 2`）
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/history?limit=50&offset=0` | 历史列表（按 `updated_at DESC`） |
-| GET | `/api/history/index?limit=1000` | 轻量索引，用于列表徽章/已读标记 |
-| PUT | `/api/history/:tid` | upsert 单条 |
+| GET | `/api/history?limit=50&offset=0` | 历史列表（按派生最近事件时间排序） |
+| GET | `/api/history/index?limit=1000` | 服务端历史读取；列表徽章索引仅用本地数据 |
+| PUT | `/api/history/:tid` | 合并单条 |
 | DELETE | `/api/history/:tid` | 删除单条 |
 | DELETE | `/api/history` | 清空当前用户 |
 
-`PUT /api/history/:tid` 请求体：
+所有历史端点要求 `X-Reading-Schema: 2`；旧客户端缺少/发送不匹配版本时返回 `409 reading_schema_mismatch`。成功 JSON 响应带 `schemaVersion: 2`，不提供旧格式兼容。
+
+`PUT /api/history/:tid` 请求体（事件组可独立合并）：
 
 ```json
 {
-  "fid": 51,
-  "forumName": "ＰＣ数码",
-  "title": "【论坛美化】S1 NUX",
-  "lastPid": 43400000,
-  "lastFloor": 12,
-  "lastPage": 1,
-  "totalPages": 15,
-  "replies": 580,
-  "updatedAt": 1792893264123
+  "fid": 51, "forumName": "ＰＣ数码", "title": "【论坛美化】S1 NUX",
+  "metadataVersion": { "at": 1792893264123, "id": "00000000-0000-4000-8000-000000000001" },
+  "openedAt": 1792893264000,
+  "read": { "replies": 580, "at": 1792893264123, "id": "00000000-0000-4000-8000-000000000001" },
+  "position": {
+    "pid": 43400000, "floor": 12, "page": 1, "totalPages": 15,
+    "at": 1792893264124, "id": "00000000-0000-4000-8000-000000000002"
+  }
 }
 ```
 
-`replies` 可为非负计数或 `null`；缺失视为未知，真实 `0` 不等于未知。新增未知记录存 NULL，未知更新保留已有有效计数。
-
-响应：
-
-```json
-{ "ok": true }
-```
+任一事件组可为 `null`；`read.replies` 是非负整数（真实 0 有效），未知计数不生成新 read 事件并保留已有基线。响应：`{ "ok": true, "schemaVersion": 2 }`。
 
 `GET /api/history` 响应：
 
 ```json
 {
-  "ok": true,
+  "ok": true, "schemaVersion": 2,
   "items": [
     { "tid": 1826103, "fid": 51, "forumName": "ＰＣ数码", "title": "…",
-      "lastPid": 43400000, "lastFloor": 12, "lastPage": 1,
-      "totalPages": 15, "replies": 580, "updatedAt": 1792893264123 }
+      "metadataVersion": { "at": 1792893264123, "id": "00000000-0000-4000-8000-000000000001" },
+      "openedAt": 1792893264000,
+      "read": { "replies": 580, "at": 1792893264123, "id": "00000000-0000-4000-8000-000000000001" },
+      "position": { "pid": 43400000, "floor": 12, "page": 1, "totalPages": 15,
+                    "at": 1792893264124, "id": "00000000-0000-4000-8000-000000000002" } }
   ]
 }
 ```
@@ -188,7 +161,7 @@ export interface ProgressStore {
 `GET /api/history/index` 响应：
 
 ```json
-{ "ok": true, "items": [{ "tid": 1826103, "replies": 580, "lastFloor": 12, "lastPage": 1, "updatedAt": 1792893264123 }] }
+{ "ok": true, "schemaVersion": 2, "items": [{ "tid": 1826103, "openedAt": 1792893264000, "read": { "replies": 580, "at": 1792893264123, "id": "00000000-0000-4000-8000-000000000001" } }] }
 ```
 
 ### 4.7 错误体
@@ -201,6 +174,7 @@ export interface ProgressStore {
 |---|---|---|
 | 400 | `bad_request` / `blocked_address` | 内部错误提示 |
 | 401 | `token_required` / `token_invalid` | 打开访问令牌设置 |
+| 409 | `reading_schema_mismatch` | 更新到 schema 2 客户端 |
 | 401 | `auth_required` | 「登录已过期」提示 → 设置 → 账号内就地登录 |
 | 403 | `forbidden_host` | 内部错误提示 |
 | 413/415 | `too_large` / `not_image` | 图片/附件提示 |
@@ -210,15 +184,18 @@ export interface ProgressStore {
 
 ## 5. 客户端存储
 
-### 5.1 IndexedDB（`s1read`，version 1）
+### 5.1 IndexedDB（`s1read`，version 2）
+
+v2 有意重置 `progress` 与 `outbox`；保留凭证、session、偏好、板块和图片数据。
 
 | store | key | value | 说明 |
 |---|---|---|---|
 | `kv` | `appToken` | `string` | 访问令牌 |
 | `kv` | `session` | `{uid:number, username?:string, at:number}` | 登录态缓存（uid 来自页面解析） |
+| `kv` | `readingOwner` | `number` | 最近阅读数据所属 uid；即使 session 过期也用于避免账号数据串用 |
 | `jar` | `main` | `{cookies: {name,value,expires?}[]}` | S1 凭证唯一存放点 |
-| `progress` | `tid` | `ProgressRow` | 服务端历史的本地镜像（离线可用、列表着色） |
-| `outbox` | `tid` | `ProgressRow` | 待上传队列（按 tid 去重保留最新） |
+| `progress` | `tid` | `ProgressRow` | 本地进度镜像（离线可用、列表着色） |
+| `outbox` | `tid` | `{accountId:number, row:ProgressRow}` | 待上传合并载荷；每帖一条，按事件组归并并绑定账号 |
 | `boards` | `list` | `{fid, name}[]` | 常用板块（数组顺序即 tab 顺序） |
 | `imgMeta` | `url` | `{size:number, lastUsed:number}` | 图片缓存 LRU 记账 |
 | `meta` | `listScroll:<fid>` | `number` | 列表滚动位置 |
@@ -249,34 +226,25 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 | `['forum', fid]`（无限分页） | 会话，`staleTime/gcTime: Infinity` | 仅下拉/刷新按钮；首次无缓存与追加页正常请求 |
 | `['thread', tid, page]` | 60s | 刷新按钮 |
 | `['history', uid]` | 60s | 显式刷新、历史增删后 `invalidate` |
-| `['progress-index', 'user'或'guest']` | 60s | 写入进度后 `invalidate` |
+| `['progress-index', uid或'guest']` | 60s | 本地事务提交后 `invalidate` |
 | `['locate', tid, pid]` | 会话（Map） | 必要时手动清 |
 
 ### 6.2 写入流程
 
 ```
-读帖 → 组件内维护 lastRead（IntersectionObserver 记录最靠下的可见楼层 pid/floor）
-   │
-   ├─ 每 1s：位置变了 → 一个 IDB 事务写本地镜像 + outbox（不碰网络，离线也成功）
-   ├─ 每 5s：flush() → PUT /api/history/:tid → 成功则删 outbox（仅当仍是这一版）
-   ├─ 路由离开 / visibilitychange(hidden) / pagehide → 先补落盘，再 flush({keepalive:true})
-   └─ flush 失败（离线/5xx）→ 留在 outbox，下次 online / 启动时重放
+列表请求开始时固定该次列表观察；仅显式刷新或无限滚动追加才取新快照
+进入帖子：立即以列表观察写 openedAt（早于帖子网络加载）
+成功取得帖子内容：用可靠回复数更新 read 基线；未知数保留旧基线
+位置实际变化：更新 position
+上述本地合并先在 IDB 事务提交，再通知 UI；不等待远端
+启动/恢复联网：先逐帖 PUT outbox，再 GET 最近完整历史与已读索引，按字段组合并
 ```
 
-本地与远端节拍解耦：本地 1s 只为把「进程被杀」的丢失窗口压到 1s 级（写 IDB 不花流量），
-远端仍按 5s 合并，避免请求风暴。
-
-重放顺序：`updatedAt` 升序，逐条 PUT；服务端 LWW 保证最终一致。
+网络观察的时间在请求**开始**时记录，缓存读取及上传/重试不产生新观察事件。每帖 outbox 合并 payload，存为 `{accountId, row}`；提交队列时校验当前 session uid，并忽略其他账号遗留队列。切换 uid 时，在一个 IDB 事务内保存新 session/`readingOwner` 并清空 `progress` 与 `outbox`；owner 即使 session 过期仍可识别旧账号。该操作不清凭证、板块、图片或偏好。flush 每条上传前校验队列 owner 与当前 session，并遵守可选的 active-operation guard；上传器在读取 cookie 后再次核对账号，变更则取消。PUT 成功仅当本地整份 payload 与发送版本仍相同时才确认删除。单帖删除与清空会在同一事务里同时删除镜像及 outbox，不单独清队列。
 
 ### 6.3 列表「新增回复」计算
 
-```
-newCount = max(0, row.replies(列表) - progress[tid].replies(上次阅读快照))
-```
-
-`progress` 镜像缺失（未登录/无历史）→ 不显示徽章着色与 `+N`。计数或基准未知时不显示 `+N`，但已有历史仍显示已读标记。本地事务与索引合并保留已知计数，不让未知值抹除基准。
-
-从无计数页开始阅读时，可暂用旧快照；本次阅读首次获得可靠计数后建立新基准，之后不随刷新变化。历史错误 0 不批量猜测修正，再次获得可靠计数时更新该帖基准。
+`newCount = max(0, listSnapshot.replies - progress[tid].read.replies)`。不使用 floor。已读标记只看 `openedAt > 0`；`read` 缺失/计数未知时不显示 `+N`。进入时先以列表观察写基线；随后成功加载/刷新帖子内容时，若回复数可靠则更新基线，未知则保留旧值。旧缓存计数不得回退基线；真实较低的新计数允许更新。列表索引完全本地，不为徽章请求服务端。
 
 ## 7. 上游与本地字段映射
 
@@ -284,13 +252,13 @@ newCount = max(0, row.replies(列表) - progress[tid].replies(上次阅读快照
 |---|---|---|
 | `ThreadPage.replies` | 首楼 `dm-chat-s` 后的数字，或“全部回复”控件总数 | 支持千位分隔；无法确认时为 `null`，与列表徽章同指标 |
 | `ThreadSummary.replies` | 列表项 `i.dm-chat-s` 后文本 | 与帖子页共用计数解析；未知为 `null`，徽章显示 `—` |
-| `ProgressRow.replies` | 进入帖子时取 `ThreadPage.replies` | 快照语义见 overview D10 |
-| `ProgressRow.lastPid/lastFloor` | 当前视口最下方已读楼层 | |
-| `ProgressRow.totalPages` | `.pg span[title^="共"]` | |
+| `ProgressRow.read.replies` | 列表进入观察；成功取得帖子内容后以可靠 `ThreadPage.replies` 更新 | 未知时保留旧值 |
+| `ProgressRow.position.pid/floor` | 当前视口最下方已读楼层 | 位置变更事件独立计时 |
+| `ProgressRow.position.totalPages` | `.pg span[title^="共"]` | |
 
 ## 8. 限额与假设
 
 - 单请求 body ≤ 16KB（POST 登录表单足够）；历史 PUT ≤ 4KB。
-- 历史索引一次最多 1000 行（约 60KB JSON）。
+- 历史索引默认 1000 行，上限 2000 行；完整位置默认同步最近 100 条。
 - D1 免费额度：读 500 万/日、写 10 万/日 —— 单用户场景绰绰有余。
 - 服务端不缓存 HTML，所有页面请求直连上游；带宽由 Cloudflare 出站承担。
