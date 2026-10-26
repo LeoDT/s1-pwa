@@ -241,6 +241,8 @@
 - 加载中：`--color-panel-light` 骨架（最小高 120px）；失败：`图片加载失败 · 点击重试`
 - 省流量模式：显示「图片 · 点击加载」chip（`--color-panel-light` 底，min-h 64）
 - 灯箱：全屏 `rgba(0,0,0,.88)`，图片 `object-fit: contain`，提供 `1x / 2x`（2x = 原始尺寸 + 容器可拖动滚动），`Esc`/点击空白/右上 X 关闭
+- 灯箱是**应用级单例**：状态在 `src/lib/lightbox.ts`（模块级 store + `useSyncExternalStore`），`main.tsx` 里只挂一份 `<ImageLightbox />`（portal 到 `body`），消费 `{ url, alt }`
+- 它不属于任何内容节点：正文图常被上游 `<a target="_blank">` 包着，挂在 `ProxyImage` 里会落进那个 `<a>`（`<a>` 不能嵌可交互内容，且点关闭会激活成外链），还会退化成每张图各一个 `<dialog>`。`ProxyImage` 只负责 `openLightbox(url, alt)`
 
 ### 5.6 分页条 `Pager`
 

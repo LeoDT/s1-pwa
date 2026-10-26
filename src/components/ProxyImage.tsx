@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Image as ImageIcon, ImageOff } from 'lucide-react'
-import { ImageLightbox } from './ImageLightbox'
+import { openLightbox } from '@/lib/lightbox'
 import { loadImage } from '@/lib/imageStore'
 import { usePrefs } from '@/lib/usePrefs'
 import { cn } from '@/lib/utils'
@@ -24,11 +24,9 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
   const containerRef = useRef<HTMLSpanElement>(null)
   const { dataSaver } = usePrefs()
   const [state, setState] = useState<State>({ status: 'idle' })
-  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   useEffect(() => {
     setState({ status: 'idle' })
-    setLightboxOpen(false)
   }, [src])
 
   useEffect(() => {
@@ -78,11 +76,12 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
     )
   }
 
-  const openLightbox = (event: React.SyntheticEvent) => {
+  const openViewer = (event: React.SyntheticEvent) => {
+    if (state.status !== 'ready') return
     // 正文图片可能被上游 <a> 包着，阻止冒泡避免同时打开链接
     event.preventDefault()
     event.stopPropagation()
-    setLightboxOpen(true)
+    openLightbox(state.url, alt)
   }
 
   const reveal = (event: React.SyntheticEvent) => {
@@ -98,9 +97,9 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
           role="button"
           tabIndex={0}
           aria-label="查看大图"
-          onClick={openLightbox}
+          onClick={openViewer}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') openLightbox(event)
+            if (event.key === 'Enter' || event.key === ' ') openViewer(event)
           }}
           className="block w-full cursor-zoom-in"
         >
@@ -144,17 +143,8 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
         </span>
       ) : null}
 
-      {(state.status === 'loading' || (state.status === 'idle' && !dataSaver)) && (
+      {state.status === 'loading' || (state.status === 'idle' && !dataSaver) ? (
         <span className="block min-h-[120px] w-full animate-pulse rounded-sm bg-panel-light" />
-      )}
-
-      {state.status === 'ready' ? (
-        <ImageLightbox
-          url={state.url}
-          alt={alt}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-        />
       ) : null}
     </span>
   )

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { router } from '@/app/router'
+import { ImageLightbox } from '@/components/ImageLightbox'
 import { applyPrefs, getPrefs } from '@/lib/prefs'
 import { pruneImageCache } from '@/lib/imageStore'
 import '@/styles/tokens.css'
@@ -30,6 +31,8 @@ createRoot(container).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      {/* 应用级单例：不属于任何页面/内容节点 */}
+      <ImageLightbox />
     </QueryClientProvider>
   </StrictMode>,
 )
