@@ -9,7 +9,6 @@ import { EmptyState, ErrorState, ListSkeleton } from '@/components/states'
 import { errorMessage } from '@/lib/errors'
 import { getListState, markFromList, rememberListState } from '@/lib/navigation'
 import { usePullToRefresh, PULL_THRESHOLD } from '@/lib/usePullToRefresh'
-import { rememberFid } from './lastForum'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { getNewReplies, getProgress, recordThreadOpened } from '@/lib/progress'
 import { useDeferredLoading } from '@/lib/useDeferredLoading'
@@ -54,8 +53,6 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   const deferredRefreshing = useDeferredLoading(refreshing || pullState.refreshing)
   const deferredPending = useDeferredLoading(forum.isPending)
   const deferredNextPage = useDeferredLoading(forum.isFetchingNextPage)
-
-  if (forum.data) rememberFid(fid)
 
   // 同一帖子可能同时出现在置顶/下一页，按 tid 去重
   const threads = useMemo(() => {

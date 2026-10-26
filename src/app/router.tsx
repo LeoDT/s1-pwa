@@ -12,12 +12,10 @@ import { ChromeProvider } from './chrome'
 import { StatusPage } from '@/features/status/StatusPage'
 import { BrowseLayout, EmptySelection } from '@/features/browse/BrowseLayout'
 import { ForumPane } from '@/features/browse/ForumPane'
-import { ThreadPane } from '@/features/browse/ThreadPane'
+import { ThreadView } from '@/features/browse/ThreadView'
 import { HistoryPane } from '@/features/history/HistoryPane'
 import { HistorySync } from '@/features/progress/HistorySync'
-import { getLastFid } from '@/features/browse/lastForum'
 import { useBoards } from '@/features/browse/queries'
-import { DEFAULT_BOARDS } from '@/lib/boards'
 import { ListSkeleton, EmptyState } from '@/components/states'
 import { useDeferredLoading } from '@/lib/useDeferredLoading'
 
@@ -63,25 +61,7 @@ function ThreadRoute({ fromHistory = false }: { fromHistory?: boolean }) {
   const page = Number.parseInt(params.page ?? '1', 10) || 1
   if (!Number.isFinite(tid)) return <EmptyState text="帖子参数不正确" />
 
-  if (fromHistory) {
-    return (
-      <BrowseLayout
-        narrow="main"
-        sidebar={<HistoryPane activeTid={tid} />}
-        main={<ThreadPane tid={tid} page={page} fromHistory />}
-      />
-    )
-  }
-
-  const sidebarFid = getLastFid() ?? DEFAULT_BOARDS[0]?.fid ?? 4
-
-  return (
-    <BrowseLayout
-      narrow="main"
-      sidebar={<ForumPane key={sidebarFid} fid={sidebarFid} activeTid={tid} />}
-      main={<ThreadPane tid={tid} page={page} />}
-    />
-  )
+  return <ThreadView tid={tid} page={page} fromHistory={fromHistory} />
 }
 
 function HistoryRoute() {

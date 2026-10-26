@@ -81,6 +81,8 @@ export function useThreadPage(tid: number, page: number) {
   })
 }
 
+export type ThreadPageQuery = ReturnType<typeof useThreadPage>
+
 /** Lightweight list index is local-only; no server request is needed for list markers. */
 export function useProgressIndex() {
   const session = useSession()

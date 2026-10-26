@@ -5,10 +5,9 @@ import { BottomBar } from '@/components/BottomBar'
 import { Pager } from '@/components/Pager'
 import { ToolbarButton } from '@/components/ToolbarButton'
 import { ErrorState, PostSkeleton } from '@/components/states'
-import { useBoards, useThreadPage } from './queries'
+import { useBoards, type ThreadPageQuery } from './queries'
 import { useReadingProgress } from './useReadingProgress'
 import { useThreadReadState } from './useThreadReadState'
-import { DEFAULT_BOARDS } from '@/lib/boards'
 import { downloadAttachment } from '@/lib/attachments'
 import { errorMessage } from '@/lib/errors'
 import { locatePid } from '@/lib/locate'
@@ -19,20 +18,20 @@ import { useMediaQuery } from '@/lib/useMediaQuery'
 import { usePrefs } from '@/lib/usePrefs'
 import { useSwipeBack } from '@/lib/useSwipeBack'
 import { PostCard } from './PostCard'
-import { getLastFid } from './lastForum'
 import { cn } from '@/lib/utils'
 
 interface ThreadPaneProps {
   tid: number
   page: number
+  query: ThreadPageQuery
+  forumId: number | null
   /** 从浏览历史进入：返回与跨帖跳转都留在历史列表旁 */
   fromHistory?: boolean
 }
 
-export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) {
+export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: ThreadPaneProps) {
   const navigate = useNavigate()
   const router = useRouter()
-  const query = useThreadPage(tid, page)
   const showPending = useDeferredLoading(query.isPending)
   const showRefreshing = useDeferredLoading(query.isFetching)
   const boards = useBoards()
@@ -45,13 +44,6 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
   // 只有小屏详情页的顶栏是浮层，需要给内容留出高度
   useCollapsingHeader(scrollRef, narrow)
 
-  const listFid =
-    query.data?.fid ||
-    getLastFid() ||
-    boards.data?.[0]?.fid ||
-    DEFAULT_BOARDS[0]?.fid ||
-    4
-
   /** 滑动/返回：总是回到该帖所属板块（或浏览历史）的列表 */
   const backToList = useCallback(() => {
     if (consumeFromList()) {
@@ -62,12 +54,13 @@ export function ThreadPane({ tid, page, fromHistory = false }: ThreadPaneProps) 
       void navigate({ to: '/history', replace: true })
       return
     }
+    if (forumId === null) return
     void navigate({
       to: '/f/$fid',
-      params: { fid: String(listFid) },
+      params: { fid: String(forumId) },
       replace: true,
     })
-  }, [fromHistory, listFid, navigate, router])
+  }, [fromHistory, forumId, navigate, router])
 
   useSwipeBack(backToList, edgeSwipe)
 
