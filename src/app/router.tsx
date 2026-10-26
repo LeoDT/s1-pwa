@@ -5,15 +5,13 @@ import {
   Navigate,
   Outlet,
   useParams,
+  useRouterState,
 } from '@tanstack/react-router'
 import { Shell } from './shell'
 import { Gate } from './gate'
 import { ChromeProvider } from './chrome'
 import { StatusPage } from '@/features/status/StatusPage'
-import { BrowseLayout, EmptySelection } from '@/features/browse/BrowseLayout'
-import { ForumPane } from '@/features/browse/ForumPane'
-import { ThreadView } from '@/features/browse/ThreadView'
-import { HistoryPane } from '@/features/history/HistoryPane'
+import { BrowseView } from '@/features/browse/BrowseView'
 import { HistorySync } from '@/features/progress/HistorySync'
 import { useBoards } from '@/features/browse/queries'
 import { ListSkeleton, EmptyState } from '@/components/states'
@@ -41,51 +39,34 @@ function IndexRoute() {
   return <Navigate to="/f/$fid" params={{ fid: String(first.fid) }} replace />
 }
 
-function ForumRoute() {
-  const params = useParams({ strict: false }) as { fid?: string }
-  const fid = Number.parseInt(params.fid ?? '', 10)
-  if (!Number.isFinite(fid)) return <EmptyState text="板块参数不正确" />
-
-  return (
-    <BrowseLayout
-      narrow="sidebar"
-      sidebar={<ForumPane key={fid} fid={fid} />}
-      main={<EmptySelection />}
-    />
-  )
-}
-
-function ThreadRoute({ fromHistory = false }: { fromHistory?: boolean }) {
-  const params = useParams({ strict: false }) as { tid?: string; page?: string }
-  const tid = Number.parseInt(params.tid ?? '', 10)
+export function BrowseRoute() {
+  const params = useParams({ strict: false }) as { fid?: string; tid?: string; page?: string }
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const fid = params.fid === undefined ? undefined : Number.parseInt(params.fid, 10)
+  const tid = params.tid === undefined ? undefined : Number.parseInt(params.tid, 10)
   const page = Number.parseInt(params.page ?? '1', 10) || 1
-  if (!Number.isFinite(tid)) return <EmptyState text="帖子参数不正确" />
+  if (fid !== undefined && (!Number.isSafeInteger(fid) || fid <= 0)) return <EmptyState text="板块参数不正确" />
+  if (tid !== undefined && (!Number.isSafeInteger(tid) || tid <= 0)) return <EmptyState text="帖子参数不正确" />
 
-  return <ThreadView tid={tid} page={page} fromHistory={fromHistory} />
+  return <BrowseView fid={fid} tid={tid} page={page} fromHistory={pathname.startsWith('/history')} />
 }
 
-function HistoryRoute() {
-  return (
-    <BrowseLayout narrow="sidebar" sidebar={<HistoryPane />} main={<EmptySelection />} />
-  )
-}
+const browseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'browse',
+  component: BrowseRoute,
+})
 
 const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/', component: IndexRoute }),
-  createRoute({ getParentRoute: () => rootRoute, path: '/f/$fid', component: ForumRoute }),
-  createRoute({ getParentRoute: () => rootRoute, path: '/t/$tid', component: ThreadRoute }),
-  createRoute({ getParentRoute: () => rootRoute, path: '/t/$tid/$page', component: ThreadRoute }),
-  createRoute({ getParentRoute: () => rootRoute, path: '/history', component: HistoryRoute }),
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/history/t/$tid',
-    component: () => <ThreadRoute fromHistory />,
-  }),
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/history/t/$tid/$page',
-    component: () => <ThreadRoute fromHistory />,
-  }),
+  browseRoute.addChildren([
+    createRoute({ getParentRoute: () => browseRoute, path: '/f/$fid' }),
+    createRoute({ getParentRoute: () => browseRoute, path: '/t/$tid' }),
+    createRoute({ getParentRoute: () => browseRoute, path: '/t/$tid/$page' }),
+    createRoute({ getParentRoute: () => browseRoute, path: '/history' }),
+    createRoute({ getParentRoute: () => browseRoute, path: '/history/t/$tid' }),
+    createRoute({ getParentRoute: () => browseRoute, path: '/history/t/$tid/$page' }),
+  ]),
   createRoute({ getParentRoute: () => rootRoute, path: '/debug', component: StatusPage }),
 ])
 

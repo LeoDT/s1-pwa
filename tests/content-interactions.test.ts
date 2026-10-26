@@ -8,7 +8,10 @@ const loadImage = vi.fn()
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigate }))
 vi.mock('@/lib/usePrefs', () => ({ usePrefs: () => ({ dataSaver: true }) }))
-vi.mock('@/lib/imageStore', () => ({ loadImage: (...args: unknown[]) => loadImage(...args) }))
+vi.mock('@/lib/imageStore', () => ({
+  isS1Image: (src: string) => new URL(src).hostname === 'stage1st.com' || new URL(src).hostname.endsWith('.stage1st.com'),
+  loadImage: (...args: unknown[]) => loadImage(...args),
+}))
 
 import { Content } from '@/components/Content'
 
@@ -45,7 +48,8 @@ describe('Content image interactions', () => {
     const placeholder = host.querySelector('[role="button"]')!
     expect(placeholder.closest('a, button')).toBeNull()
     await act(async () => placeholder.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
-    await act(async () => Promise.resolve())
+    const image = host.querySelector('img')!
+    await act(async () => image.dispatchEvent(new Event('error')))
 
     const retry = host.querySelector('button')!
     const original = host.querySelector('a[href="https://img.test/a.jpg"]')!

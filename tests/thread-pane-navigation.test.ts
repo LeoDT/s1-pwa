@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(), historyBack: vi.fn(), useThreadPage: vi.fn(), swipe: vi.fn(),
-  consumeFromList: vi.fn(),
+  consumeFromList: vi.fn(), narrow: true,
 }))
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mocks.navigate,
@@ -20,7 +20,7 @@ vi.mock('@/features/browse/useReadingProgress', () => ({ useReadingProgress: vi.
 vi.mock('@/features/browse/useThreadReadState', () => ({ useThreadReadState: vi.fn() }))
 vi.mock('@/lib/useCollapsingHeader', () => ({ useCollapsingHeader: vi.fn() }))
 vi.mock('@/lib/useDeferredLoading', () => ({ useDeferredLoading: () => false }))
-vi.mock('@/lib/useMediaQuery', () => ({ useMediaQuery: () => false }))
+vi.mock('@/lib/useMediaQuery', () => ({ useMediaQuery: () => mocks.narrow }))
 vi.mock('@/lib/usePrefs', () => ({ usePrefs: () => ({ edgeSwipe: true }) }))
 vi.mock('@/components/BottomBar', () => ({ BottomBar: ({ children }: { children: React.ReactNode }) => createElement('div', null, children) }))
 vi.mock('@/components/Pager', () => ({ Pager: () => null }))
@@ -46,6 +46,7 @@ describe('ThreadPane back navigation', () => {
     document.body.append(host)
     root = createRoot(host)
     back = undefined
+    mocks.narrow = true
     mocks.navigate.mockReset()
     mocks.historyBack.mockReset()
     mocks.swipe.mockImplementation((callback: () => void) => { back = callback })
@@ -81,6 +82,15 @@ describe('ThreadPane back navigation', () => {
     act(() => back?.())
     expect(mocks.historyBack).toHaveBeenCalledTimes(1)
     expect(mocks.navigate).not.toHaveBeenCalled()
+  })
+
+  it('returns to the source list on desktop without popping unrelated browser history', () => {
+    mocks.narrow = false
+    mocks.consumeFromList.mockReturnValue(true)
+    render(6)
+    act(() => back?.())
+    expect(mocks.historyBack).not.toHaveBeenCalled()
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/f/$fid', params: { fid: '6' }, replace: true })
   })
 
   it('uses only the supplied query and does not fetch thread data itself', () => {

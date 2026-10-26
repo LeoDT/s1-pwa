@@ -153,7 +153,7 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 
 地址一律 `new URL(src, base).href`，仅保留 `http/https` 与 `data:image/`。
 
-**输出到渲染层时只写 `data-src`、不写 `src`**：DOMPurify 内部用 `innerHTML` 解析片段，带 `src` 会让浏览器直连原图（绕过代理、撞防盗链、白耗流量）。渲染器只读 `data-src` 并交给 `ProxyImage`。单测 `tests/parser-content.test.ts` 会检查 `<img>` 不含 `src`。
+**输出到渲染层时只写 `data-src`、不写 `src`**：DOMPurify 内部用 `innerHTML` 解析片段，带 `src` 会导致清洗阶段浏览器提前请求。渲染器只读 `data-src` 并交给 `ProxyImage`，由组件按域名决定加载通道。单测 `tests/parser-content.test.ts` 会检查 `<img>` 不含 `src`。
 
 ### 6.3 附件
 
@@ -182,7 +182,7 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 
 ### 7.2 图片
 
-`<img>` 不在 HTML 字符串里渲染：清洗阶段把每个图片元素替换成占位节点，由 React 渲染器映射为 `<ProxyImage>`（`fetch → blob` + Cache API）。因此上游图片永远不会被浏览器直连。
+`<img>` 不在 HTML 字符串里渲染：清洗阶段把每个图片元素替换成占位节点，由 React 渲染器映射为 `<ProxyImage>`。仅 `stage1st.com` 及其真实子域名走 `fetch → blob` + Cache API；其他域名直接作为原生 `<img src>` 加载，不 fetch/blob/代理回退，也不记入应用缓存。外站图使用原生 `onLoad/onError` 管理加载与失败重试。
 
 ### 7.3 清洗与「DOM → React」渲染
 

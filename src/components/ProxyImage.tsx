@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Image as ImageIcon, ImageOff } from 'lucide-react'
 import { openLightbox } from '@/lib/lightbox'
-import { loadImage } from '@/lib/imageStore'
+import { isS1Image, loadImage } from '@/lib/imageStore'
 import { usePrefs } from '@/lib/usePrefs'
 import { cn } from '@/lib/utils'
 
-type State =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'ready'; url: string }
-  | { status: 'error' }
+type Status = 'idle' | 'loading' | 'ready' | 'error'
+type State = { src: string; status: Status; url?: string }
 
 interface ProxyImageProps {
   src: string
@@ -23,22 +20,22 @@ interface ProxyImageProps {
 export function ProxyImage({ src, alt = '', className, inline = false }: ProxyImageProps) {
   const containerRef = useRef<HTMLSpanElement>(null)
   const { dataSaver } = usePrefs()
-  const [state, setState] = useState<State>({ status: 'idle' })
-
-  useEffect(() => {
-    setState({ status: 'idle' })
-  }, [src])
+  const [state, setState] = useState<State>({ src, status: 'idle' })
+  // 在 render 阶段同步重置，避免 A→B→A 时复活 A 的旧状态。
+  if (state.src !== src) setState({ src, status: 'idle' })
+  const current: State = state.src === src ? state : { src, status: 'idle' }
+  const trusted = isS1Image(src)
 
   useEffect(() => {
     const element = containerRef.current
-    if (!element || state.status !== 'idle') return
+    if (!element || current.status !== 'idle') return
     // 省流量模式只作用于正文大图；表情行内图照常加载
     if (dataSaver && !inline) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
-          setState({ status: 'loading' })
+          setState({ src, status: 'loading' })
           observer.disconnect()
         }
       },
@@ -46,75 +43,83 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
     )
     observer.observe(element)
     return () => observer.disconnect()
-  }, [state.status, dataSaver, inline])
+  }, [src, current.status, dataSaver, inline])
 
   useEffect(() => {
-    if (state.status !== 'loading') return
+    if (!trusted || current.status !== 'loading') return
     let alive = true
     loadImage(src).then(
       (url) => {
-        if (alive) setState({ status: 'ready', url })
+        if (alive) setState({ src, status: 'ready', url })
       },
       () => {
-        if (alive) setState({ status: 'error' })
+        if (alive) setState({ src, status: 'error' })
       },
     )
     return () => {
       alive = false
     }
-  }, [state.status, src])
-
-  if (inline) {
-    return (
-      <span ref={containerRef} className="inline-block align-middle">
-        {state.status === 'ready' ? (
-          <img src={state.url} alt={alt} className="inline size-6 align-middle" />
-        ) : (
-          <span className="inline-block size-6 align-middle" />
-        )}
-      </span>
-    )
-  }
+  }, [src, trusted, current.status])
 
   const openViewer = (event: React.SyntheticEvent) => {
-    if (state.status !== 'ready') return
+    if (current.status !== 'ready') return
     // 正文图片可能被上游 <a> 包着，阻止冒泡避免同时打开链接
     event.preventDefault()
     event.stopPropagation()
-    openLightbox(state.url, alt)
+    openLightbox(trusted ? current.url! : src, alt)
   }
 
   const reveal = (event: React.SyntheticEvent) => {
     event.preventDefault()
     event.stopPropagation()
-    setState({ status: 'loading' })
+    setState({ src, status: 'loading' })
+  }
+
+  const image = (current.status === 'loading' || current.status === 'ready') &&
+    (!trusted || current.status === 'ready') ? (
+      <img
+        src={trusted ? current.url : src}
+        alt={alt}
+        className={inline ? 'inline size-6 align-middle' : 'block w-full rounded-sm'}
+        loading="lazy"
+        onLoad={!trusted ? () => setState({ src, status: 'ready' }) : undefined}
+        onError={!trusted ? () => setState({ src, status: 'error' }) : undefined}
+      />
+    ) : null
+
+  if (inline) {
+    return (
+      <span ref={containerRef} className="inline-block align-middle">
+        {image ?? <span className="inline-block size-6 align-middle" />}
+      </span>
+    )
   }
 
   return (
     <span ref={containerRef} className={cn('my-2 block', className)}>
-      {state.status === 'ready' ? (
+      {current.status === 'ready' || (!trusted && current.status === 'loading') ? (
         <span
-          role="button"
-          tabIndex={0}
-          aria-label="查看大图"
-          onClick={openViewer}
-          onKeyDown={(event) => {
+          role={current.status === 'ready' ? 'button' : undefined}
+          tabIndex={current.status === 'ready' ? 0 : undefined}
+          aria-label={current.status === 'ready' ? '查看大图' : undefined}
+          onClick={current.status === 'ready' ? openViewer : undefined}
+          onKeyDown={current.status === 'ready' ? (event) => {
             if (event.key === 'Enter' || event.key === ' ') openViewer(event)
-          }}
-          className="block w-full cursor-zoom-in"
+          } : undefined}
+          className={current.status === 'ready' ? 'block w-full cursor-zoom-in' : 'block'}
         >
-          <img src={state.url} alt={alt} className="block w-full rounded-sm" loading="lazy" />
+          {image}
         </span>
       ) : null}
 
-      {state.status === 'error' ? (
+      {current.status === 'error' ? (
         <span className="relative flex min-h-[120px] w-full items-center justify-center rounded-sm border border-line bg-panel-light">
           <button
             type="button"
             onClick={(event) => {
               event.preventDefault()
               event.stopPropagation()
-              setState({ status: 'loading' })
+              setState({ src, status: 'loading' })
             }}
             className="inline-flex items-center gap-2 text-ui text-muted"
           >
@@ -132,7 +137,7 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
         </span>
       ) : null}
 
-      {state.status === 'idle' && dataSaver ? (
+      {current.status === 'idle' && dataSaver ? (
         <span
           role="button"
           tabIndex={0}
@@ -147,7 +152,7 @@ export function ProxyImage({ src, alt = '', className, inline = false }: ProxyIm
         </span>
       ) : null}
 
-      {state.status === 'loading' || (state.status === 'idle' && !dataSaver) ? (
+      {current.status === 'loading' || (current.status === 'idle' && !dataSaver) ? (
         <span className="block min-h-[120px] w-full animate-pulse rounded-sm bg-panel-light" />
       ) : null}
     </span>

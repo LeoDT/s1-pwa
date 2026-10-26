@@ -43,13 +43,14 @@ async function loadHistory(): Promise<ProgressRow[]> {
 interface HistoryPaneProps {
   /** 大屏：当前从历史里打开的帖子，用于激活态 */
   activeTid?: number
+  visible?: boolean
 }
 
 /**
  * 浏览历史列表：复用板块列表的左栏/整屏位置与底部板块条，
  * 点击条目直接回到上次楼层（docs/navigation.md §4.1）。
  */
-export function HistoryPane({ activeTid }: HistoryPaneProps) {
+export function HistoryPane({ activeTid, visible = true }: HistoryPaneProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const boards = useBoards()
@@ -95,7 +96,7 @@ export function HistoryPane({ activeTid }: HistoryPaneProps) {
     ['history', accountId], identity, fetchLatestHistory, commitHistory,
   )
 
-  const pullState = usePullToRefresh(scrollRef, refresh)
+  const pullState = usePullToRefresh(scrollRef, refresh, visible && !wide)
   const pull = pullState.pull
   const deferredRefreshing = useDeferredLoading(refreshing || pullState.refreshing)
   const deferredPending = useDeferredLoading(history.isPending)

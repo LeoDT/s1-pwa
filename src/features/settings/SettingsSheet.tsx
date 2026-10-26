@@ -312,7 +312,7 @@ function StorageSection({ active }: { active: boolean }) {
         {usage !== null ? ` · 浏览器总占用 ${formatBytes(usage)}` : ''}
       </p>
       <p className="text-meta leading-relaxed text-muted">
-        超过 7 天未访问的图片会自动清理（站内表情除外），总占用上限 500MB。
+        仅缓存 S1 图片，外站图片由浏览器直接加载。超过 7 天未访问的图片会自动清理（站内表情除外），总占用上限 500MB。
       </p>
       <button
         type="button"

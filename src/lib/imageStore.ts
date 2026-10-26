@@ -16,6 +16,7 @@ const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 /** 站内表情是固定静态资源，不做 7 天过期（仍参与 500MB LRU） */
 const LONG_LIVED_HOST = 'static.stage1st.com'
 const LONG_LIVED_PATH = '/image/smiley/'
+
 const MAX_CONCURRENT = 6
 const MAX_OBJECT_URLS = 60
 
@@ -47,6 +48,16 @@ function withSlot<T>(task: () => Promise<T>): Promise<T> {
   })
 }
 
+export function isS1Image(absoluteUrl: string): boolean {
+  try {
+    const url = new URL(absoluteUrl)
+    return (url.protocol === 'http:' || url.protocol === 'https:') &&
+      (url.hostname === 'stage1st.com' || url.hostname.endsWith('.stage1st.com'))
+  } catch {
+    return false
+  }
+}
+
 export function imageCacheKey(absoluteUrl: string): string {
   return `${IMAGE_PATH}?u=${encodeURIComponent(absoluteUrl)}`
 }
@@ -73,6 +84,7 @@ function isLongLivedCacheKey(key: string): boolean {
 
 /** 返回可直接给 <img src> 的 blob URL（同一 src 复用） */
 export async function loadImage(absoluteUrl: string): Promise<string> {
+  if (!isS1Image(absoluteUrl)) throw new Error('外站图片不得使用代理通道')
   const key = imageCacheKey(absoluteUrl)
 
   const cached = objectUrls.get(key)

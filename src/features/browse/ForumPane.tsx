@@ -19,9 +19,10 @@ interface ForumPaneProps {
   fid: number
   /** 大屏时当前打开的帖子，用于列表激活态 */
   activeTid?: number
+  visible?: boolean
 }
 
-export function ForumPane({ fid, activeTid }: ForumPaneProps) {
+export function ForumPane({ fid, activeTid, visible = true }: ForumPaneProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const boards = useBoards()
@@ -48,7 +49,7 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   const { refresh, refreshing, error: refreshError, isBusy } = useListRefresh(
     ['forum', fid], identity, fetchFirstPage, commitFirstPage,
   )
-  const pullState = usePullToRefresh(scrollRef, refresh)
+  const pullState = usePullToRefresh(scrollRef, refresh, visible && !wide)
   const pull = pullState.pull
   const deferredRefreshing = useDeferredLoading(refreshing || pullState.refreshing)
   const deferredPending = useDeferredLoading(forum.isPending)
@@ -87,19 +88,23 @@ export function ForumPane({ fid, activeTid }: ForumPaneProps) {
   useEffect(() => {
     const root = scrollRef.current
     const target = sentinelRef.current
-    if (!root || !target || !forum.hasNextPage) return
+    if (!visible || !root || !target || !forum.hasNextPage) return
 
+    let active = true
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return
+        if (!active || !entries.some((entry) => entry.isIntersecting)) return
         if (isBusy() || forum.isFetchingNextPage) return
         void forum.fetchNextPage()
       },
       { root, rootMargin: '600px 0px' },
     )
     observer.observe(target)
-    return () => observer.disconnect()
-  }, [forum.hasNextPage, forum.isFetchingNextPage, forum.fetchNextPage, isBusy, refreshing])
+    return () => {
+      active = false
+      observer.disconnect()
+    }
+  }, [visible, forum.hasNextPage, forum.isFetchingNextPage, forum.fetchNextPage, isBusy, refreshing])
 
   const openThread = (thread: typeof threads[number]) => {
     rememberListState(fid, scrollTopRef.current)

@@ -62,7 +62,7 @@ function renderNode(
   const tag = element.tagName.toLowerCase()
 
   if (tag === 'img') {
-    // 只认 data-src：src 会让浏览器直连上游图片
+    // 只认 data-src，避免清洗阶段提前加载图片。
     const src = element.getAttribute('data-src')
     if (!src) return null
     return (

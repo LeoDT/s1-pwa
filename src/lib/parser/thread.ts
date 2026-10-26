@@ -124,8 +124,7 @@ function normalizeImages(body: Element, base: string): string[] {
       image.remove()
       continue
     }
-    // 不写 src：DOMPurify 内部用 innerHTML 解析，带 src 会让浏览器直连原图
-    // （绕过代理、撞防盗链、浪费流量）。渲染器只读 data-src 并交给 ProxyImage。
+    // DOMPurify 解析期间不能提前加载图片；由 ProxyImage 控制省流量、懒加载及通道选择。
     image.setAttribute('data-src', absolute)
     image.removeAttribute('src')
     for (const attribute of ['zoomfile', 'file', 'onclick', 'onload']) {

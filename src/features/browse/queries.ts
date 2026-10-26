@@ -73,9 +73,10 @@ export function useForumPages(fid: number) {
   })
 }
 
-export function useThreadPage(tid: number, page: number) {
+export function useThreadPage(tid: number, page: number, enabled = true) {
   return useQuery<ObservedThreadPage>({
     queryKey: ['thread', tid, page],
+    enabled,
     queryFn: () => fetchThreadPage(tid, page),
     staleTime: 60 * 1000,
   })

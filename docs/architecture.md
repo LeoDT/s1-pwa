@@ -118,17 +118,15 @@ GET /api/proxy?u=…/forum.php?mod=redirect&goto=findpost&ptid=1826103&pid=43400
 ### 3.5 图片 / 附件
 
 ```
-<img> 不直接出现。ProxyImage 组件：
-  const key = '/api/img?u=' + encodeURIComponent(absUrl)
-  cache.match(key) → hit: objectURL
-  miss → fetch(key, { headers: { X-App-Token, X-S1-Cookie? } })
-        → blob → cache.put(key, res.clone()) → objectURL（LRU 记账，超限淘汰）
+ProxyImage 按图片域名分通道：
+  stage1st.com 或其子域名 → /api/img → Cache API/blob URL（LRU 记账）
+  其他域名 → 原始 URL 直接赋给 <img src>，由浏览器原生加载，不 fetch、不 blob、不进入应用缓存
 附件（非图片）：fetch('/api/file?u=…') → blob → 触发下载 / 新标签查看
 ```
 
-- 图片请求带 `Referer: https://stage1st.com/2b/`（解决外站防盗链），**不带** S1 cookie（除非目标域属于上游）。
+- 仅 stage1st.com 及其真实子域名图片进入代理/blob/cache 通道；域名按 hostname 精确或 `.stage1st.com` 后缀判断，拒绝 `stage1st.com.evil` 等伪装域名。外站图直接用原始 URL，由原生 `<img>` 的 `onLoad/onError` 管理状态，绝不代理回退、fetch 或记入应用图片缓存。
 - 正文 HTML 里的图片只带 `data-src`（不带 `src`），否则浏览器会在 DOMPurify/HTML 解析阶段直接请求原图，既绕过代理也会撞防盗链。
-- 省流量模式：ProxyImage 只渲染占位框，点击才加载。
+- 省流量模式：正文图只渲染占位框，点击才加载；行内图照常加载。域名切换时按新 src 重置状态，避免旧请求结果显示为新图。
 
 ### 3.6 阅读进度写入
 
@@ -216,7 +214,8 @@ Referer: https://stage1st.com/2b/   （仅图片/附件）
 | 帖子列表 | TanStack Query | 30s | 切换板块/下拉刷新失效 |
 | 帖子页 | TanStack Query | 60s | 同页内返回不重新请求 |
 | 历史索引 | TanStack Query | 60s | 失败时回落到本地镜像 |
-| 图片 | Cache API | 1 年 immutable | LRU 上限 500MB，可手动清空 |
+| S1 图片 | Cache API | 1 年 immutable | LRU 上限 500MB，可手动清空 |
+| 外站图片 | 浏览器原生 HTTP 缓存 | 由图床响应头决定 | 不计入应用缓存或由应用清理 |
 | 应用壳（HTML/JS/CSS/图标） | Service Worker precache | 随构建版本更新 | `vite-plugin-pwa` generateSW；`navigateFallback: /index.html`，只接管导航与静态资源，**`/api/*` 不进 SW** |
 | 上游页面 HTML | **不缓存** | — | 服务端零缓存（跨用户泄漏 + 状态分叉） |
 
@@ -225,7 +224,7 @@ Referer: https://stage1st.com/2b/   （仅图片/附件）
 1. 凭证只在浏览器；worker 不打印请求头/请求体（`observability` 日志只记路径、状态、耗时、错误码）。
 2. 上游 HTML 从不直接进入 `document`：正文经 DOMPurify 清洗后由 **DOM → React 元素** 渲染（不使用 `dangerouslySetInnerHTML`，见 parser.md §7.3），其余字段只取文本。
 3. DOMPurify 白名单：保留 `img/font/blockquote/br/a/strong/em/u/strike/ol/ul/li/code/pre/table/tr/td/th/span/div/hr`；移除 `script/iframe/object/embed/style/link/meta/form/input`；事件属性全禁；`style` 属性只允许 `color/background-color/font-size/font-weight/text-align`，且 `url()`、`expression()`、`position:fixed` 一律剥离。
-4. `index.html` 加 CSP：`default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'`。
+4. `index.html` 加 CSP：`default-src 'self'; img-src 'self' blob: data: https: http:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'`。
 5. 所有外链渲染为 `rel="noopener noreferrer" target="_blank"`。
 6. 图片代理拒绝非图片 Content-Type，避免被当作通用代理。
 7. `ACCESS_TOKEN` 默认开启；`/api/config` 是可匿名访问的唯一端点（只回布尔值）。

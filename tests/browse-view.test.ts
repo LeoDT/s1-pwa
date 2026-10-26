@@ -27,7 +27,9 @@ vi.mock('@/features/browse/BrowseLayout', () => ({
   BrowseLayout: ({ sidebar, main }: { sidebar: ReactNode; main: ReactNode }) => createElement('div', null, createElement('aside', null, sidebar), createElement('main', null, main)),
 }))
 
-import { ThreadView } from '@/features/browse/ThreadView'
+vi.mock('@/lib/useMediaQuery', () => ({ useMediaQuery: () => true }))
+
+import { BrowseView } from '@/features/browse/BrowseView'
 import { parsePage } from '@/lib/parser/dom'
 import { parseThreadPage } from '@/lib/parser/thread'
 
@@ -35,12 +37,12 @@ const fixture = readFileSync(path.resolve(import.meta.dirname, 'fixtures/viewthr
 const response = (html = fixture) => ({ html, url: 'https://stage1st.com/2b/forum.php?mod=viewthread&tid=1826103&mobile=2' })
 const parsedData = (fid = 51) => ({ ...parseThreadPage(parsePage(fixture, response().url)), fid, observation: { at: 1, id: 'fixture' } })
 
-describe('ThreadView query ownership and sidebar selection', () => {
+describe('BrowseView query ownership and sidebar selection', () => {
   let host: HTMLDivElement
   let root: Root
   let client: QueryClient
 
-  const render = (tid: number, page: number, fromHistory = false) => act(() => root.render(createElement(QueryClientProvider, { client }, createElement(ThreadView, { tid, page, fromHistory }))))
+  const render = (tid: number, page: number, fromHistory = false) => act(() => root.render(createElement(QueryClientProvider, { client }, createElement(BrowseView, { tid, page, fromHistory }))))
   const forum = () => host.querySelector('[data-testid="forum"]')
   const waitForForum = async (fid: number) => act(async () => {
     await vi.waitFor(() => expect(forum()?.getAttribute('data-fid')).toBe(String(fid)))
@@ -110,15 +112,15 @@ describe('ThreadView query ownership and sidebar selection', () => {
     expect(proxy.fetch).not.toHaveBeenCalled()
   })
 
-  it('updates sidebar when the active thread resolves to another forum', async () => {
+  it('preserves sidebar when another thread resolves to a different forum', async () => {
     proxy.fetch.mockResolvedValue(response())
     render(1826103, 1)
     await waitForForum(51)
     const changed = { ...(client.getQueryData(['thread', 1826103, 1]) as object), fid: 6 }
     client.setQueryData(['thread', 77, 1], { ...changed, tid: 77 })
     render(77, 1)
-    expect(forum()?.getAttribute('data-fid')).toBe('6')
-    expect(host.querySelector('[data-testid="thread"]')?.getAttribute('data-forum-id')).toBe('6')
+    expect(forum()?.getAttribute('data-fid')).toBe('51')
+    expect(host.querySelector('[data-testid="thread"]')?.getAttribute('data-forum-id')).toBe('51')
   })
 
   it('keeps query errors visible with retry and does not guess a board', async () => {

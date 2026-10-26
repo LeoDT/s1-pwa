@@ -44,9 +44,9 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
   // 只有小屏详情页的顶栏是浮层，需要给内容留出高度
   useCollapsingHeader(scrollRef, narrow)
 
-  /** 滑动/返回：总是回到该帖所属板块（或浏览历史）的列表 */
+  /** 浏览中返回原列表；深链进入时返回帖子所属板块。 */
   const backToList = useCallback(() => {
-    if (consumeFromList()) {
+    if (consumeFromList() && narrow) {
       router.history.back()
       return
     }
@@ -60,7 +60,7 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
       params: { fid: String(forumId) },
       replace: true,
     })
-  }, [fromHistory, forumId, navigate, router])
+  }, [fromHistory, forumId, navigate, router, narrow])
 
   useSwipeBack(backToList, edgeSwipe)
 

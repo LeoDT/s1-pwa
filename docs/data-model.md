@@ -209,6 +209,8 @@ v2 有意重置 `progress` 与 `outbox`；保留凭证、session、偏好、板�
 
 ### 5.3 图片缓存
 
+仅 `stage1st.com` 及其真实子域名图片经 `/api/img` 转为 blob 并写入应用 Cache API / `imgMeta`；外站图片由浏览器直接加载，不进入应用缓存。域名边界匹配完整 hostname 或 `.stage1st.com` 后缀，不能用简单包含匹配。
+
 `caches.open('s1-img-v1')`，key = `/api/img?u=…`。
 `imgMeta` 记录字节数与最近访问时间；**超过 7 天未访问**的条目在启动/新图入库后清理，总占用 > 500MB 时再按 `lastUsed` 淘汰。
 站内表情（`static.stage1st.com/image/smiley/`）是固定静态资源，不做 7 天过期，但仍参与 500MB LRU。
