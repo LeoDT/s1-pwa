@@ -8,7 +8,8 @@ import { apiFetch, type JsonInit } from './api'
 import { cookieHeader } from './cookieJar'
 import { idbAll, idbClear, idbDel, idbGet, idbSet } from './db'
 
-const STORE = 'progress'
+export const PROGRESS_STORE = 'progress'
+const STORE = PROGRESS_STORE
 const HISTORY_PAGE_SIZE = 100
 
 export function getProgress(tid: number): Promise<ProgressRow | undefined> {

@@ -38,57 +38,68 @@ function openDb(): Promise<IDBDatabase> {
   return dbPromise
 }
 
-async function run<T>(
-  store: StoreName,
+/**
+ * 在给定 store 上开一个事务，commit 完成后交出 action 的返回值（通常是 IDBRequest，
+ * 此时 result 已就绪）。写事务必须等 commit，否则紧接着的导航可能丢掉刚写入的数据。
+ */
+export async function idbTransact<T>(
+  stores: StoreName[],
   mode: IDBTransactionMode,
-  action: (objectStore: IDBObjectStore) => IDBRequest<T>,
+  action: (tx: IDBTransaction) => T,
 ): Promise<T> {
   const db = await openDb()
 
   return new Promise<T>((resolve, reject) => {
-    const tx = db.transaction(store, mode)
-    const request = action(tx.objectStore(store))
-
-    let result: T | undefined
+    const tx = db.transaction(stores, mode)
+    let result!: T
     let settled = false
+
     const finish = (error?: unknown) => {
       if (settled) return
       settled = true
       if (error !== undefined) reject(error)
-      else resolve(result as T)
+      else resolve(result)
     }
 
-    request.onsuccess = () => {
-      result = request.result
-    }
-    request.onerror = () => finish(request.error ?? new Error('本地数据库操作失败'))
-    // 写事务必须等 commit 完成，否则紧接着的导航可能丢掉刚写入的数据
     tx.oncomplete = () => finish()
     tx.onerror = () => finish(tx.error ?? new Error('本地数据库事务失败'))
     tx.onabort = () => finish(tx.error ?? new Error('本地数据库事务中断'))
+
+    try {
+      result = action(tx)
+    } catch (error) {
+      tx.abort()
+      finish(error)
+    }
   })
 }
 
 export function idbGet<T>(store: StoreName, key: IDBValidKey): Promise<T | undefined> {
-  return run<T | undefined>(store, 'readonly', (s) => s.get(key) as IDBRequest<T | undefined>)
+  return idbTransact([store], 'readonly', (tx) => tx.objectStore(store).get(key)).then(
+    (request) => request.result as T | undefined,
+  )
 }
 
 export async function idbSet<T>(store: StoreName, key: IDBValidKey, value: T): Promise<void> {
-  await run(store, 'readwrite', (s) => s.put(value as unknown, key))
+  await idbTransact([store], 'readwrite', (tx) => tx.objectStore(store).put(value as unknown, key))
 }
 
 export async function idbDel(store: StoreName, key: IDBValidKey): Promise<void> {
-  await run(store, 'readwrite', (s) => s.delete(key))
+  await idbTransact([store], 'readwrite', (tx) => tx.objectStore(store).delete(key))
 }
 
 export function idbAll<T>(store: StoreName): Promise<T[]> {
-  return run<T[]>(store, 'readonly', (s) => s.getAll() as IDBRequest<T[]>)
+  return idbTransact([store], 'readonly', (tx) => tx.objectStore(store).getAll()).then(
+    (request) => request.result as T[],
+  )
 }
 
 export function idbKeys(store: StoreName): Promise<IDBValidKey[]> {
-  return run<IDBValidKey[]>(store, 'readonly', (s) => s.getAllKeys())
+  return idbTransact([store], 'readonly', (tx) => tx.objectStore(store).getAllKeys()).then(
+    (request) => request.result,
+  )
 }
 
-export function idbClear(store: StoreName): Promise<void> {
-  return run<undefined>(store, 'readwrite', (s) => s.clear())
+export async function idbClear(store: StoreName): Promise<void> {
+  await idbTransact([store], 'readwrite', (tx) => tx.objectStore(store).clear())
 }

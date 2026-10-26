@@ -253,11 +253,14 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 ```
 读帖 → 组件内维护 lastRead（IntersectionObserver 记录最靠下的可见楼层 pid/floor）
    │
-   ├─ 每 5s 节流（若发生变化）→ 写本地镜像 + 入 outbox → flush()
-   ├─ 路由离开 / visibilitychange(hidden) → flush({keepalive:true})
-   └─ flush(): PUT /api/history/:tid → 成功则删除 outbox 记录
-                  失败（离线/5xx）→ 留在 outbox，下次 online / 启动重放
+   ├─ 每 1s：位置变了 → 一个 IDB 事务写本地镜像 + outbox（不碰网络，离线也成功）
+   ├─ 每 5s：flush() → PUT /api/history/:tid → 成功则删 outbox（仅当仍是这一版）
+   ├─ 路由离开 / visibilitychange(hidden) / pagehide → 先补落盘，再 flush({keepalive:true})
+   └─ flush 失败（离线/5xx）→ 留在 outbox，下次 online / 启动时重放
 ```
+
+本地与远端节拍解耦：本地 1s 只为把「进程被杀」的丢失窗口压到 1s 级（写 IDB 不花流量），
+远端仍按 5s 合并，避免请求风暴。
 
 重放顺序：`updatedAt` 升序，逐条 PUT；服务端 LWW 保证最终一致。
 

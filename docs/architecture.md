@@ -134,7 +134,8 @@ GET /api/proxy?u=…/forum.php?mod=redirect&goto=findpost&ptid=1826103&pid=43400
 
 ```
 进入帖子：记 { tid, fid, title, replies, totalPages }（内存 + 队列）
-离开/切后台/每 5 秒节流：PUT /api/history/:tid  （头：X-S1-Cookie、X-App-Token）
+每 1s（位置变化时）：一个 IDB 事务写 progress 镜像 + outbox（离线也成功）
+每 5s / 离开 / 切后台：PUT /api/history/:tid  （头：X-S1-Cookie、X-App-Token）
                           {…, lastPid, lastFloor, lastPage, updatedAt}
 页面隐藏时：fetch(url, { keepalive: true })（自定义头可用，sendBeacon 不行）
 离线/失败：写入 IDB outbox，下次 online / 启动时按 updatedAt 顺序重放
