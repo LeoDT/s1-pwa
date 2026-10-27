@@ -3,7 +3,8 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { STORE_NAMES, idbClear, idbGet } from '@/lib/db'
+import { STORE_NAMES, idbClear, idbGet, idbSet } from '@/lib/db'
+import { recordThreadOpened } from '@/lib/progress'
 import { progressRow } from './progress-fixtures'
 
 const mocks = vi.hoisted(() => ({ uid: 1, fetch: vi.fn(), index: vi.fn(), put: vi.fn() }))
@@ -21,6 +22,7 @@ describe('history synchronization identity', () => {
     mocks.uid = 1
     mocks.fetch.mockReset()
     mocks.index.mockReset().mockResolvedValue([])
+    mocks.put.mockReset().mockResolvedValue(undefined)
     client = new QueryClient()
     host = document.createElement('div')
     root = createRoot(host)
@@ -29,12 +31,32 @@ describe('history synchronization identity', () => {
     if (root) await act(async () => root!.unmount())
     root = undefined
     client.clear()
+    vi.useRealTimers()
   })
   async function render() {
     await act(async () => root!.render(createElement(QueryClientProvider, {
       client, children: createElement(HistorySync),
     })))
   }
+
+  it('uploads queued local history without a mounted detail page and sends nothing for an empty queue', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    await idbSet('kv', 'session', { uid: 1 })
+    mocks.fetch.mockResolvedValue([])
+    await render()
+    await act(async () => vi.waitFor(() => expect(mocks.index).toHaveBeenCalledTimes(1)))
+    expect(mocks.put).not.toHaveBeenCalled()
+    await recordThreadOpened({ tid: 42, title: 'thread' }, undefined, 1)
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
+    await act(async () => vi.waitFor(async () => {
+      expect(mocks.put).toHaveBeenCalledTimes(1)
+      expect(await idbGet('outbox', 42)).toBeUndefined()
+    }))
+    expect(mocks.put).toHaveBeenCalledWith(expect.objectContaining({ tid: 42 }), false, 1)
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
+    expect(mocks.put).toHaveBeenCalledTimes(1)
+    expect(mocks.fetch).toHaveBeenCalledTimes(1)
+  })
 
   it('restarts for a new UID and rejects the old account response', async () => {
     const old = Promise.withResolvers<ReturnType<typeof progressRow>[]>()

@@ -4,9 +4,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { ThreadPage } from '@shared/types'
 
-const mocks = vi.hoisted(() => ({ record: vi.fn(async (_metadata: unknown, _position: unknown) => {}), version: vi.fn(() => ({ at: 100, id: 'version' })) }))
-vi.mock('@/features/auth/useSession', () => ({ useSession: () => ({ data: { uid: 7 } }) }))
-vi.mock('@/lib/outbox', () => ({ flushProgress: vi.fn(async () => 0) }))
+const mocks = vi.hoisted(() => ({
+  record: vi.fn(async (_metadata: unknown, _position: unknown): Promise<unknown> => ({
+    tid: 11, fid: 6, forumName: 'board', title: 't11', metadataVersion: null, openedAt: 100, read: null,
+    position: { pid: 110, floor: 1, page: 1, totalPages: 1, at: 100, id: 'version' },
+  })),
+  version: vi.fn(() => ({ at: 100, id: 'version' })),
+  requestSync: vi.fn(),
+  uid: 7 as number | undefined,
+}))
+vi.mock('@/features/auth/useSession', () => ({ useSession: () => ({ data: { uid: mocks.uid } }) }))
+vi.mock('@/lib/progressEvents', () => ({ requestHistorySync: mocks.requestSync }))
 vi.mock('@/lib/progress', () => ({ recordReadingPosition: mocks.record, createProgressVersion: mocks.version }))
 import { useReadingProgress } from '@/features/browse/useReadingProgress'
 
@@ -32,7 +40,12 @@ describe('useReadingProgress position observations', () => {
   afterEach(async () => {
     if (root) await act(async () => root!.unmount())
     client?.clear(); host?.remove(); root = undefined; host = undefined; client = undefined
-    vi.unstubAllGlobals(); mocks.record.mockClear(); mocks.version.mockClear()
+    vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers()
+    mocks.record.mockReset().mockImplementation(async () => ({
+      tid: 11, fid: 6, forumName: 'board', title: 't11', metadataVersion: null, openedAt: 100, read: null,
+      position: { pid: 110, floor: 1, page: 1, totalPages: 1, at: 100, id: 'version' },
+    }))
+    mocks.version.mockClear(); mocks.requestSync.mockClear(); mocks.uid = 7
   })
   function mount(initial: ThreadPage) {
     vi.stubGlobal('IntersectionObserver', Observer)
@@ -67,6 +80,56 @@ describe('useReadingProgress position observations', () => {
       7,
     )
     expect(mocks.record).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ replies: 18194 }))
+  })
+
+  it('requests sync only after persistence completes on background and unmount', async () => {
+    mount(page(11, 0, 110))
+    act(() => {
+      const article = document.createElement('article'); article.id = 'pid110'
+      Observer.instances.at(-1)?.fire(article)
+    })
+    let finish!: () => void
+    mocks.record.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve }))
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+    await act(async () => { document.dispatchEvent(new Event('visibilitychange')) })
+    visibility.mockRestore()
+    expect(mocks.requestSync).not.toHaveBeenCalled()
+    await act(async () => { finish(); await Promise.resolve() })
+    expect(mocks.requestSync).toHaveBeenCalledWith({ accountId: 7, keepalive: true })
+    mocks.requestSync.mockClear()
+    await act(async () => root!.unmount())
+    root = undefined
+    expect(mocks.requestSync).toHaveBeenCalledWith({ accountId: 7, keepalive: true })
+  })
+
+  it('does not request sync if the account changes while persistence is pending', async () => {
+    const { setData } = mount(page(11, 0, 110))
+    act(() => {
+      const article = document.createElement('article'); article.id = 'pid110'
+      Observer.instances.at(-1)?.fire(article)
+    })
+    let finish!: () => void
+    mocks.record.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve }))
+    await act(async () => { window.dispatchEvent(new Event('pagehide')) })
+    mocks.uid = 8
+    act(() => setData(page(11, 0, 110)))
+    await act(async () => { finish(); await Promise.resolve() })
+    expect(mocks.requestSync).not.toHaveBeenCalled()
+  })
+
+  it('persists locally every second without uploading remotely', async () => {
+    vi.useFakeTimers()
+    mount(page(11, 0, 110))
+    act(() => {
+      const article = document.createElement('article'); article.id = 'pid110'
+      Observer.instances.at(-1)?.fire(article)
+    })
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000) })
+    expect(mocks.record).toHaveBeenCalledTimes(1)
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
+    expect(mocks.record).toHaveBeenCalledTimes(1)
+    expect(mocks.version).toHaveBeenCalledTimes(1)
+    expect(mocks.requestSync).not.toHaveBeenCalled()
   })
 
   it('switching threads on the same page resets the position to the new thread', async () => {

@@ -227,7 +227,7 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 | `['boards-src']` | 10min | 设置里展开「添加板块」 |
 | `['forum', fid]`（无限分页） | 会话，`staleTime/gcTime: Infinity` | 仅下拉/刷新按钮；首次无缓存与追加页正常请求 |
 | `['thread', tid, page]` | 60s | 刷新按钮 |
-| `['history', uid]` | 60s | 显式刷新、历史增删后 `invalidate` |
+| `['history', uid]` | 60s（本地查询） | 本地提交/远端合并后 `invalidate`；显式刷新重新拉取并提交 |
 | `['progress-index', uid或'guest']` | 60s | 本地事务提交后 `invalidate` |
 | `['locate', tid, pid]` | 会话（Map） | 必要时手动清 |
 
@@ -239,7 +239,11 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 成功取得帖子内容：用可靠回复数更新 read 基线；未知数保留旧基线
 位置实际变化：更新 position
 上述本地合并先在 IDB 事务提交，再通知 UI；不等待远端
-启动/恢复联网：先逐帖 PUT outbox，再 GET 最近完整历史与已读索引，按字段组合并
+应用级 HistorySync：启动/恢复联网/回到前台/窗口聚焦时，先逐帖 PUT outbox，再 GET 最近完整历史与已读索引，按字段组合并
+前台每 5 秒尝试上传（空队列不发请求），每 30 秒上传并拉取；后台停止周期任务
+历史面板变为可见：距上次自动成功拉取至少 10 秒才请求同步；失败不更新成功时间
+详情隐藏/pagehide/卸载：先保存当前位置，再请求 keepalive 上传；位置仍每秒检查本地保存
+自动同步请求串行执行并合并待处理意图；手动刷新保留现有独立交互，不受自动同步新鲜度限制
 ```
 
 网络观察的时间在请求**开始**时记录，缓存读取及上传/重试不产生新观察事件。每帖 outbox 合并 payload，存为 `{accountId, row}`；提交队列时校验当前 session uid，并忽略其他账号遗留队列。切换 uid 时，在一个 IDB 事务内保存新 session/`readingOwner` 并清空 `progress` 与 `outbox`；owner 即使 session 过期仍可识别旧账号。该操作不清凭证、板块、图片或偏好。flush 每条上传前校验队列 owner 与当前 session，并遵守可选的 active-operation guard；上传器在读取 cookie 后再次核对账号，变更则取消。PUT 成功仅当本地整份 payload 与发送版本仍相同时才确认删除。单帖删除与清空会在同一事务里同时删除镜像及 outbox，不单独清队列。

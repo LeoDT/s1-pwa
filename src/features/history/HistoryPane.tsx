@@ -18,6 +18,7 @@ import { PULL_THRESHOLD, usePullToRefresh } from '@/lib/usePullToRefresh'
 import { cn } from '@/lib/utils'
 import { useDeferredLoading } from '@/lib/useDeferredLoading'
 import { useListRefresh } from '@/lib/useListRefresh'
+import { requestHistorySync } from '@/lib/progressEvents'
 import {
   clearProgress,
   clearServerHistory,
@@ -59,8 +60,13 @@ export function HistoryPane({ activeTid, visible = true }: HistoryPaneProps) {
   const wide = useMediaQuery('(min-width: 1024px)')
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const accountId = session.data?.uid ?? 'unknown'
+  const uid = session.data?.uid
+  const accountId = uid ?? 'unknown'
   const identity = String(accountId)
+
+  useEffect(() => {
+    if (visible && uid != null) requestHistorySync({ accountId: uid, pull: true, ifStale: true })
+  }, [uid, visible])
 
   useEffect(() => subscribeProgress(() => {
     void queryClient.invalidateQueries({ queryKey: ['history', accountId] })

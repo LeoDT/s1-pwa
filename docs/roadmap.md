@@ -132,7 +132,7 @@
 | 路由参数 | core 路由表支持 `:name` 单段占位符（编译成正则），`/api/history/index` 先于 `/:tid` 注册；方法不符仍返回 405 |
 | D1 配置 | 已创建 `s1-progress` 并回填真实 `database_id`；换账号/重建库时替换，preflight 拦截占位 UUID。本地用 `pnpm db:local`（首次 clone 或换了 database_id 后必须执行一次） |
 | 游客态 | 进度写入与历史请求都挂在 `useSession()` 之后；未登录只读本地镜像，不产生 401 请求。历史页离线时退回本地镜像 |
-| 跨设备续读 | 启动/恢复联网时 `HistorySync` 拉最近 100 条写入本地镜像，列表点开即可续读；列表徽章只用轻量 `/api/history/index` |
+| 跨设备续读 | `HistorySync` 在启动/联网恢复/前台恢复/窗口聚焦时同步，前台每 5 秒尝试上传、每 30 秒拉取最近 100 条；进入历史按 10 秒新鲜度同步，列表徽章只读本地索引 |
 | 退出登录 | 同时清本地 `progress` 镜像与 `outbox`，避免换账号串数据 |
 | 回复快照 | `ProgressRow.replies` 只在进入帖子时取一次，本次阅读内翻页/刷新不更新（`newReplies = 列表回复数 - 快照`） |
 | 浏览历史 | 不是独立页面：`/history` 与 `/history/t/…` 复用 `BrowseLayout`，小屏占满、大屏占左栏，底部板块条常驻；行样式与板块列表共用 `ListRow`；从历史进入的详情页翻页/引用跳转都留在 `/history/t/…` |

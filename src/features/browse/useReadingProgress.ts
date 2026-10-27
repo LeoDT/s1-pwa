@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import type { Post, ThreadPage } from '@shared/types'
 import { useSession } from '@/features/auth/useSession'
-import { flushProgress } from '@/lib/outbox'
+import { requestHistorySync } from '@/lib/progressEvents'
 import { createProgressVersion, recordReadingPosition } from '@/lib/progress'
 import type { ReadingPosition } from '@shared/types'
 
-/** Local observation writes and remote synchronization run on independent cadences. */
+/** Position observations are persisted locally once per second. */
 const PERSIST_INTERVAL_MS = 1000
-const FLUSH_INTERVAL_MS = 5000
 
 type PositionSnapshot = ReadingPosition & { tid: number }
 
@@ -115,38 +114,30 @@ export function useReadingProgress(
     }
   }, [accountId, signedIn])
 
-  const flush = useCallback(async (keepalive = false) => {
-    if (!signedIn || accountIdRef.current !== accountId) return
+  const persistAndSync = useCallback(async () => {
+    if (!signedIn || accountIdRef.current !== accountId || accountId == null) return
     await persist()
     if (accountIdRef.current !== accountId) return
-    try {
-      await flushProgress({ keepalive, shouldContinue: () => accountIdRef.current === accountId })
-    } catch {
-      // Keep the local outbox for the next attempt.
-    }
+    requestHistorySync({ accountId, keepalive: true })
   }, [accountId, persist, signedIn])
 
   useEffect(() => {
     const persistTimer = setInterval(() => void persist(), PERSIST_INTERVAL_MS)
-    const flushTimer = setInterval(() => void flush(), FLUSH_INTERVAL_MS)
-    return () => {
-      clearInterval(persistTimer)
-      clearInterval(flushTimer)
-    }
-  }, [flush, persist])
+    return () => clearInterval(persistTimer)
+  }, [persist])
 
   useEffect(() => {
-    const onVisibilityChange = () => { if (document.visibilityState === 'hidden') void flush(true) }
-    const onPageHide = () => void flush(true)
+    const onVisibilityChange = () => { if (document.visibilityState === 'hidden') void persistAndSync() }
+    const onPageHide = () => void persistAndSync()
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('pagehide', onPageHide)
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       window.removeEventListener('pagehide', onPageHide)
     }
-  }, [flush])
+  }, [persistAndSync])
 
-  useEffect(() => () => { void flush(true) }, [flush])
+  useEffect(() => () => { void persistAndSync() }, [persistAndSync])
 }
 
 function updatePosition(ref: { current: PositionSnapshot | null }, post: Post, data: ThreadPage): void {

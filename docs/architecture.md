@@ -134,7 +134,9 @@ ProxyImage 按图片域名分通道：
 列表请求开始时记录该次观察，缓存快照保持不变，直到显式刷新或无限滚动追加。
 进入帖子时立即以列表观察写 openedAt（早于帖子加载）；成功取得帖子内容后以可靠回复数更新 read 基线。
 位置实际变化时更新 position；read、position、元数据各自带 at + UUID id，并独立合并。位置写入不更新 `metadataVersion`。
-先提交本地 IDB progress/outbox 事务，再通知 UI；不等待远端。后台同步读取服务端并合并字段组，再上传。
+先提交本地 IDB progress/outbox 事务，再通知 UI；不等待远端。应用级 HistorySync 统一调度自动同步：先上传 outbox，再拉取并合并服务端字段组。
+启动、恢复联网、回到前台、窗口聚焦时同步；前台每 5 秒尝试上传、每 30 秒拉取，后台停止周期任务。历史面板变为可见时，以 10 秒自动拉取新鲜度判断是否同步。
+详情仅负责位置观察与每秒本地保存，隐藏/pagehide/卸载时先保存再请求 keepalive 上传。请求携带 UID，全局调度器串行执行并合并待处理请求；自动合并只通知本地查询更新，不重置滚动或生成新的阅读事件。
 每帖一条 `{accountId, row}` outbox；上传前检查 owner 与 session，读 cookie 后再检查账号。成功仅在本地整份 payload 未变化时确认删除。
 切换 uid 时原子保存 session/`readingOwner` 并清空本地 progress/outbox；expired session 时仍以 owner 识别旧账号。凭证、板块、图片、偏好不受影响。
 单帖移除/清空在同一事务同步删除 progress 与 outbox。时间戳来自对应网络请求开始时；读缓存或上传/重试不生成新事件。
