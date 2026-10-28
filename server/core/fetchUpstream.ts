@@ -28,6 +28,7 @@ interface FetchUpstreamOptions {
   maxHops?: number
   /** 返回非 null 表示内容类型不合法，直接作为错误响应 */
   validateContentType?: (contentType: string) => Response | null
+  fetch?: typeof fetch
 }
 
 /**
@@ -55,7 +56,7 @@ export async function fetchUpstreamAsset(
 
     let upstream: Response
     try {
-      upstream = await fetch(current.toString(), { headers, redirect: 'manual' })
+      upstream = await (options.fetch ?? fetch)(current.toString(), { headers, redirect: 'manual' })
     } catch {
       return { ok: false, response: fail(502, 'upstream_error', `${label}源不可达`) }
     }

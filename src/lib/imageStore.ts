@@ -7,6 +7,7 @@
 import { idbAll, idbDel, idbGet, idbSet } from './db'
 import { getAppToken } from './api'
 import { cookieHeader } from './cookieJar'
+import { captureContentRoute, routedContentFetch } from './contentProxy'
 
 const CACHE_NAME = 's1-img-v1'
 const IMAGE_PATH = '/api/img'
@@ -107,7 +108,8 @@ export async function loadImage(absoluteUrl: string): Promise<string> {
       if (token) headers.set('x-app-token', token)
       if (cookie) headers.set('x-s1-cookie', cookie)
 
-      const fetched = await fetch(key, { headers })
+      const route = await captureContentRoute()
+      const fetched = await routedContentFetch('/api/img', `?u=${encodeURIComponent(absoluteUrl)}`, { headers }, route)
       if (!fetched.ok) throw new Error(`图片加载失败（${fetched.status}）`)
 
       const blob = await fetched.blob()

@@ -68,7 +68,7 @@ export interface ProgressRow {
 
 ## 4. API 契约
 
-所有端点同源，无 CORS。除 `/api/config`、`/api/health` 外都要求 `X-App-Token`（部署开启时）。
+以下为默认 Cloudflare 同源 API，无需 CORS。除 `/api/config`、`/api/health` 外都要求 `X-App-Token`（部署开启时）。可选家庭代理仅复用三个内容接口，并提供需鉴权的独立 health/CORS 契约；历史接口仍固定 Cloudflare。见 [家庭代理部署](./home-proxy.md)。
 
 ### 4.1 `GET /api/config`
 

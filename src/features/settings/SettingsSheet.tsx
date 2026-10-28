@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LogIn, LogOut, ShieldCheck, Trash2 } from 'lucide-react'
 import { LoginForm } from '@/features/auth/LoginForm'
+import { HomeProxySection } from './HomeProxySection'
 import { useSession } from '@/features/auth/useSession'
 import { BoardsPanel } from '@/features/boards/BoardsPanel'
 import { getAppToken, setAppToken } from '@/lib/api'
@@ -55,6 +56,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           <BoardsPanel active={open} />
           <ReadingSection />
           <AccessTokenSection />
+          <HomeProxySection />
           <StorageSection active={open} />
           <AboutSection />
         </div>

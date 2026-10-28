@@ -11,7 +11,11 @@ export interface CoreEnv {
   HISTORY_SECRET?: string
 }
 
-export interface CoreDeps {
+export interface ProxyDeps {
+  fetch?: typeof fetch
+}
+
+export interface CoreDeps extends ProxyDeps {
   env: CoreEnv
   store: ProgressStore
 }

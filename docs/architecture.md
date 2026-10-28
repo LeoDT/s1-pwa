@@ -35,6 +35,12 @@
 
 只有执行在浏览器里的代码知道 S1 HTML 长什么样。worker 对 HTML **只做字节转发**，唯一例外是 §2.1 身份探针里的一行 `discuz_uid` 正则（取一个数字，不解析正文）。
 
+### 1.1 可选家庭内容代理
+
+默认仍采用上图的同源部署。配置「家庭代理地址」后，`src/lib/contentProxy.ts` 统一探测并路由 `/api/proxy`、`/api/img`、`/api/file`：优先家庭 Node 节点，失败回退 Cloudflare。`/api/config` 与 `/api/history*` 不参与切换。登录表单、提交及跳转固定节点，POST 不跨节点重放。
+
+`server/node/` 复用 core 的三个内容 handler，仅增加 Node HTTP 适配、必选访问令牌、严格 CORS 和原生 fetch 限制，不提供数据库或静态 UI。家庭 health 需鉴权，返回专用服务标识及协议版本，区别于 Cloudflare health。部署与验收见 [家庭代理部署](./home-proxy.md)。
+
 ## 2. 凭证模型
 
 | 凭证 | 存放位置 | 生命周期 | 服务端可见性 |
@@ -172,7 +178,7 @@ Referer: https://stage1st.com/2b/   （仅图片/附件）
 | `Content-Disposition` | 附件文件名 |
 | `Cache-Control` | `/api/img` → `private, max-age=31536000, immutable`；其余 `no-store` |
 
-同源部署 ⇒ 不需要 CORS；`X-Upstream-Url` 等自定义头在同源下天然可读，无需 `Access-Control-Expose-Headers`。
+Cloudflare 同源部署不需要 CORS；`X-Upstream-Url` 等自定义头在同源下天然可读。可选家庭代理属于跨域例外，仅允许配置的 PWA origin，并通过 `Access-Control-Expose-Headers` 暴露 Cookie、上游状态及附件文件名响应头。
 
 ### 4.3 重定向语义
 

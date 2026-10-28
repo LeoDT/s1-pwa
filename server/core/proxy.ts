@@ -1,4 +1,4 @@
-import type { CoreDeps } from './env'
+import type { ProxyDeps } from './env'
 import { fail, json } from './http'
 import { base64UrlEncode, HTML_ACCEPT, MOBILE_UA } from './upstream'
 
@@ -26,7 +26,7 @@ export function readTarget(url: URL): URL | null {
  * HTML 透传：不跟随上游重定向（3xx → JSON），不改写 body，
  * 只把 Set-Cookie 以 JS 可读的方式回给客户端。见 docs/architecture.md §4。
  */
-export async function handleProxy(request: Request, _deps: CoreDeps, url: URL): Promise<Response> {
+export async function handleProxy(request: Request, deps: ProxyDeps, url: URL): Promise<Response> {
   const target = readTarget(url)
   if (!target) return fail(400, 'bad_request', '缺少或非法的 u 参数')
   if (!isUpstreamHost(target.hostname)) return fail(403, 'forbidden_host', '不允许代理该地址')
@@ -56,7 +56,7 @@ export async function handleProxy(request: Request, _deps: CoreDeps, url: URL): 
 
   let upstream: Response
   try {
-    upstream = await fetch(target.toString(), {
+    upstream = await (deps.fetch ?? fetch)(target.toString(), {
       method: request.method,
       headers,
       body,

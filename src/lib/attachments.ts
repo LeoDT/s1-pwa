@@ -4,6 +4,7 @@
  */
 import { ApiError, getAppToken } from './api'
 import { cookieHeader } from './cookieJar'
+import { captureContentRoute, routedContentFetch } from './contentProxy'
 
 interface ErrorBody {
   code?: string
@@ -18,7 +19,8 @@ export async function downloadAttachment(url: string, fallbackName: string): Pro
   const cookie = await cookieHeader()
   if (cookie) headers.set('x-s1-cookie', cookie)
 
-  const response = await fetch(`/api/file?u=${encodeURIComponent(url)}`, { headers })
+  const route = await captureContentRoute()
+  const response = await routedContentFetch('/api/file', `?u=${encodeURIComponent(url)}`, { headers }, route)
 
   if (!response.ok) {
     let body: ErrorBody | null = null

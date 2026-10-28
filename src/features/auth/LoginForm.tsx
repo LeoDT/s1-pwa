@@ -44,7 +44,8 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const loginPage = useQuery({
     queryKey: ['login-page'],
     queryFn: fetchLoginPage,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 0,
+    gcTime: 0,
     retry: 1,
   })
 
@@ -62,7 +63,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const mutation = useMutation({
     mutationFn: async (input: LoginInput) => {
       if (!loginPage.data) throw new Error('登录表单尚未就绪')
-      return submitLogin(loginPage.data.form, input)
+      return submitLogin(loginPage.data.form, input, loginPage.data.route)
     },
     onError: (error) => {
       setThrottled(/次数过多|稍后再试|频繁/.test(errorMessage(error)))
@@ -71,7 +72,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       // 立刻写入会话缓存，避免账号区块在探针回来前闪回「未登录」
       queryClient.setQueryData(['session'], session)
       onSuccess()
-      // 换身份 = 换 cookie，下游缓存全部作废；登录页表单本身与身份无关，留着
+      // 登录页即将卸载，不再重取；其余缓存按新身份刷新。
       void queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] !== 'login-page',
       })
@@ -166,7 +167,17 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           ) : null}
 
           {mutation.isError ? (
-            <p className="text-ui text-danger">{errorMessage(mutation.error)}</p>
+            <div className="space-y-2">
+              <p className="text-ui text-danger">{errorMessage(mutation.error)}</p>
+              <button
+                type="button"
+                disabled={loginPage.isFetching}
+                onClick={() => { mutation.reset(); void loginPage.refetch() }}
+                className="min-h-11 rounded-md border border-line px-3 py-2 text-ui"
+              >
+                重新读取登录表单
+              </button>
+            </div>
           ) : null}
 
           {lock.remainingMinutes > 0 ? (
@@ -181,6 +192,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             type="submit"
             disabled={
               mutation.isPending ||
+              loginPage.isFetching ||
               lock.remainingMinutes > 0 ||
               values.username === '' ||
               values.password === ''

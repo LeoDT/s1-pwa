@@ -22,7 +22,7 @@ Stage1st（Discuz X3.5）只读阅读器 PWA：用 S1 账号登录、按板块�
 
 ## 环境要求
 
-- Node.js ≥ 20（开发用 26 验证）
+- 本地开发和完整测试使用较新的 Node.js（当前用 26 验证，包含 `node:sqlite` 测试）；独立家庭代理部署包只需 Node.js ≥20.19
 - pnpm 11
 - 部署时需要 Cloudflare 账号（Workers + D1）
 - 本地开发端口：Web `5180`，Worker `8787`
@@ -139,6 +139,12 @@ curl https://<worker>.workers.dev/api/config
 | 图片大面积失败 | 上游图床/TLS 偶发失败，先重跑；详情看 `/api/img` 的 502 日志。正文图片失败可点「打开原图」 |
 | 返回不了列表 | 详情页横向滑动（左右都行）；若与系统手势冲突，可在设置 → 阅读里关闭「横向滑动返回」，用系统返回 |
 | 想看请求细节 | Worker 每个请求打一行 `{"path","method","status","upstream","ms"}`；浏览器 DevTools 的 Verbose 级别有 `[s1]` 前缀日志（不含凭证） |
+
+## 可选：家庭代理加速
+
+UI 与阅读历史仍部署在 Cloudflare，可在家额外运行独立 Node 内容代理。设置 → **家庭代理地址** 填入家庭 HTTPS 地址后自动家庭优先、失败回退。
+
+执行 `pnpm package:proxy` 生成零第三方运行时依赖的部署包；服务器只需 Node.js ≥20.19。完整的 systemd 服务、Caddy 配置、首次安装和覆盖更新流程见 [家庭代理部署](./docs/home-proxy.md)。
 
 ## 安全边界
 

@@ -1,4 +1,4 @@
-import type { CoreDeps } from './env'
+import type { ProxyDeps } from './env'
 import { fetchUpstreamAsset } from './fetchUpstream'
 import { fail } from './http'
 import { readTarget } from './proxy'
@@ -9,7 +9,7 @@ const MAX_BYTES = 50 * 1024 * 1024
  * 附件下载：不限 Content-Type，但限制大小并透出 Content-Disposition。
  * 见 docs/data-model.md §4.5。
  */
-export async function handleFile(request: Request, _deps: CoreDeps, url: URL): Promise<Response> {
+export async function handleFile(request: Request, deps: ProxyDeps, url: URL): Promise<Response> {
   const target = readTarget(url)
   if (!target) return fail(400, 'bad_request', '缺少或非法的 u 参数')
 
@@ -19,6 +19,7 @@ export async function handleFile(request: Request, _deps: CoreDeps, url: URL): P
     accept: '*/*',
     maxBytes: MAX_BYTES,
     label: '附件',
+    fetch: deps.fetch,
   })
   if (!result.ok) return result.response
 

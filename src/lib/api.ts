@@ -1,7 +1,7 @@
 import type { ApiErrorBody } from '@shared/types'
-import { idbDel, idbGet, idbSet } from './db'
+import { getAppToken } from './appToken'
 
-const TOKEN_KEY = 'appToken'
+export { getAppToken, setAppToken } from './appToken'
 
 export class ApiError extends Error {
   readonly code: string
@@ -13,16 +13,6 @@ export class ApiError extends Error {
     this.code = code
     this.status = status
   }
-}
-
-/** 没有令牌时返回 null（TanStack Query 不接受 undefined） */
-export async function getAppToken(): Promise<string | null> {
-  return (await idbGet<string>('kv', TOKEN_KEY)) ?? null
-}
-
-export async function setAppToken(token: string | null): Promise<void> {
-  if (token) await idbSet('kv', TOKEN_KEY, token)
-  else await idbDel('kv', TOKEN_KEY)
 }
 
 type JsonInit = Omit<RequestInit, 'body'> & { json?: unknown; body?: BodyInit }

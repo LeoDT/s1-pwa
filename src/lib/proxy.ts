@@ -3,6 +3,7 @@
  * 并在每一跳合并 Set-Cookie。见 docs/architecture.md §3.2 / §4.3。
  */
 import { ApiError, getAppToken } from './api'
+import { captureContentRoute, routedContentFetch, type ContentRouteContext } from './contentProxy'
 import { cookieHeader, mergeJar, type StoredCookie } from './cookieJar'
 
 export const UPSTREAM_ORIGIN = 'https://stage1st.com'
@@ -43,10 +44,14 @@ interface ProxyEnvelope {
 export async function proxyFetch(
   targetUrl: string,
   init?: ProxyPostInit,
+  routeContext?: ContentRouteContext,
 ): Promise<ProxyResult> {
+  const route = routeContext ?? await captureContentRoute()
   let current = targetUrl
+  let requestInit = init
   for (let hop = 0; hop <= MAX_HOPS; hop += 1) {
-    const response = await sendProxy(current, init)
+    const response = await sendProxy(current, requestInit, route)
+    route.allowFallback = false
 
     const contentType = response.headers.get('content-type') ?? ''
     if (contentType.includes('application/json')) {
@@ -54,6 +59,10 @@ export async function proxyFetch(
       if (!payload.redirect) {
         throw new ApiError('bad_response', '代理返回了无法识别的内容', response.status)
       }
+      if (requestInit && (payload.redirect.status === 307 || payload.redirect.status === 308)) {
+        throw new ApiError('unsafe_post_redirect', '登录请求需要重新提交，请刷新登录表单后重试', 502)
+      }
+      requestInit = undefined
       current = payload.redirect.url
       continue
     }
@@ -78,8 +87,10 @@ export async function proxyFetch(
  */
 export async function proxyRedirect(
   targetUrl: string,
+  routeContext?: ContentRouteContext,
 ): Promise<{ status: number; url: string } | null> {
-  const response = await sendProxy(targetUrl)
+  const route = routeContext ?? await captureContentRoute()
+  const response = await sendProxy(targetUrl, undefined, route)
   const contentType = response.headers.get('content-type') ?? ''
   if (!contentType.includes('application/json')) {
     await response.body?.cancel().catch(() => undefined)
@@ -89,7 +100,7 @@ export async function proxyRedirect(
   return payload.redirect ?? null
 }
 
-async function sendProxy(targetUrl: string, init?: ProxyPostInit): Promise<Response> {
+async function sendProxy(targetUrl: string, init: ProxyPostInit | undefined, route: ContentRouteContext): Promise<Response> {
   const token = await getAppToken()
   const headers = new Headers()
   if (token) headers.set('x-app-token', token)
@@ -99,11 +110,9 @@ async function sendProxy(targetUrl: string, init?: ProxyPostInit): Promise<Respo
 
   if (init) headers.set('content-type', 'application/x-www-form-urlencoded')
 
-  const response = await fetch(`/api/proxy?u=${encodeURIComponent(targetUrl)}`, {
-    method: init ? 'POST' : 'GET',
-    headers,
-    body: init?.body,
-  })
+  const response = await routedContentFetch('/api/proxy', `?u=${encodeURIComponent(targetUrl)}`, {
+    method: init ? 'POST' : 'GET', headers, body: init?.body,
+  }, route)
 
   const setCookieHeader = response.headers.get('x-s1-set-cookie')
   if (setCookieHeader) await mergeJar(decodeSetCookies(setCookieHeader))

@@ -7,6 +7,7 @@ import { debug } from './log'
 import { clearProgress } from './progress'
 import { invalidateProgressOperations, notifyProgress } from './progressEvents'
 import { proxyFetch, UPSTREAM_ROOT, upstreamUrl } from './proxy'
+import { captureContentRoute, type ContentRouteContext } from './contentProxy'
 
 const SESSION_KEY = 'session'
 
@@ -30,6 +31,7 @@ export interface LoginInput {
 export interface LoginPage {
   form: LoginForm
   page: ParsedPage
+  route: ContentRouteContext
 }
 
 const LOGIN_PAGE_URL = upstreamUrl('member.php', {
@@ -74,7 +76,8 @@ export async function clearSession(): Promise<void> {
 
 /** 抓取登录页并解析表单（安全提问选项、是否有验证码） */
 export async function fetchLoginPage(): Promise<LoginPage> {
-  const result = await proxyFetch(LOGIN_PAGE_URL)
+  const route = await captureContentRoute()
+  const result = await proxyFetch(LOGIN_PAGE_URL, undefined, route)
   const page = parsePage(result.html, result.url)
   const form = parseLoginForm(page)
   if (!form) {
@@ -83,7 +86,8 @@ export async function fetchLoginPage(): Promise<LoginPage> {
       loginErrorMessage(page) ?? '无法读取登录表单，S1 可能返回了异常页面',
     )
   }
-  return { form, page }
+  route.allowFallback = false
+  return { form, page, route }
 }
 
 /**
@@ -115,7 +119,7 @@ export function buildLoginRequest(
   return { url: url.toString(), body: body.toString() }
 }
 
-export async function submitLogin(form: LoginForm, input: LoginInput): Promise<Session> {
+export async function submitLogin(form: LoginForm, input: LoginInput, route?: ContentRouteContext): Promise<Session> {
   if (form.captcha) {
     throw new LoginError(
       'captcha_required',
@@ -126,7 +130,7 @@ export async function submitLogin(form: LoginForm, input: LoginInput): Promise<S
   const request = buildLoginRequest(form, input)
   debug('login:request', { url: request.url })
 
-  const result = await proxyFetch(request.url, { method: 'POST', body: request.body })
+  const result = await proxyFetch(request.url, { method: 'POST', body: request.body }, route)
   const uid = parseUid(result.html)
   const landed = parsePage(result.html, result.url)
   const upstreamMessage = loginErrorMessage(landed)

@@ -6,8 +6,10 @@ import { router } from '@/app/router'
 import { ImageLightbox } from '@/components/ImageLightbox'
 import { applyPrefs, getPrefs } from '@/lib/prefs'
 import { pruneImageCache } from '@/lib/imageStore'
+import { startContentProxyLifecycle } from '@/lib/contentProxy'
 import '@/styles/tokens.css'
 
+startContentProxyLifecycle()
 applyPrefs(getPrefs())
 void pruneImageCache().catch(() => undefined)
 // 图片缓存与阅读进度都在本地；申请持久化，降低被系统回收的概率。

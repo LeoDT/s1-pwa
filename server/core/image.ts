@@ -1,4 +1,4 @@
-import type { CoreDeps } from './env'
+import type { ProxyDeps } from './env'
 import { fetchUpstreamAsset } from './fetchUpstream'
 import { fail } from './http'
 import { readTarget } from './proxy'
@@ -9,7 +9,7 @@ const MAX_BYTES = 12 * 1024 * 1024
  * 图片代理：解决外链防盗链与混合内容，顺带把 S1 的登录态带过去（仅上游域）。
  * 见 docs/architecture.md §3.5 / §4.4。
  */
-export async function handleImage(request: Request, _deps: CoreDeps, url: URL): Promise<Response> {
+export async function handleImage(request: Request, deps: ProxyDeps, url: URL): Promise<Response> {
   const target = readTarget(url)
   if (!target) return fail(400, 'bad_request', '缺少或非法的 u 参数')
 
@@ -19,6 +19,7 @@ export async function handleImage(request: Request, _deps: CoreDeps, url: URL): 
     accept: 'image/avif,image/webp,image/png,image/*,*/*;q=0.8',
     maxBytes: MAX_BYTES,
     label: '图片',
+    fetch: deps.fetch,
     validateContentType: (contentType) =>
       contentType.toLowerCase().startsWith('image/')
         ? null
