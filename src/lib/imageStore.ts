@@ -8,6 +8,7 @@ import { idbAll, idbDel, idbGet, idbSet } from './db'
 import { getAppToken } from './api'
 import { cookieHeader } from './cookieJar'
 import { captureContentRoute, routedContentFetch } from './contentProxy'
+import { clearImageDimensions } from './imageDimensions'
 
 const CACHE_NAME = 's1-img-v1'
 const IMAGE_PATH = '/api/img'
@@ -196,9 +197,14 @@ export async function imageCacheStats(): Promise<{ bytes: number; count: number 
 }
 
 export async function clearImageCache(): Promise<void> {
+  const dimensionsCleared = clearImageDimensions()
   for (const url of objectUrls.values()) URL.revokeObjectURL(url)
   objectUrls.clear()
-  await caches.delete(CACHE_NAME)
-  const entries = await idbAll<CacheMeta>('imgMeta')
-  await Promise.all(entries.map((entry) => idbDel('imgMeta', entry.key)))
+  await Promise.all([
+    dimensionsCleared,
+    caches.delete(CACHE_NAME).then(async () => {
+      const entries = await idbAll<CacheMeta>('imgMeta')
+      await Promise.all(entries.map((entry) => idbDel('imgMeta', entry.key)))
+    }),
+  ])
 }

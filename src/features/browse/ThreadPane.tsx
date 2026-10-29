@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
 import { RefreshCw } from 'lucide-react'
 import { BottomBar } from '@/components/BottomBar'
@@ -16,6 +16,7 @@ import { useCollapsingHeader } from '@/lib/useCollapsingHeader'
 import { useDeferredLoading } from '@/lib/useDeferredLoading'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { usePrefs } from '@/lib/usePrefs'
+import { ImageDimensionsContext, usePreparedImageDimensions } from '@/lib/useImageDimensions'
 import { useSwipeBack } from '@/lib/useSwipeBack'
 import { PostCard } from './PostCard'
 import { cn } from '@/lib/utils'
@@ -32,7 +33,11 @@ interface ThreadPaneProps {
 export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: ThreadPaneProps) {
   const navigate = useNavigate()
   const router = useRouter()
-  const showPending = useDeferredLoading(query.isPending)
+  const data = query.data
+  const imageSources = useMemo(() => data?.posts.flatMap((post) => post.images) ?? [], [data])
+  const dimensions = usePreparedImageDimensions(imageSources)
+  const displayedData = dimensions === undefined ? undefined : data
+  const showPending = useDeferredLoading(query.isPending || (!!data && !displayedData))
   const showRefreshing = useDeferredLoading(query.isFetching)
   const boards = useBoards()
   const hash = useRouterState({ select: (state) => state.location.hash })
@@ -166,9 +171,9 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
   )
 
   useEffect(() => {
-    if (!query.data || highlightPid === null) return
+    if (!displayedData || highlightPid === null) return
 
-    if (query.data.posts.some((post) => post.pid === highlightPid)) {
+    if (displayedData.posts.some((post) => post.pid === highlightPid)) {
       const element = document.getElementById(`pid${highlightPid}`)
       if (!element) return
 
@@ -189,7 +194,7 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
     return () => {
       cancelled = true
     }
-  }, [query.data, highlightPid, page, tid, goPage])
+  }, [displayedData, highlightPid, page, tid, goPage])
 
   const openPost = (targetTid: number, pid: number) => {
     const onThisPage = targetTid === tid && query.data?.posts.some((post) => post.pid === pid)
@@ -205,10 +210,9 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
     void downloadAttachment(url, name).catch((error) => window.alert(errorMessage(error)))
   }
 
-  const data = query.data
   const boardName = boards.data?.find((board) => board.fid === data?.fid)?.name
   useThreadReadState(tid, data, boardName)
-  useReadingProgress(scrollRef, data, boardName)
+  useReadingProgress(scrollRef, displayedData, boardName)
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-canvas">
@@ -225,28 +229,30 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
           <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
         ) : null}
 
-        {data ? (
-          <div className="mx-auto max-w-[900px]">
-            <header className="border-b border-line px-4 pb-3 pt-3 lg:px-6">
-              <h1 className="text-title font-semibold leading-[1.45] text-heading">
-                {data.title}
-              </h1>
-              <p className="mt-1 text-meta text-muted">
-                {boardName ? `${boardName} · ` : ''}
-                {data.page} / {data.totalPages} 页 · {data.posts.length} 楼
-              </p>
-            </header>
-            {data.posts.map((post) => (
-              <PostCard
-                key={post.pid}
-                post={post}
-                tid={tid}
-                highlighted={highlighted === post.pid}
-                onOpenPost={openPost}
-                onOpenAttachment={openAttachment}
-              />
-            ))}
-          </div>
+        {displayedData ? (
+          <ImageDimensionsContext.Provider value={dimensions!}>
+            <div className="mx-auto max-w-[900px]">
+              <header className="border-b border-line px-4 pb-3 pt-3 lg:px-6">
+                <h1 className="text-title font-semibold leading-[1.45] text-heading">
+                  {displayedData.title}
+                </h1>
+                <p className="mt-1 text-meta text-muted">
+                  {boardName ? `${boardName} · ` : ''}
+                  {displayedData.page} / {displayedData.totalPages} 页 · {displayedData.posts.length} 楼
+                </p>
+              </header>
+              {displayedData.posts.map((post) => (
+                <PostCard
+                  key={post.pid}
+                  post={post}
+                  tid={tid}
+                  highlighted={highlighted === post.pid}
+                  onOpenPost={openPost}
+                  onOpenAttachment={openAttachment}
+                />
+              ))}
+            </div>
+          </ImageDimensionsContext.Provider>
         ) : null}
       </div>
 

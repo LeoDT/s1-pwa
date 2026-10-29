@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { isLongLivedImage, isS1Image } from '@/lib/imageStore'
+import 'fake-indexeddb/auto'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { idbClear, idbGet, idbSet } from '@/lib/db'
+import { clearImageCache, isLongLivedImage, isS1Image } from '@/lib/imageStore'
+import { loadImageDimensions, saveImageDimensions } from '@/lib/imageDimensions'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('图片代理域名边界', () => {
   it('仅允许 stage1st.com 及其子域名进入代理/blob/cache 通道', () => {
@@ -10,6 +17,25 @@ describe('图片代理域名边界', () => {
     expect(isS1Image('https://evilstage1st.com/a.png')).toBe(false)
     expect(isS1Image('https://example.com/a.png')).toBe(false)
     expect(isS1Image('data:image/png;base64,abc')).toBe(false)
+  })
+})
+
+describe('图片缓存清理', () => {
+  it('actual clearImageCache removes image bytes metadata and dimensions, preserving unrelated meta', async () => {
+    await idbClear('imgMeta')
+    await idbClear('meta')
+    await idbSet('imgMeta', 'cached-image', { key: 'cached-image', size: 123, lastUsed: 1 })
+    await saveImageDimensions('https://example.com/image.png', { width: 640, height: 480 })
+    await idbSet('meta', 'unrelated-setting', { keep: true })
+
+    const deleteCache = vi.fn().mockResolvedValue(true)
+    vi.stubGlobal('caches', { delete: deleteCache })
+    await clearImageCache()
+
+    expect(deleteCache).toHaveBeenCalledOnce()
+    expect(await idbGet('imgMeta', 'cached-image')).toBeUndefined()
+    expect(await loadImageDimensions(['https://example.com/image.png'])).toEqual(new Map())
+    expect(await idbGet('meta', 'unrelated-setting')).toEqual({ keep: true })
   })
 })
 

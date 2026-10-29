@@ -74,7 +74,10 @@ describe('browse navigation integration', () => {
     act(() => root.render(createElement(QueryClientProvider, { client }, createElement(RouterProvider, { router }))))
   }
   const navigate = async (url: string) => act(async () => { await router.navigate({ to: url as never }) })
-  const wait = async (predicate: () => void) => act(async () => { await vi.waitFor(predicate) })
+  const wait = async (predicate: () => void) => vi.waitFor(async () => {
+    await act(async () => {})
+    predicate()
+  })
   const forumRequests = () => env.proxy.mock.calls.filter(([url]) => String(url).includes('mod=forumdisplay'))
 
   beforeEach(() => {

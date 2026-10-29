@@ -151,11 +151,13 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 |---|---|
 | 普通外链图 | `img[src]` |
 | 站内附件图 | `img[zoomfile]` 或 `img[file]` 优先（原图），`src` 作缩略图 |
-| 表情 | `img[smilieid]` → 行内 20px，不进入灯箱 |
+| 表情 | `img[smilieid]` → 行内 24px，不进入灯箱 |
 
 地址一律 `new URL(src, base).href`，仅保留 `http/https` 与 `data:image/`。
 
 **输出到渲染层时只写 `data-src`、不写 `src`**：DOMPurify 内部用 `innerHTML` 解析片段，带 `src` 会导致清洗阶段浏览器提前请求。渲染器只读 `data-src` 并交给 `ProxyImage`，由组件按域名决定加载通道。单测 `tests/parser-content.test.ts` 会检查 `<img>` 不含 `src`。
+
+尺寸以图片加载后的 `naturalWidth`/`naturalHeight` 为准，不依赖上游 HTML 的宽高属性，也不额外请求图片。`ThreadPane` 在渲染帖子和定位楼层前读取当前页已缓存的尺寸；首次未知尺寸或存储失败时允许布局位移。尺寸存储及淘汰规则见 data-model.md §5.3，不改变本站/外站图片的文件加载通道。
 
 ### 6.3 附件
 
@@ -319,4 +321,4 @@ tests/fixtures/
 | 登录后用户名解析 | 待实测（登录后补 §9 选择器） |
 | 引用指向**其它主题** | 已支持（`ptid` ≠ 当前 tid 时路由到 `/t/<ptid>/<page>`） |
 | 楼中楼/`#comment_` | 一律忽略 |
-| 图片 `width/height` 缺失导致布局位移 | 接受（占位 120px 最小高 + 渐显） |
+| 图片 `width/height` 缺失 | 有缓存尺寸时预留比例尺寸；首次未知尺寸允许布局位移，加载后用 `naturalWidth`/`naturalHeight` 补录 |

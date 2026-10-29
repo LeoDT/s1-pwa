@@ -199,6 +199,7 @@ v2 有意重置 `progress` 与 `outbox`；保留凭证、session、偏好、板�
 | `boards` | `list` | `{fid, name}[]` | 常用板块（数组顺序即 tab 顺序） |
 | `imgMeta` | `url` | `{size:number, lastUsed:number}` | 图片缓存 LRU 记账 |
 | `meta` | `listScroll:<fid>` | `number` | 列表滚动位置 |
+| `meta` | `imageDimensions:<absolute URL>` | `{width:number, height:number, lastUsed:number}` | 图片尺寸缓存（含外站及本站），供占位与布局预留 |
 
 ### 5.2 localStorage（同步读取的偏好）
 
@@ -214,8 +215,10 @@ v2 有意重置 `progress` 与 `outbox`；保留凭证、session、偏好、板�
 `caches.open('s1-img-v1')`，key = `/api/img?u=…`。
 `imgMeta` 记录字节数与最近访问时间；**超过 7 天未访问**的条目在启动/新图入库后清理，总占用 > 500MB 时再按 `lastUsed` 淘汰。
 站内表情（`static.stage1st.com/image/smiley/`）是固定静态资源，不做 7 天过期，但仍参与 500MB LRU。
-设置页显示本站占用（`imgMeta` 汇总）与 `navigator.storage.estimate().usage`，可一键清空（同时清 Cache、`imgMeta` 与内存 objectURL）。
+设置页显示本站占用（`imgMeta` 汇总）与 `navigator.storage.estimate().usage`，可一键清空（同时清 Cache、`imgMeta`、图片尺寸记录与内存 objectURL）。
 Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
+
+图片尺寸单独由 `src/lib/imageDimensions.ts` 维护，按 `imageDimensions:<absolute URL>` 存在现有 IndexedDB `meta` store，值为 `{width, height, lastUsed}`；不升级数据库版本。外站图片字节仍由浏览器原生缓存管理，本站图片字节仍走既有 Cache API/`imgMeta`，尺寸记录不改变两条字节缓存通道。帖子页渲染前准备页面内图片源的尺寸并触碰 `lastUsed`；7 天未使用的尺寸记录过期，启动和新增记录时清理，最多保留 5000 条并按 `lastUsed` 做 LRU 淘汰。存储失败时回退到无尺寸缓存的渲染。历史图片缺失尺寸时由 HTML 图片 `onLoad` 的 `naturalWidth`/`naturalHeight` 补录，不额外 fetch 图片。
 
 ## 6. 数据流与缓存
 

@@ -10,7 +10,8 @@
 │   ├── sanitizer    DOMPurify（帖子正文）                                       │
 │   ├── apiFetch()   注入 X-App-Token / X-S1-Cookie                             │
 │   ├── cookieJar    IndexedDB（S1 凭证唯一存放点）                              │
-│   ├── imageStore   fetch → blob + Cache API（LRU 500MB）                       │
+│   ├── imageStore   fetch → blob + Cache API（S1 字节 LRU 500MB）               │
+│   ├── imageDimensions  页面图片尺寸 → IDB meta（7 天 / LRU 5000）               │
 │   ├── progress     本地镜像 + 写入队列（离线可续传）                            │
 │   └── ServiceWorker 仅 app shell precache                                     │
 └───────────────────────────────┬──────────────────────────────────────────────┘
@@ -130,9 +131,10 @@ ProxyImage 按图片域名分通道：
 附件（非图片）：fetch('/api/file?u=…') → blob → 触发下载 / 新标签查看
 ```
 
-- 仅 stage1st.com 及其真实子域名图片进入代理/blob/cache 通道；域名按 hostname 精确或 `.stage1st.com` 后缀判断，拒绝 `stage1st.com.evil` 等伪装域名。外站图直接用原始 URL，由原生 `<img>` 的 `onLoad/onError` 管理状态，绝不代理回退、fetch 或记入应用图片缓存。
+- 仅 stage1st.com 及其真实子域名图片进入代理/blob/cache 通道；域名按 hostname 精确或 `.stage1st.com` 后缀判断，拒绝 `stage1st.com.evil` 等伪装域名。外站图直接用原始 URL，由原生 `<img>` 的 `onLoad/onError` 管理状态，绝不代理回退、fetch 或记入应用图片文件缓存。
 - 正文 HTML 里的图片只带 `data-src`（不带 `src`），否则浏览器会在 DOMPurify/HTML 解析阶段直接请求原图，既绕过代理也会撞防盗链。
 - 省流量模式：正文图只渲染占位框，点击才加载；行内图照常加载。域名切换时按新 src 重置状态，避免旧请求结果显示为新图。
+- `ThreadPane` 在渲染帖子和 hash 楼层定位前批量读取当前页图片尺寸，提前预留空间。`ProxyImage` 在原生 `onLoad` 中补录 `naturalWidth`/`naturalHeight`，不额外下载图片；首次未知尺寸或存储失败时允许布局位移。本站、外站图片都只额外保存尺寸元数据，不改变原有文件加载通道；尺寸缓存的存储和淘汰规则见 data-model.md §5.3。
 
 ### 3.6 阅读进度写入
 
@@ -223,7 +225,8 @@ Cloudflare 同源部署不需要 CORS；`X-Upstream-Url` 等自定义头在同�
 | 帖子页 | TanStack Query | 60s | 同页内返回不重新请求 |
 | 历史索引 | TanStack Query | 60s | 失败时回落到本地镜像 |
 | S1 图片 | Cache API | 1 年 immutable | LRU 上限 500MB，可手动清空 |
-| 外站图片 | 浏览器原生 HTTP 缓存 | 由图床响应头决定 | 不计入应用缓存或由应用清理 |
+| 外站图片字节 | 浏览器原生 HTTP 缓存 | 由图床响应头决定 | 不计入应用缓存或由应用清理；尺寸元数据另存 IDB `meta` |
+| 图片尺寸 | IndexedDB `meta`（`imageDimensions:<absolute URL>`） | 7 天未使用；上限 5000 条 LRU | 启动/新插入时 prune；设置清空图片缓存时一并清除 |
 | 应用壳（HTML/JS/CSS/图标） | Service Worker precache | 随构建版本更新 | `vite-plugin-pwa` generateSW；`navigateFallback: /index.html`，只接管导航与静态资源，**`/api/*` 不进 SW** |
 | 上游页面 HTML | **不缓存** | — | 服务端零缓存（跨用户泄漏 + 状态分叉） |
 
