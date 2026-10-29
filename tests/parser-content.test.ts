@@ -149,6 +149,29 @@ function groupCount(groups: ReturnType<typeof parseBoardGroups>): number {
   return groups.reduce((sum, group) => sum + group.boards.length, 0)
 }
 
+describe('引用截断留下未闭合格式化标签', () => {
+  const page = parsePage(
+    fixture('viewthread-malformed-strike.html'),
+    `${BASE}forum.php?mod=viewthread&tid=2275806&page=465&mobile=2`,
+  )
+  const thread = parseThreadPage(page)
+
+  it('游离 <strike> 不会吞掉后续楼层', () => {
+    expect(thread.posts.map((post) => post.pid)).toEqual([9001, 9002, 9003])
+    expect(thread.posts.map((post) => post.floor)).toEqual([18582, 18583, 18584])
+  })
+
+  it('后续楼层正文仍然完整解析', () => {
+    const html = thread.posts.flatMap((post) => post.blocks.map((block) => block.html)).join('')
+    expect(html).toContain('第二楼正文')
+    expect(html).toContain('第三楼正文')
+  })
+
+  it('被游离元素包住的回复总数仍可读取', () => {
+    expect(thread.replies).toBe(12345)
+  })
+})
+
 describe('图片不走浏览器直连', () => {
   const page = parsePage(fixture('viewthread-1826103-p1.html'), `${BASE}forum.php?mod=viewthread&tid=1826103&mobile=2`)
   const thread = parseThreadPage(page)

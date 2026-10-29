@@ -57,7 +57,9 @@ export const FORUM_LIST = {
 
 export const THREAD = {
   fidLink: '.header .mz a[href*="fid="]',
-  post: '.viewthread > .plc.cl[id^="pid"]',
+  // 上游引用截断可能留下未闭合的格式化标签，HTML 解析器会把后续楼层包进 <strike> 等元素，
+  // 所以楼层与回复总数都不能依赖 .viewthread 的直接子节点。
+  post: '.viewthread .plc.cl[id^="pid"]',
   avatar: '.avatar img',
   authi: 'ul.authi',
   floor: 'ul.authi li.mtit span.y',
@@ -65,7 +67,7 @@ export const THREAD = {
   time: 'ul.authi li.mtime',
   viewsAndReplies: 'ul.authi li.mtime span.y',
   replyCount: 'ul.authi li.mtime span.y .dm-chat-s + em',
-  repliesTotal: '.viewthread > .txtlist > .mtit.cl',
+  repliesTotal: '.viewthread .txtlist > .mtit.cl',
   message: '.message',
   editNote: 'i.pstatus',
   quote: 'div.quote',

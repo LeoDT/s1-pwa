@@ -100,7 +100,7 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 ```
 .header h2                              → 主题标题
 .header .mz a[href*=fid=]               → fid
-.viewthread > .plc.cl[id^=pid]           → 每个楼层（**扁平结构，无嵌套**）
+.viewthread .plc.cl[id^=pid]             → 每个楼层（用后代选择器，不依赖直接子节点）
     .avatar img                          → 头像（不渲染）
     .display                             → 帖子容器（首楼多 class pione）
     ul.authi
@@ -117,7 +117,9 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 
 首楼识别：`floor === 1`（不依赖 `pione` 类）。
 
-回复数按 `dm-chat-s` 标识后的 `em` 读取，缺失时回退到 `.viewthread > .txtlist > .mtit.cl` 的“全部回复”直接控件；不从正文文本推断。支持 `18,194` 等千位分隔计数，真实 0 保留，缺失或非法值为 `null`。
+回复数按 `dm-chat-s` 标识后的 `em` 读取，缺失时回退到 `.viewthread .txtlist > .mtit.cl` 的“全部回复”直接控件；不从正文文本推断。支持 `18,194` 等千位分隔计数，真实 0 保留，缺失或非法值为 `null`。
+
+楼层与回复总数统一用后代选择器：Discuz 截断引用时可能把 `<strike>` 等格式化标签截在中间，HTML 解析器会把后续楼层包进这个游离元素，直接子节点选择器会漏掉 18583 楼之后的帖子。
 
 正文与独立 HTML 块首尾的空白、无用 `<br>` 会清理并丢弃空块；清理可沿包装层递归，但只处理整体边界，保留正文内部换行和 `pre/code` 内容。
 
