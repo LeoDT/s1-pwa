@@ -7,7 +7,7 @@ import { ThreadRow } from './ThreadRow'
 import { BoardTabs } from './BoardTabs'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/states'
 import { errorMessage } from '@/lib/errors'
-import { getListState, markFromList, rememberListState } from '@/lib/navigation'
+import { clearThreadFocus, getListState, markFromList, rememberListState, setThreadFocus } from '@/lib/navigation'
 import { usePullToRefresh, PULL_THRESHOLD } from '@/lib/usePullToRefresh'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { getNewReplies, getProgress, recordThreadOpened } from '@/lib/progress'
@@ -129,18 +129,19 @@ export function ForumPane({ fid, activeTid, visible = true }: ForumPaneProps) {
     const local = await getProgress(tid).catch(() => undefined)
     if (generation !== openGenerationRef.current || accountRef.current !== accountId) return
     const page = local?.position?.page ?? 1
-    const hash = local?.position?.pid ? `pid${local.position.pid}` : undefined
+    const pid = local?.position?.pid
+    clearThreadFocus()
+    if (pid) setThreadFocus(tid, page, pid)
 
     if (page > 1) {
       void navigate({
         to: '/t/$tid/$page',
         params: { tid: String(tid), page: String(page) },
-        hash,
         replace,
       })
       return
     }
-    void navigate({ to: '/t/$tid', params: { tid: String(tid) }, hash, replace })
+    void navigate({ to: '/t/$tid', params: { tid: String(tid) }, replace })
   }
 
   const progressMap = useMemo(

@@ -24,7 +24,7 @@ vi.mock('@/lib/progress', () => ({
   deleteServerProgress: vi.fn(), loadProgress: vi.fn(async () => mocks.rows), removeProgress: vi.fn(),
   subscribeProgress: (listener: () => void) => { mocks.onProgress = listener; return () => { mocks.onProgress = undefined } },
 }))
-vi.mock('@/lib/navigation', () => ({ markFromList: vi.fn() }))
+vi.mock('@/lib/navigation', () => ({ markFromList: vi.fn(), consumeThreadFocus: () => null, peekThreadFocus: () => null, setThreadFocus: vi.fn(), clearThreadFocus: vi.fn() }))
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
 import { HistoryPane } from '@/features/history/HistoryPane'
 

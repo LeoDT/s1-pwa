@@ -117,6 +117,8 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 
 首楼识别：`floor === 1`（不依赖 `pione` 类）。
 
+楼主 uid：优先从第 1 页「只看楼主」链接的 `authorid` 解析；没有该链接时才回退到首楼作者 uid。第 2 页起没有该链接，因此不能把本页第一楼作者当作楼主；客户端用 IndexedDB `meta` 缓存 `threadOpUid:<tid>`，缺失时才补拉第 1 页。
+
 回复数按 `dm-chat-s` 标识后的 `em` 读取，缺失时回退到 `.viewthread .txtlist > .mtit.cl` 的“全部回复”直接控件；不从正文文本推断。支持 `18,194` 等千位分隔计数，真实 0 保留，缺失或非法值为 `null`。
 
 楼层与回复总数统一用后代选择器：Discuz 截断引用时可能把 `<strike>` 等格式化标签截在中间，HTML 解析器会把后续楼层包进这个游离元素，直接子节点选择器会漏掉 18583 楼之后的帖子。
@@ -212,7 +214,7 @@ message HTML
 ## 8. 楼层定位
 
 ```ts
-locatePid(tid: number, pid: number): Promise<{ page: number; hash: string }>
+locatePid(tid: number, pid: number): Promise<{ page: number; pid: number }>
 // GET /api/proxy?u=<findpost 地址>   → 200 { redirect: { status, url } }
 // 从 url 取 page=(\d+) 与 #pid(\d+)
 ```
@@ -220,11 +222,11 @@ locatePid(tid: number, pid: number): Promise<{ page: number; hash: string }>
 规则：
 
 1. 目标 pid 已在当前已加载页的 `posts` 中 → 直接滚动，不发请求。
-2. 否则 §8 定位成功 → 路由到 `/t/<tid>/<page>#pid<pid>`（**push**，保证返回可用）。
+2. 否则 §8 定位成功 → 路由到 `/t/<tid>/<page>`，并把目标 pid 放入一次性内存 focus。
 3. `findpost` 失败（网络/结构变化）→ 回落到历史里记录的页；还不存在 → 第 1 页；页 > `totalPages` → 末页。
 4. 部分帖子被删导致 `redirect` 指向的页不含该 pid（Discuz 行为）→ 落在该页顶部，不报错。
 
-同帖内的引用跳转、历史恢复、路由带 `#pid` 三种入口共用此函数。
+同帖内的引用跳转、跨帖跳转和历史恢复共用此函数；URL 不保存 pid。旧 `#pid` 深链仅在进入时兼容消费一次。
 
 ## 9. DTO
 

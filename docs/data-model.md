@@ -199,6 +199,7 @@ v2 有意重置 `progress` 与 `outbox`；保留凭证、session、偏好、板�
 | `boards` | `list` | `{fid, name}[]` | 常用板块（数组顺序即 tab 顺序） |
 | `imgMeta` | `url` | `{size:number, lastUsed:number}` | 图片缓存 LRU 记账 |
 | `meta` | `listScroll:<fid>` | `number` | 列表滚动位置 |
+| `meta` | `threadOpUid:<tid>` | `number` | 楼主 uid 缓存；第 N 页缺缓存时补拉第 1 页 |
 | `meta` | `imageDimensions:<absolute URL>` | `{width:number, height:number, lastUsed:number}` | 图片尺寸缓存（含外站及本站），供占位与布局预留 |
 
 ### 5.2 localStorage（同步读取的偏好）
@@ -229,7 +230,7 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 | `['config']` | 会话 | 手动刷新 |
 | `['boards-src']` | 10min | 设置里展开「添加板块」 |
 | `['forum', fid]`（无限分页） | 会话，`staleTime/gcTime: Infinity` | 仅下拉/刷新按钮；首次无缓存与追加页正常请求 |
-| `['thread', tid, page]` | 60s | 刷新按钮 |
+| `['thread', tid, page]` | 60s | 刷新按钮；刷新保留旧 DOM/视口，不触发楼内定位 |
 | `['history', uid]` | 60s（本地查询） | 本地提交/远端合并后 `invalidate`；显式刷新重新拉取并提交 |
 | `['progress-index', uid或'guest']` | 60s | 本地事务提交后 `invalidate` |
 | `['locate', tid, pid]` | 会话（Map） | 必要时手动清 |

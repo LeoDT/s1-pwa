@@ -14,7 +14,7 @@ vi.mock('@tanstack/react-router', () => ({
   useRouterState: () => '',
 }))
 vi.mock('@/features/browse/queries', () => ({ useBoards: () => ({ data: [] }), useThreadPage: mocks.useThreadPage }))
-vi.mock('@/lib/navigation', () => ({ consumeFromList: mocks.consumeFromList }))
+vi.mock('@/lib/navigation', () => ({ consumeFromList: mocks.consumeFromList, consumeThreadFocus: () => null, peekThreadFocus: () => null, setThreadFocus: vi.fn(), clearThreadFocus: vi.fn() }))
 vi.mock('@/lib/useSwipeBack', () => ({ useSwipeBack: mocks.swipe }))
 vi.mock('@/features/browse/useReadingProgress', () => ({ useReadingProgress: vi.fn() }))
 vi.mock('@/features/browse/useThreadReadState', () => ({ useThreadReadState: vi.fn() }))

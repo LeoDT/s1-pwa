@@ -63,6 +63,24 @@ describe('帖子页', () => {
     expect(thread.title).toContain('S1 NUX')
     expect(thread.totalPages).toBe(15)
     expect(thread.replies).toBe(580)
+    expect(thread.opUid).toBe(152709)
+  })
+
+  it('非第 1 页没有「只看楼主」时不把本页第一楼作者当楼主', () => {
+    const pageTwo = parsePage(`
+      <html><body class="pg_viewthread">
+        <base href="https://stage1st.com/2b/" />
+        <div class="header"><h2>topic</h2></div>
+        <div class="viewthread"><div class="plc cl" id="pid2">
+          <ul class="authi">
+            <li class="mtit"><span class="y">41<sup>#</sup></span><span class="z"><a href="home.php?mod=space&amp;uid=999&amp;mobile=2">not-op</a></span></li>
+            <li class="mtime">2020-1-1 00:00</li>
+          </ul>
+          <div class="message">body</div>
+        </div></div>
+      </body></html>
+    `, `${BASE}forum.php?mod=viewthread&tid=1826103&page=2&mobile=2`)
+    expect(parseThreadPage(pageTwo).opUid).toBeNull()
   })
 
   it('楼层：首楼 = 1，其余为数字或不连续缺省', () => {

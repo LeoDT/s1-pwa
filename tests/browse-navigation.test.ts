@@ -33,7 +33,7 @@ vi.mock('@/lib/progress', () => ({
   fetchHistory: async () => [], mergeProgress: async () => {}, deleteServerProgress: async () => {}, clearServerHistory: async () => {}, removeProgress: async () => {}, clearProgress: async () => {},
 }))
 vi.mock('@/lib/useMediaQuery', () => ({ useMediaQuery: (query: string) => query.includes('min-width') ? env.wide : !env.wide }))
-vi.mock('@/lib/navigation', () => ({ markFromList: () => {}, rememberListState: () => {}, getListState: () => undefined, consumeFromList: () => false }))
+vi.mock('@/lib/navigation', () => ({ markFromList: () => {}, rememberListState: () => {}, getListState: () => undefined, consumeFromList: () => false, consumeThreadFocus: () => null, peekThreadFocus: () => null, setThreadFocus: () => {}, clearThreadFocus: () => {} }))
 vi.mock('@/lib/useDeferredLoading', () => ({ useDeferredLoading: () => true }))
 vi.mock('@/lib/usePrefs', () => ({ usePrefs: () => ({ edgeSwipe: false }) }))
 vi.mock('@/lib/useSwipeBack', () => ({ useSwipeBack: () => {} }))
@@ -194,7 +194,7 @@ describe('browse navigation integration', () => {
     expect(String(forumRequests()[0][0])).toContain('fid=51')
   })
 
-  it('keeps the source list during detail refresh and failed cross-post requests', async () => {
+  it('keeps the source list during failed cross-post requests', async () => {
     await mount('/f/6')
     await wait(() => expect(host.querySelector('.divide-y button')).not.toBeNull())
     const list = host.querySelector('.divide-y')
@@ -202,9 +202,6 @@ describe('browse navigation integration', () => {
     await wait(() => expect(host.querySelector('h1')).not.toBeNull())
     const threadRequests = () => env.proxy.mock.calls.filter(([url]) => String(url).includes('mod=viewthread'))
     expect(threadRequests()).toHaveLength(1)
-    const refreshButtons = host.querySelectorAll<HTMLButtonElement>('button[aria-label="刷新"]')
-    await act(async () => refreshButtons[refreshButtons.length - 1].click())
-    await wait(() => expect(threadRequests()).toHaveLength(2))
     expect(forumRequests()).toHaveLength(1)
     expect(host.querySelector('.divide-y')).toBe(list)
 

@@ -1,25 +1,31 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
-import { RefreshCw } from 'lucide-react'
+import type { ThreadPage } from '@shared/types'
 import { BottomBar } from '@/components/BottomBar'
 import { Pager } from '@/components/Pager'
-import { ToolbarButton } from '@/components/ToolbarButton'
 import { ErrorState, PostSkeleton } from '@/components/states'
 import { useBoards, type ThreadPageQuery } from './queries'
 import { useReadingProgress } from './useReadingProgress'
+import { useThreadOpUid } from './useThreadOpUid'
 import { useThreadReadState } from './useThreadReadState'
 import { downloadAttachment } from '@/lib/attachments'
 import { errorMessage } from '@/lib/errors'
+import type { ImageDimensions } from '@/lib/imageDimensions'
 import { locatePid } from '@/lib/locate'
-import { consumeFromList } from '@/lib/navigation'
+import { consumeFromList, consumeThreadFocus, peekThreadFocus, setThreadFocus } from '@/lib/navigation'
+import { getProgress } from '@/lib/progress'
 import { useCollapsingHeader } from '@/lib/useCollapsingHeader'
 import { useDeferredLoading } from '@/lib/useDeferredLoading'
+import { useEdgePull } from '@/lib/useEdgePull'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { usePrefs } from '@/lib/usePrefs'
-import { ImageDimensionsContext, usePreparedImageDimensions } from '@/lib/useImageDimensions'
+import {
+  EMPTY_IMAGE_DIMENSIONS,
+  ImageDimensionsContext,
+  usePreparedImageDimensions,
+} from '@/lib/useImageDimensions'
 import { useSwipeBack } from '@/lib/useSwipeBack'
 import { PostCard } from './PostCard'
-import { cn } from '@/lib/utils'
 
 interface ThreadPaneProps {
   tid: number
@@ -30,20 +36,41 @@ interface ThreadPaneProps {
   fromHistory?: boolean
 }
 
+interface RenderedThread {
+  data: ThreadPage
+  dimensions: ReadonlyMap<string, ImageDimensions>
+}
+
 export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: ThreadPaneProps) {
   const navigate = useNavigate()
   const router = useRouter()
   const data = query.data
   const imageSources = useMemo(() => data?.posts.flatMap((post) => post.images) ?? [], [data])
   const dimensions = usePreparedImageDimensions(imageSources)
-  const displayedData = dimensions === undefined ? undefined : data
+
+  // 刷新时新图片集合的尺寸尚未就绪：继续显示上一份正文，避免整段卸载和滚动归零。
+  const lastRenderedRef = useRef<RenderedThread | null>(null)
+  if (data && dimensions !== undefined) {
+    lastRenderedRef.current = { data, dimensions }
+  }
+  const previous = lastRenderedRef.current
+  const canReusePrevious = !!data && !!previous &&
+    previous.data.tid === data.tid && previous.data.page === data.page
+  const rendered = data && dimensions !== undefined
+    ? { data, dimensions }
+    : canReusePrevious ? previous : undefined
+  const displayedData = rendered?.data
+  const displayedDimensions = rendered?.dimensions ?? EMPTY_IMAGE_DIMENSIONS
   const showPending = useDeferredLoading(query.isPending || (!!data && !displayedData))
-  const showRefreshing = useDeferredLoading(query.isFetching)
   const boards = useBoards()
+  const opUid = useThreadOpUid(tid, page, data)
   const hash = useRouterState({ select: (state) => state.location.hash })
   const [highlighted, setHighlighted] = useState<number | null>(null)
 
   const scrollRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const highlightTimerRef = useRef<number | null>(null)
+  const entryHandledRef = useRef<string | null>(null)
   const { edgeSwipe } = usePrefs()
   const narrow = useMediaQuery('(max-width: 1023px)')
   // 只有小屏详情页的顶栏是浮层，需要给内容留出高度
@@ -69,17 +96,34 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
 
   useSwipeBack(backToList, edgeSwipe)
 
-  const targetPid = /^#?pid(\d+)$/.exec(hash ?? '')?.[1]
-  const highlightPid = targetPid ? Number.parseInt(targetPid, 10) : null
+  const legacyFocusPid = /^#?pid(\d+)$/.exec(hash ?? '')?.[1]
+  const legacyPid = legacyFocusPid ? Number.parseInt(legacyFocusPid, 10) : null
+
+  const focusPid = useCallback((pid: number): boolean => {
+    const element = document.getElementById(`pid${pid}`)
+    if (!element) return false
+
+    element.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    setHighlighted(pid)
+    if (highlightTimerRef.current !== null) window.clearTimeout(highlightTimerRef.current)
+    highlightTimerRef.current = window.setTimeout(() => {
+      setHighlighted(null)
+      highlightTimerRef.current = null
+    }, 1200)
+    return true
+  }, [])
+
+  useEffect(() => () => {
+    if (highlightTimerRef.current !== null) window.clearTimeout(highlightTimerRef.current)
+  }, [])
 
   const goPage = useCallback(
-    (next: number, targetHash?: string) => {
+    (next: number) => {
       if (fromHistory) {
         if (next === 1) {
           void navigate({
             to: '/history/t/$tid',
             params: { tid: String(tid) },
-            hash: targetHash,
             replace: true,
           })
           return
@@ -87,7 +131,6 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
         void navigate({
           to: '/history/t/$tid/$page',
           params: { tid: String(tid), page: String(next) },
-          hash: targetHash,
           replace: true,
         })
         return
@@ -95,13 +138,12 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
 
       // 第 1 页用干净 URL（/t/<tid>），避免 /1 与 / 两份地址
       if (next === 1) {
-        void navigate({ to: '/t/$tid', params: { tid: String(tid) }, hash: targetHash, replace: true })
+        void navigate({ to: '/t/$tid', params: { tid: String(tid) }, replace: true })
         return
       }
       void navigate({
         to: '/t/$tid/$page',
         params: { tid: String(tid), page: String(next) },
-        hash: targetHash,
         replace: true,
       })
     },
@@ -110,13 +152,12 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
 
   /** 打开另一个帖子：保持当前列表来源（板块或历史） */
   const openThreadAt = useCallback(
-    (targetTid: number, targetPage: number, targetHash: string) => {
+    (targetTid: number, targetPage: number) => {
       if (fromHistory) {
         if (targetPage === 1) {
           void navigate({
             to: '/history/t/$tid',
             params: { tid: String(targetTid) },
-            hash: targetHash,
             replace: true,
           })
           return
@@ -124,7 +165,6 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
         void navigate({
           to: '/history/t/$tid/$page',
           params: { tid: String(targetTid), page: String(targetPage) },
-          hash: targetHash,
           replace: true,
         })
         return
@@ -134,7 +174,6 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
         void navigate({
           to: '/t/$tid',
           params: { tid: String(targetTid) },
-          hash: targetHash,
           replace: true,
         })
         return
@@ -142,80 +181,203 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
       void navigate({
         to: '/t/$tid/$page',
         params: { tid: String(targetTid), page: String(targetPage) },
-        hash: targetHash,
         replace: true,
       })
     },
     [fromHistory, navigate],
   )
 
-  /** 跨页/跨帖定位：先问上游 pid 在哪一页，再带着 #pid 跳过去 */
+  /** 跨页/跨帖定位：先问上游 pid 在哪一页，再把目标交给下一次进入消费。 */
   const goToPost = useCallback(
     async (targetTid: number, pid: number) => {
       let located: Awaited<ReturnType<typeof locatePid>> = null
       try {
         located = await locatePid(targetTid, pid)
       } catch {
-        // 定位失败：退回第 1 页 + hash
+        // 定位失败：退回第 1 页
       }
       const targetPage = located?.page ?? 1
-      const targetHash = `pid${located?.pid ?? pid}`
+      const targetPid = located?.pid ?? pid
 
-      if (targetTid === tid) {
-        goPage(targetPage, targetHash)
+      if (targetTid === tid && targetPage === page) {
+        focusPid(targetPid)
         return
       }
-      openThreadAt(targetTid, targetPage, targetHash)
+
+      setThreadFocus(targetTid, targetPage, targetPid)
+      if (targetTid === tid) goPage(targetPage)
+      else openThreadAt(targetTid, targetPage)
     },
-    [goPage, openThreadAt, tid],
+    [focusPid, goPage, openThreadAt, page, tid],
   )
 
-  useEffect(() => {
-    if (!displayedData || highlightPid === null) return
-
-    if (displayedData.posts.some((post) => post.pid === highlightPid)) {
-      const element = document.getElementById(`pid${highlightPid}`)
-      if (!element) return
-
-      element.scrollIntoView({ block: 'start', behavior: 'smooth' })
-      setHighlighted(highlightPid)
-      const timer = setTimeout(() => setHighlighted(null), 1200)
-      return () => clearTimeout(timer)
+  /** 旧 URL 深链的 #pid 只兼容一次：消费后从地址里清掉。 */
+  const clearLegacyHash = useCallback(() => {
+    if (!hash) return
+    if (fromHistory) {
+      if (page === 1) {
+        void navigate({
+          to: '/history/t/$tid',
+          params: { tid: String(tid) },
+          replace: true,
+          resetScroll: false,
+          hashScrollIntoView: false,
+        })
+        return
+      }
+      void navigate({
+        to: '/history/t/$tid/$page',
+        params: { tid: String(tid), page: String(page) },
+        replace: true,
+        resetScroll: false,
+        hashScrollIntoView: false,
+      })
+      return
     }
 
-    // 目标楼层不在当前页：定位到所在页（定位结果有缓存，不会反复请求）
-    let cancelled = false
-    void locatePid(tid, highlightPid)
-      .then((located) => {
-        if (cancelled || !located || located.page === page) return
-        goPage(located.page, `pid${located.pid}`)
+    if (page === 1) {
+      void navigate({
+        to: '/t/$tid',
+        params: { tid: String(tid) },
+        replace: true,
+        resetScroll: false,
+        hashScrollIntoView: false,
       })
-      .catch(() => undefined)
+      return
+    }
+    void navigate({
+      to: '/t/$tid/$page',
+      params: { tid: String(tid), page: String(page) },
+      replace: true,
+      resetScroll: false,
+      hashScrollIntoView: false,
+    })
+  }, [fromHistory, hash, navigate, page, tid])
+
+  // 进入帖子时只定位一次：显式 focus > 旧 hash 深链 > 本地阅读进度。
+  useEffect(() => {
+    if (!displayedData) return
+    const entryKey = `${tid}:${page}`
+    if (entryHandledRef.current === entryKey) return
+
+    let cancelled = false
+    const markHandled = () => {
+      entryHandledRef.current = entryKey
+    }
+    const clearLegacy = () => {
+      if (legacyPid !== null) clearLegacyHash()
+    }
+
+    const pendingFocus = peekThreadFocus(tid, page)
+    const targetPid = pendingFocus ?? legacyPid
+
+    if (targetPid !== null) {
+      if (displayedData.posts.some((post) => post.pid === targetPid)) {
+        focusPid(targetPid)
+        if (pendingFocus !== null) consumeThreadFocus(tid, page)
+        clearLegacy()
+        markHandled()
+        return
+      }
+
+      void locatePid(tid, targetPid)
+        .then((located) => {
+          if (cancelled) return
+          if (located && located.page !== page) {
+            setThreadFocus(tid, located.page, located.pid)
+            goPage(located.page)
+            return
+          }
+          if (located && located.page === page && focusPid(located.pid)) {
+            if (pendingFocus !== null) consumeThreadFocus(tid, page)
+            clearLegacy()
+            markHandled()
+            return
+          }
+          if (pendingFocus !== null) consumeThreadFocus(tid, page)
+          clearLegacy()
+          markHandled()
+        })
+        .catch(() => {
+          if (!cancelled) {
+            if (pendingFocus !== null) consumeThreadFocus(tid, page)
+            clearLegacy()
+            markHandled()
+          }
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    void getProgress(tid)
+      .then((row) => {
+        if (cancelled) return
+        const position = row?.position
+        if (!position || position.page !== page ||
+          !displayedData.posts.some((post) => post.pid === position.pid)) {
+          clearLegacy()
+          markHandled()
+          return
+        }
+        focusPid(position.pid)
+        clearLegacy()
+        markHandled()
+      })
+      .catch(() => {
+        if (!cancelled) {
+          clearLegacy()
+          markHandled()
+        }
+      })
+
     return () => {
       cancelled = true
     }
-  }, [displayedData, highlightPid, page, tid, goPage])
+  }, [clearLegacyHash, displayedData, focusPid, goPage, legacyPid, page, tid])
 
-  const openPost = (targetTid: number, pid: number) => {
-    const onThisPage = targetTid === tid && query.data?.posts.some((post) => post.pid === pid)
+  const displayedPosts = displayedData?.posts
+  const openPost = useCallback((targetTid: number, pid: number) => {
+    const onThisPage = targetTid === tid && displayedPosts?.some((post) => post.pid === pid)
     if (onThisPage) {
-      goPage(page, `pid${pid}`)
+      focusPid(pid)
       return
     }
     void goToPost(targetTid, pid)
-  }
+  }, [displayedPosts, focusPid, goToPost, tid])
 
-  const openAttachment = (url: string, name: string) => {
+  const openAttachment = useCallback((url: string, name: string) => {
     if (!window.confirm(`下载附件「${name}」？`)) return
     void downloadAttachment(url, name).catch((error) => window.alert(errorMessage(error)))
-  }
+  }, [])
+
+  const pullState = useEdgePull(scrollRef, {
+    edge: 'bottom',
+    enabled: narrow && !!data,
+    targetRef: rootRef,
+    blocked: query.isFetching,
+    engageDistance: 6,
+    onTrigger: () => {
+      if (!data) return
+      if (data.page < data.totalPages) {
+        goPage(data.page + 1)
+        return
+      }
+      return query.refetch()
+    },
+  })
 
   const boardName = boards.data?.find((board) => board.fid === data?.fid)?.name
   useThreadReadState(tid, data, boardName)
   useReadingProgress(scrollRef, displayedData, boardName)
 
+  const pullOffset = pullState.pull
+  const pullStyle: CSSProperties = pullOffset > 0
+    ? { transform: `translateY(-${pullOffset}px)`, willChange: 'transform' }
+    : { transform: 'translateY(0)', transition: 'transform 180ms var(--motion-ease)' }
+
   return (
-    <div className="flex h-full min-h-0 flex-col bg-canvas">
+    <div ref={rootRef} className="flex h-full min-h-0 flex-col bg-canvas">
       <div
         ref={scrollRef}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
@@ -223,37 +385,40 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
           narrow ? { paddingTop: 'calc(var(--header-h) + env(safe-area-inset-top))' } : undefined
         }
       >
-        {showPending ? <PostSkeleton /> : null}
+        <div style={pullStyle}>
+          {showPending ? <PostSkeleton /> : null}
 
-        {query.isError ? (
-          <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
-        ) : null}
+          {query.isError ? (
+            <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
+          ) : null}
 
-        {displayedData ? (
-          <ImageDimensionsContext.Provider value={dimensions!}>
-            <div className="mx-auto max-w-[900px]">
-              <header className="border-b border-line px-4 pb-3 pt-3 lg:px-6">
-                <h1 className="text-title font-semibold leading-[1.45] text-heading">
-                  {displayedData.title}
-                </h1>
-                <p className="mt-1 text-meta text-muted">
-                  {boardName ? `${boardName} · ` : ''}
-                  {displayedData.page} / {displayedData.totalPages} 页 · {displayedData.posts.length} 楼
-                </p>
-              </header>
-              {displayedData.posts.map((post) => (
-                <PostCard
-                  key={post.pid}
-                  post={post}
-                  tid={tid}
-                  highlighted={highlighted === post.pid}
-                  onOpenPost={openPost}
-                  onOpenAttachment={openAttachment}
-                />
-              ))}
-            </div>
-          </ImageDimensionsContext.Provider>
-        ) : null}
+          {displayedData ? (
+            <ImageDimensionsContext.Provider value={displayedDimensions}>
+              <div className="mx-auto max-w-[900px]">
+                <header className="border-b border-line px-4 pb-3 pt-3 lg:px-6">
+                  <h1 className="text-title font-semibold leading-[1.45] text-heading">
+                    {displayedData.title}
+                  </h1>
+                  <p className="mt-1 text-meta text-muted">
+                    {boardName ? `${boardName} · ` : ''}
+                    {displayedData.page} / {displayedData.totalPages} 页 · {displayedData.posts.length} 楼
+                  </p>
+                </header>
+                {displayedData.posts.map((post) => (
+                  <PostCard
+                    key={post.pid}
+                    post={post}
+                    tid={tid}
+                    highlighted={highlighted === post.pid}
+                    isOp={post.floor !== 1 && opUid !== null && post.authorUid === opUid}
+                    onOpenPost={openPost}
+                    onOpenAttachment={openAttachment}
+                  />
+                ))}
+              </div>
+            </ImageDimensionsContext.Provider>
+          ) : null}
+        </div>
       </div>
 
       {data ? (
@@ -263,18 +428,11 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
               page={data.page}
               totalPages={data.totalPages}
               onChange={goPage}
+              onRefresh={() => void query.refetch()}
+              refreshing={query.isFetching}
+              pullProgress={pullState.progress}
               className="min-w-0 flex-1"
             />
-            <ToolbarButton
-              type="button"
-              aria-label="刷新"
-              title="刷新"
-              disabled={query.isFetching}
-              onClick={() => void query.refetch()}
-              className="hidden px-1 text-text lg:inline-flex"
-            >
-              <RefreshCw size={16} className={cn(showRefreshing && 'animate-spin')} />
-            </ToolbarButton>
           </BottomBar>
         </div>
       ) : null}

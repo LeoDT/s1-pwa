@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RefreshCw } from 'lucide-react'
 import { ToolbarButton } from '@/components/ToolbarButton'
 import { cn } from '@/lib/utils'
 
@@ -7,17 +7,31 @@ interface PagerProps {
   page: number
   totalPages: number
   onChange: (page: number) => void
+  /** 最后一页时「下一页」位置改为刷新 */
+  onRefresh?: () => void
+  refreshing?: boolean
+  /** 0..1，上拉进度；用于旋转下一页/刷新图标 */
+  pullProgress?: number
   className?: string
 }
 
 /** 页码条：‹ 3 / 15 ›，点中间可以输入页码（见 docs/design-system.md §5.6） */
-export function Pager({ page, totalPages, onChange, className }: PagerProps) {
+export function Pager({ page, totalPages, onChange, onRefresh, refreshing = false, pullProgress = 0, className }: PagerProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(String(page))
 
   const go = (target: number) => {
     const clamped = Math.min(Math.max(1, target), Math.max(1, totalPages))
     if (clamped !== page) onChange(clamped)
+  }
+
+  const hasNext = page < totalPages
+  const progress = Math.min(1, Math.max(0, pullProgress))
+  const pulling = progress > 0
+  const nextLabel = hasNext ? '下一页' : '刷新'
+  const nextAction = () => {
+    if (hasNext) go(page + 1)
+    else onRefresh?.()
   }
 
   return (
@@ -60,8 +74,34 @@ export function Pager({ page, totalPages, onChange, className }: PagerProps) {
         </ToolbarButton>
       )}
 
-      <PagerButton label="下一页" disabled={page >= totalPages} onClick={() => go(page + 1)}>
-        <ChevronRight size={20} />
+      <PagerButton
+        label={nextLabel}
+        disabled={refreshing || (!hasNext && !onRefresh)}
+        onClick={nextAction}
+      >
+        {hasNext ? (
+          <span
+            className={cn(
+              'inline-flex items-center justify-center',
+              pulling ? 'text-accent-strong' : 'transition-transform duration-150',
+            )}
+            style={{ transform: `rotate(${progress * 90}deg)` }}
+          >
+            <ChevronRight size={20} />
+          </span>
+        ) : (
+          <span
+            className={cn(
+              'inline-flex items-center justify-center',
+              pulling ? 'text-accent-strong' : 'transition-transform duration-150',
+            )}
+            style={refreshing ? undefined : {
+              transform: `rotate(${progress * 180}deg) scale(${1 + progress * 0.1})`,
+            }}
+          >
+            <RefreshCw size={18} className={cn(refreshing && 'animate-spin')} />
+          </span>
+        )}
       </PagerButton>
 
       <PagerButton

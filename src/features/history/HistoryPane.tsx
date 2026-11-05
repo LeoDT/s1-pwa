@@ -12,7 +12,7 @@ import { ListRow } from '@/features/browse/ListRow'
 import { useBoards } from '@/features/browse/queries'
 import { ApiError } from '@/lib/api'
 import { errorMessage } from '@/lib/errors'
-import { markFromList } from '@/lib/navigation'
+import { clearThreadFocus, markFromList, setThreadFocus } from '@/lib/navigation'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { PULL_THRESHOLD, usePullToRefresh } from '@/lib/usePullToRefresh'
 import { cn } from '@/lib/utils'
@@ -145,18 +145,19 @@ export function HistoryPane({ activeTid, visible = true }: HistoryPaneProps) {
   const open = (row: ProgressRow) => {
     markFromList()
     const page = row.position?.page ?? 1
-    const hash = row.position?.pid ? `pid${row.position.pid}` : undefined
+    const pid = row.position?.pid
+    clearThreadFocus()
+    if (pid) setThreadFocus(row.tid, page, pid)
 
     if (page > 1) {
       void navigate({
         to: '/history/t/$tid/$page',
         params: { tid: String(row.tid), page: String(page) },
-        hash,
         replace: wide,
       })
       return
     }
-    void navigate({ to: '/history/t/$tid', params: { tid: String(row.tid) }, hash, replace: wide })
+    void navigate({ to: '/history/t/$tid', params: { tid: String(row.tid) }, replace: wide })
   }
 
   return (

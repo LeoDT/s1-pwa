@@ -1,10 +1,10 @@
-import { act, createElement, useContext } from 'react'
+import { act, createElement, StrictMode, useContext } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-const mocks = vi.hoisted(() => ({ hash: 'pid42', load: vi.fn(), navigate: vi.fn() }))
+const mocks = vi.hoisted(() => ({ hash: 'pid42', load: vi.fn(), navigate: vi.fn(), progress: vi.fn(), focus: null as number | null }))
 vi.mock('@/lib/imageDimensions', () => ({ loadImageDimensions: mocks.load }))
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mocks.navigate,
@@ -12,7 +12,13 @@ vi.mock('@tanstack/react-router', () => ({
   useRouterState: () => mocks.hash,
 }))
 vi.mock('@/features/browse/queries', () => ({ useBoards: () => ({ data: [] }) }))
-vi.mock('@/lib/navigation', () => ({ consumeFromList: () => false }))
+vi.mock('@/lib/navigation', () => ({
+  consumeFromList: () => false,
+  peekThreadFocus: () => mocks.focus,
+  consumeThreadFocus: () => { const pid = mocks.focus; mocks.focus = null; return pid },
+  setThreadFocus: vi.fn(),
+  clearThreadFocus: vi.fn(),
+}))
 vi.mock('@/lib/useSwipeBack', () => ({ useSwipeBack: () => {} }))
 vi.mock('@/features/browse/useReadingProgress', () => ({ useReadingProgress: vi.fn() }))
 vi.mock('@/features/browse/useThreadReadState', () => ({ useThreadReadState: vi.fn() }))
@@ -26,6 +32,7 @@ vi.mock('@/components/ToolbarButton', () => ({ ToolbarButton: () => null }))
 vi.mock('@/components/states', () => ({ ErrorState: () => null, PostSkeleton: () => null }))
 vi.mock('@/lib/attachments', () => ({ downloadAttachment: vi.fn() }))
 vi.mock('@/lib/locate', () => ({ locatePid: vi.fn() }))
+vi.mock('@/lib/progress', () => ({ getProgress: mocks.progress }))
 vi.mock('@/features/browse/PostCard', async () => {
   const React = await vi.importActual<typeof import('react')>('react')
   const { ImageDimensionsContext } = await vi.importActual<typeof import('@/lib/useImageDimensions')>('@/lib/useImageDimensions')
@@ -62,7 +69,9 @@ describe('ThreadPane image-dimension preparation', () => {
     document.body.append(host)
     root = createRoot(host)
     mocks.hash = 'pid42'
+    mocks.focus = null
     mocks.load.mockReset()
+    mocks.progress.mockReset().mockResolvedValue(undefined)
     scrollIntoView = vi.fn()
     Element.prototype.scrollIntoView = scrollIntoView
   })
@@ -79,6 +88,20 @@ describe('ThreadPane image-dimension preparation', () => {
     await act(async () => load.resolve(new Map([['https://img.test/cached.jpg', { width: 640, height: 480 }]])))
     expect(host.querySelector('[data-post="42"]')?.getAttribute('data-dimensions')).toContain('640')
     expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  })
+
+  it('consumes an explicit focus once under StrictMode', async () => {
+    mocks.hash = ''
+    mocks.focus = 42
+    await act(async () => {
+      root.render(createElement(StrictMode, null, createElement(ThreadPane, {
+        tid: 9, page: 1, forumId: 6, query: query(1, 42, []),
+      })))
+    })
+    await act(async () => { await Promise.resolve() })
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+    expect(mocks.focus).toBeNull()
+    expect(mocks.progress).not.toHaveBeenCalled()
   })
 
   it('falls back to rendering and hash scrolling when dimension loading fails', async () => {
@@ -102,6 +125,39 @@ describe('ThreadPane image-dimension preparation', () => {
     await act(async () => pageTwo.resolve(new Map([['https://img.test/two.jpg', { width: 2, height: 3 }]])))
     expect(host.querySelector('[data-post="42"]')?.getAttribute('data-dimensions')).toContain('two.jpg')
     expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  })
+
+  it('resumes local progress once and does not scroll again when the same page is refreshed', async () => {
+    mocks.hash = ''
+    mocks.progress.mockResolvedValue({ position: { pid: 42, floor: 1, page: 1, totalPages: 2 } })
+    render(query(1, 42, []), 1)
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+
+    render(query(1, 42, []), 1)
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the previous page rendered while a refresh waits for new image dimensions', async () => {
+    mocks.hash = ''
+    const next = deferred()
+    mocks.load.mockImplementation((urls: string[]) =>
+      urls.includes('https://img.test/new.jpg')
+        ? next.promise
+        : Promise.resolve(new Map([['https://img.test/old.jpg', { width: 640, height: 480 }]])))
+    render(query(1, 42, ['https://img.test/old.jpg']), 1)
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    expect(host.querySelector('[data-post="42"]')?.getAttribute('data-dimensions')).toContain('old.jpg')
+
+    render(query(1, 42, ['https://img.test/old.jpg', 'https://img.test/new.jpg']), 1)
+    expect(host.querySelector('[data-post="42"]')?.getAttribute('data-dimensions')).toContain('old.jpg')
+
+    await act(async () => next.resolve(new Map([
+      ['https://img.test/old.jpg', { width: 640, height: 480 }],
+      ['https://img.test/new.jpg', { width: 320, height: 200 }],
+    ])))
+    expect(host.querySelector('[data-post="42"]')?.getAttribute('data-dimensions')).toContain('new.jpg')
   })
 
   it('does not await dimensions when there are no image sources', () => {

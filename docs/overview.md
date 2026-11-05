@@ -70,10 +70,10 @@
 | D13 | 引用块：有 `goto=findpost&pid=&ptid=` 才可点，否则纯展示 | 已实测 27 个引用块中 23 个带链接 |
 | D14 | worker 支持可选 `ACCESS_TOKEN`，**默认开启**，客户端在设置页填写 | `GET /api/config` 探测 |
 | D15 | 大屏两栏，左栏 360px 可折叠，右栏内容 `max-width: 800px`；右栏不自动打开上次帖子 | |
-| D16 | 路由 `/f/<fid>[/<page>]`、`/t/<tid>[/<page>][#pid]`；除"列表→详情"外一律 replace | 见 navigation.md |
+| D16 | 路由 `/f/<fid>[/<page>]`、`/t/<tid>[/<page>]`；楼内定位不写 URL；除"列表→详情"外一律 replace | 见 navigation.md |
 | D17 | 详情页横向滑动返回，**总是回到该板块列表**；不使用浏览器历史栈语义 | 固定层级，无全局后退按钮 |
 | D23 | 顶栏为浮层，向下滚动隐藏、向上/回顶显示；列表页同样适用 | 见 navigation.md §3 |
-| D24 | 列表页下拉刷新，移除全局刷新按钮；管理入口收进设置 | 见 navigation.md §4/§6 |
+| D24 | 列表页下拉刷新，移除全局刷新按钮；详情页小屏上拉翻页/刷新；管理入口收进设置 | 见 navigation.md §4/§5/§6 |
 | D18 | 服务端零 HTML 解析、零 HTML 缓存 | 避免跨用户泄漏与状态分叉 |
 | D19 | 不引入服务端框架，core 层是纯 `Request → Response` | 迁移成本最小化 |
 | D20 | 单包（不分 workspace）：`src/` `worker/` `shared/` `docs/` | KISS |

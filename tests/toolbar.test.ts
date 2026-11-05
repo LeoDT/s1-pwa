@@ -41,6 +41,26 @@ describe('toolbar layout and controls', () => {
     expect(button.firstElementChild?.className).toContain('group-hover:bg-panel-light')
   })
 
+  it('turns the next slot into refresh on the last page', async () => {
+    let refreshed = 0
+    await render(
+      createElement(Pager, {
+        page: 8,
+        totalPages: 8,
+        onChange: () => {},
+        onRefresh: () => { refreshed += 1 },
+        pullProgress: 0.5,
+      }),
+    )
+
+    const refresh = host.querySelector<HTMLButtonElement>('button[aria-label="刷新"]')!
+    expect(refresh).not.toBeNull()
+    const icon = refresh.querySelector('span > span') as HTMLElement
+    expect(icon.style.transform).toContain('rotate(90deg)')
+    await act(async () => refresh.click())
+    expect(refreshed).toBe(1)
+  })
+
   it('keeps pager controls operable and advances the selected page', async () => {
     let selected = 3
     await render(

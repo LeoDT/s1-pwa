@@ -89,7 +89,7 @@ export function useReadingProgress(
       active = false
       observer.disconnect()
     }
-  }, [accountId, data, scrollRef])
+  }, [accountId, data?.page, data?.posts, data?.tid, data?.totalPages, scrollRef])
 
   const persist = useCallback(async () => {
     if (!signedIn) return false

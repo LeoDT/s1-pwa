@@ -15,17 +15,26 @@ export function parseThreadPage(page: ParsedPage): ThreadPage {
 
   const postElements = Array.from(doc.querySelectorAll(THREAD.post))
   const posts = postElements.map((element) => parsePost(element, page.base))
+  const pageInfo = parsePageInfo(page)
+  const opUid = readOpUid(doc) ?? (pageInfo.page === 1 ? posts[0]?.authorUid ?? null : null)
 
   return {
     tid,
     fid: Number.isFinite(fid) ? fid : 0,
     title: textOf(doc.querySelector('.header h2')),
     replies: readReplies(postElements[0] ?? null, doc),
-    opUid: posts[0]?.authorUid ?? null,
-    page: parsePageInfo(page).page,
-    totalPages: parsePageInfo(page).totalPages,
+    opUid,
+    page: pageInfo.page,
+    totalPages: pageInfo.totalPages,
     posts,
   }
+}
+
+/** 第 1 页的「只看楼主」链接是跨页唯一可靠的楼主 uid 来源。 */
+function readOpUid(doc: Document): number | null {
+  const href = doc.querySelector(THREAD.opAuthorLink)?.getAttribute('href') ?? ''
+  const uid = Number.parseInt(/\bauthorid=(\d+)/.exec(href)?.[1] ?? '', 10)
+  return Number.isSafeInteger(uid) && uid > 0 ? uid : null
 }
 
 function readReplies(firstPost: Element | null, doc: Document): number | null {

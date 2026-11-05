@@ -28,3 +28,31 @@ export function consumeFromList(): boolean {
   fromList = false
   return value
 }
+
+interface ThreadFocus {
+  tid: number
+  page: number
+  pid: number
+}
+
+let threadFocus: ThreadFocus | null = null
+
+/** 一次性的楼层定位目标；只活在应用内存里，不写 URL。 */
+export function setThreadFocus(tid: number, page: number, pid: number): void {
+  threadFocus = { tid, page, pid }
+}
+
+export function peekThreadFocus(tid: number, page: number): number | null {
+  if (!threadFocus || threadFocus.tid !== tid || threadFocus.page !== page) return null
+  return threadFocus.pid
+}
+
+export function consumeThreadFocus(tid: number, page: number): number | null {
+  const pid = peekThreadFocus(tid, page)
+  if (pid !== null) threadFocus = null
+  return pid
+}
+
+export function clearThreadFocus(): void {
+  threadFocus = null
+}

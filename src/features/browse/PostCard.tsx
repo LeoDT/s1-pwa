@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { Post } from '@shared/types'
 import { Content } from '@/components/Content'
 import { QuoteBlock } from '@/components/QuoteBlock'
@@ -7,13 +8,14 @@ import { cn } from '@/lib/utils'
 interface PostCardProps {
   post: Post
   highlighted: boolean
+  isOp?: boolean
   onOpenPost: (tid: number, pid: number) => void
   onOpenAttachment: (url: string, name: string) => void
   tid: number
 }
 
 /** 帖子卡片：正文 + 引用 + 附件（见 docs/design-system.md §5.3） */
-export function PostCard({ post, highlighted, onOpenPost, onOpenAttachment, tid }: PostCardProps) {
+export const PostCard = memo(function PostCard({ post, highlighted, isOp = false, onOpenPost, onOpenAttachment, tid }: PostCardProps) {
   const jump = (targetTid: number, pid: number) =>
     onOpenPost(targetTid === 0 ? tid : targetTid, pid)
 
@@ -32,6 +34,11 @@ export function PostCard({ post, highlighted, onOpenPost, onOpenAttachment, tid 
         <span className="min-w-0 truncate text-meta font-medium text-text">
           {post.authorName || '匿名'}
         </span>
+        {isOp ? (
+          <span className="shrink-0 rounded-sm border border-flag-strong px-1 text-meta leading-[1.35] text-flag-strong">
+            楼主
+          </span>
+        ) : null}
         <span className="ml-auto shrink-0 tnum">{post.postedAt}</span>
       </header>
 
@@ -68,4 +75,4 @@ export function PostCard({ post, highlighted, onOpenPost, onOpenAttachment, tid 
       ) : null}
     </article>
   )
-}
+})

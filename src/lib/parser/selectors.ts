@@ -68,6 +68,7 @@ export const THREAD = {
   viewsAndReplies: 'ul.authi li.mtime span.y',
   replyCount: 'ul.authi li.mtime span.y .dm-chat-s + em',
   repliesTotal: '.viewthread .txtlist > .mtit.cl',
+  opAuthorLink: '.txtlist a[href*="authorid="]',
   message: '.message',
   editNote: 'i.pstatus',
   quote: 'div.quote',
