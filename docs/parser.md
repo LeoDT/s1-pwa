@@ -169,6 +169,37 @@ $temp = strtoupper(urldecode(urldecode($temp)));                     // ← 双�
 
 `iframe, embed, object, video` 一律不渲染，替换为 `[媒体] 打开原页` 链接（指向其 `src`，仅 `http/https`）。
 
+### 6.5 评分
+
+有评分的楼层在 `.message` 之外、`.plc` 之内：
+
+```
+<h3 class="psth">评分</h3>
+<div id="ratelog_<pid>">
+  <dd>
+    <div id="post_rate_<pid>"></div>
+    <ul class="post_box cl">
+      <li>参与人数 <span class="xi1">40</span> · 战斗力 <span class="xi1">+41</span> · 理由</li>
+      <li><a href="home.php?mod=space&uid=...">用户</a><div>+ 1</div><div>理由</div></li>
+      …（最多约 20 条）
+      <li><a href="forum.php?mod=misc&action=viewratings&…">查看全部评分</a></li>
+    </ul>
+  </dd>
+</div>
+```
+
+| 字段 | 规则 |
+|---|---|
+| `count` | 汇总行的「参与人数」；**完整值**，不能拿明细条数当总数 |
+| `score` | 汇总行的「战斗力」有符号数字；正数为加鹅，负数为扣鹅 |
+| `entries` | 含 `a[href*="uid="]` 的内联明细，最多约 20 条；`uid`/`name`/`score`/`reason` |
+
+无评分楼层只有空的 `#post_rate_<pid>` / `#post_rate_div_<pid>`，`ratings = null`，不要用这些空节点判断有评分。
+
+完整列表按需请求 `forum.php?mod=misc&action=viewratings&tid=T&pid=P&mobile=2`（约 18KB）。页面结构是「评分行 + 理由行」交替，评分行无 uid 链接；`parseRatingList` 解析 `{uid:null, name, score, time, reason}`。内联明细有 uid，完整列表没有。
+
+评分解析必须放在 `.message` 存在性判断之前：被屏蔽楼层仍可能保留评分块。
+
 ## 7. 内容重写规则
 
 渲染前对 `Post` 的每个 HTML 片段做两件事：**URL 重写** 与 **标签清洗/映射**。
@@ -265,6 +296,21 @@ export interface Post {
   blocks: PostBlock[]
   images: string[]         // 绝对地址（含 zoomfile 原图）
   attachments: Attachment[]
+  ratings: PostRatings | null
+}
+
+export interface RatingEntry {
+  uid: number | null
+  name: string
+  score: number            // 正数加鹅，负数扣鹅
+  time?: string
+  reason?: string
+}
+
+export interface PostRatings {
+  count: number            // 参与人数（完整值）
+  score: number            // 战斗力合计（鹅）
+  entries: RatingEntry[]   // 帖子页内联的最多约 20 条
 }
 
 export type PostBlock =
@@ -302,7 +348,9 @@ export interface Session { uid: number; username?: string }
 ```
 tests/fixtures/
   forumdisplay-fid6-p1.html
-  viewthread-1826103-p1.html     (41 帖 / 27 引用 / 表情 / 外链图)
+  viewthread-1826103-p1.html     (41 帖 / 27 引用 / 表情 / 外链图 / 5 个评分块)
+  viewthread-rating-negative.html (扣鹅样本：战斗力 -1)
+  ratings-negative.html           (完整评分页：战斗力 -1 鹅)
   index.html                     (板块树)
   login.html                     (无验证码)
   login-fail.html                (错误密码 → 消息页「登录失败，您还可以尝试 N 次」)
@@ -319,7 +367,8 @@ tests/fixtures/
 |---|---|
 | 点评（楼中楼） | 不支持（HTML 无内容，需 AJAX） |
 | 隐藏内容（回复可见） | 保持隐藏 |
-| 投票 / 评分明细 | 不渲染 |
+| 投票 | 不渲染 |
+| 评分明细 | 已支持：内联前 20 条 + 按需拉取完整列表（§6.5） |
 | 登录后用户名解析 | 待实测（登录后补 §9 选择器） |
 | 引用指向**其它主题** | 已支持（`ptid` ≠ 当前 tid 时路由到 `/t/<ptid>/<page>`） |
 | 楼中楼/`#comment_` | 一律忽略 |

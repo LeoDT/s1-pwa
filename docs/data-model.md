@@ -234,6 +234,8 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 | `['history', uid]` | 60s（本地查询） | 本地提交/远端合并后 `invalidate`；显式刷新重新拉取并提交 |
 | `['progress-index', uid或'guest']` | 60s | 本地事务提交后 `invalidate` |
 | `['locate', tid, pid]` | 会话（Map） | 必要时手动清 |
+| `['author-stats', uid]` | 30min | 点击作者名时按需请求；内存缓存，不持久化 |
+| `['post-ratings', tid, pid]` | 60s | 分数变化后重新打开全部评分 |
 
 ### 6.2 写入流程
 
@@ -265,6 +267,33 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 | `ProgressRow.read.replies` | 列表进入观察；成功取得帖子内容后以可靠 `ThreadPage.replies` 更新 | 未知时保留旧值 |
 | `ProgressRow.position.pid/floor` | 当前视口最下方已读楼层 | 位置变更事件独立计时 |
 | `ProgressRow.position.totalPages` | `.pg span[title^="共"]` | |
+| `Post.ratings` | `.plc` 内 `div[id^="ratelog_"]` 汇总 + 内联明细 | 无评分 `null`；明细最多约 20 条，`count` 才是完整人数 |
+
+## 7.1 作者统计（按需）
+
+点击帖子作者名时，客户端经 `/api/proxy` 读取 S1 手机版公开资料：
+
+```http
+GET https://stage1st.com/2b/api/mobile/index.php?module=profile&uid=<uid>&version=1
+```
+
+只投影以下字段，**不保存原始响应**（响应含手机号等隐私字段）：
+
+| 显示项 | 上游字段 |
+|---|---|
+| 发帖数 | `Variables.space.posts`（总帖数） |
+| 主题数 | `Variables.space.threads` |
+| 鹅 | `Variables.space.extcredits1`（`extcredits.1.title = 战斗力`，`unit = 鹅`） |
+
+`version=1` 必须显式携带；缺失时可能返回 PHP warning 且没有 `space`。无效资料没有 `space`，浮层显示错误并提供重试；资料存在但统计字段缺失时显示 `—`。该接口实测游客可读，但客户端仍按需请求，不做每楼预取。
+
+完整评分列表的按需接口：
+
+```http
+GET https://stage1st.com/2b/forum.php?mod=misc&action=viewratings&tid=<tid>&pid=<pid>&mobile=2
+```
+
+约 18KB，包含全部评分、用户名、时间、理由、总计。
 
 ## 8. 限额与假设
 
@@ -272,3 +301,4 @@ Cache API 本身没有 TTL，过期判断完全由 `imgMeta.lastUsed` 驱动。
 - 历史索引默认 1000 行，上限 2000 行；完整位置默认同步最近 100 条。
 - D1 免费额度：读 500 万/日、写 10 万/日 —— 单用户场景绰绰有余。
 - 服务端不缓存 HTML，所有页面请求直连上游；带宽由 Cloudflare 出站承担。
+- 作者资料每次点击约 4KB；完整评分列表每次展开约 18KB。两者都走客户端按需请求，不写 D1，不增加阅读进度表。

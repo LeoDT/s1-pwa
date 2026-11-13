@@ -4,6 +4,8 @@ import { Content } from '@/components/Content'
 import { QuoteBlock } from '@/components/QuoteBlock'
 import { UPSTREAM_ROOT } from '@/lib/proxy'
 import { cn } from '@/lib/utils'
+import { AuthorName } from './AuthorName'
+import { PostRatings } from './PostRatings'
 
 interface PostCardProps {
   post: Post
@@ -31,9 +33,7 @@ export const PostCard = memo(function PostCard({ post, highlighted, isOp = false
         <span className="shrink-0 tnum">
           {post.floor === 1 ? '楼主' : post.floor !== null ? `${post.floor}#` : '—'}
         </span>
-        <span className="min-w-0 truncate text-meta font-medium text-text">
-          {post.authorName || '匿名'}
-        </span>
+        <AuthorName name={post.authorName} uid={post.authorUid} />
         {isOp ? (
           <span className="shrink-0 rounded-sm border border-flag-strong px-1 text-meta leading-[1.35] text-flag-strong">
             楼主
@@ -73,6 +73,8 @@ export const PostCard = memo(function PostCard({ post, highlighted, isOp = false
           ))}
         </ul>
       ) : null}
+
+      {post.ratings ? <PostRatings tid={tid} pid={post.pid} ratings={post.ratings} /> : null}
     </article>
   )
 })

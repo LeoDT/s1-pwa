@@ -73,4 +73,30 @@ describe('内容代理跳转与登录节点固定', () => {
     }
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })
+
+  it('proxyJson 直接返回上游 JSON，不把普通 JSON 当成重定向信封', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ Variables: { space: { posts: '1' } } }))
+    const payload = await proxy.proxyJson<{ Variables: { space: { posts: string } } }>(
+      'https://stage1st.com/2b/api/mobile/index.php?module=profile&uid=1&version=1',
+      { origin: '', allowFallback: true },
+    )
+    expect(payload.Variables.space.posts).toBe('1')
+    expect(fetchMock.mock.calls[0]![0]).toMatch(/^\/api\/proxy\?/)
+  })
+
+  it('proxyJson 跟随代理 3xx 信封，并把错误 JSON 转成 ApiError', async () => {
+    fetchMock.mockResolvedValueOnce(redirect()).mockResolvedValueOnce(Response.json({ ok: true }))
+    await expect(proxy.proxyJson('https://stage1st.com/2b/api/mobile/index.php', {
+      origin: '', allowFallback: true,
+    })).resolves.toEqual({ ok: true })
+    expect(fetchMock.mock.calls[1]![0]).toContain(encodeURIComponent('https://stage1st.com/2b/next'))
+
+    fetchMock.mockResolvedValueOnce(Response.json(
+      { ok: false, code: 'auth_required', message: '登录已过期' },
+      { status: 401 },
+    ))
+    await expect(proxy.proxyJson('https://stage1st.com/2b/api/mobile/index.php', {
+      origin: '', allowFallback: true,
+    })).rejects.toMatchObject({ code: 'auth_required', message: '登录已过期' })
+  })
 })

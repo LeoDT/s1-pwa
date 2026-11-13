@@ -1,6 +1,7 @@
 import type { Attachment, Post, PostBlock, QuoteBlock, ThreadPage } from '@shared/types'
 import { countOf, intOf, parsePageInfo, resolveUrl, textOf, type ParsedPage } from './dom'
 import { extractTid } from './forum'
+import { parsePostRatings } from './ratings'
 import { THREAD } from './selectors'
 
 /** 帖子页（forum.php?mod=viewthread） */
@@ -52,6 +53,7 @@ function readReplies(firstPost: Element | null, doc: Document): number | null {
 
 function parsePost(element: Element, base: string): Post {
   const pid = Number.parseInt((element.id ?? '').replace(/\D/g, ''), 10)
+  const ratings = parsePostRatings(element)
   const floorText = textOf(element.querySelector(THREAD.floor))
   const floor = floorText === '' ? null : floorText.includes('楼主') ? 1 : (intOf(element.querySelector(THREAD.floor)) ?? null)
 
@@ -77,6 +79,7 @@ function parsePost(element: Element, base: string): Post {
       blocks: [],
       images: [],
       attachments: [],
+      ratings,
     }
   }
 
@@ -100,6 +103,7 @@ function parsePost(element: Element, base: string): Post {
     blocks,
     images,
     attachments,
+    ratings,
   }
 }
 

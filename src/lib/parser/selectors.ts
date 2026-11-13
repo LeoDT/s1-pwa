@@ -75,4 +75,16 @@ export const THREAD = {
   quoteLink: 'a[href*="goto=findpost"]',
   attachment: 'a[href*="mod=attachment"]',
   multipage: '#multipage_url',
+  ratings: 'div[id^="ratelog_"]',
+  ratingUserLink: 'a[href*="uid="]',
+  ratingAllLink: 'a[href*="action=viewratings"]',
+  ratingScore: '.xi1',
+  ratingReason: '.flex-3',
+} as const
+
+/** 「查看全部评分」页面（forum.php?mod=misc&action=viewratings） */
+export const RATINGS = {
+  list: 'ul.post_box',
+  row: 'li.flex-box',
+  total: '.o.pns',
 } as const

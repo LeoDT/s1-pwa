@@ -41,6 +41,43 @@ interface ProxyEnvelope {
   message?: string
 }
 
+/**
+ * 同源代理读取上游 JSON（如作者资料）。
+ * 不能复用 proxyFetch：上游 JSON 与「3xx→JSON」信封同为 application/json，
+ * 这里只在 payload 带 redirect/ok 字段时才按信封处理。
+ */
+export async function proxyJson<T>(targetUrl: string, routeContext?: ContentRouteContext): Promise<T> {
+  const route = routeContext ?? await captureContentRoute()
+  let current = targetUrl
+
+  for (let hop = 0; hop <= MAX_HOPS; hop += 1) {
+    const response = await sendProxy(current, undefined, route)
+    route.allowFallback = false
+
+    const contentType = response.headers.get('content-type') ?? ''
+    if (!contentType.includes('application/json')) {
+      await response.body?.cancel().catch(() => undefined)
+      throw new ApiError('bad_response', '代理返回了非 JSON 内容', response.status)
+    }
+
+    const payload = (await response.json()) as ProxyEnvelope & T
+    if (!response.ok || payload.ok === false) {
+      throw new ApiError(
+        payload.code ?? `http_${response.status}`,
+        payload.message ?? '代理请求失败',
+        response.status,
+      )
+    }
+    if (payload.redirect) {
+      current = payload.redirect.url
+      continue
+    }
+    return payload
+  }
+
+  throw new ApiError('too_many_redirects', '重定向次数过多', 502)
+}
+
 export async function proxyFetch(
   targetUrl: string,
   init?: ProxyPostInit,

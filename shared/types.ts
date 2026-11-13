@@ -38,6 +38,23 @@ export interface Attachment {
   name: string
 }
 
+export interface RatingEntry {
+  uid: number | null
+  name: string
+  /** 有符号：正数为加鹅，负数为扣鹅 */
+  score: number
+  time?: string
+  reason?: string
+}
+
+export interface PostRatings {
+  /** 参与人数；内联明细可能只包含前 20 条 */
+  count: number
+  /** 战斗力合计（鹅） */
+  score: number
+  entries: RatingEntry[]
+}
+
 export interface QuoteBlock {
   kind: 'quote'
   pid?: number
@@ -67,6 +84,8 @@ export interface Post {
   /** 绝对地址（含 zoomfile 原图） */
   images: string[]
   attachments: Attachment[]
+  /** 无评分时为 null */
+  ratings: PostRatings | null
 }
 
 export interface ThreadPage extends PageInfo {
