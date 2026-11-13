@@ -7,6 +7,8 @@ interface ThreadRowProps {
   onOpen: () => void
   /** 大屏左栏：当前正在阅读的帖子 */
   active?: boolean
+  /** 键盘焦点所在行 */
+  focused?: boolean
   /** M3：有阅读历史时为 true，显示绿色标记 */
   read?: boolean
   /** M3：自上次打开以来新增回复数 */
@@ -18,12 +20,14 @@ export function ThreadRow({
   thread,
   onOpen,
   active = false,
+  focused = false,
   read = false,
   newReplies = 0,
 }: ThreadRowProps) {
   return (
     <ListRow
       active={active}
+      focused={focused}
       read={read}
       badgeAccent={read || active}
       badgeLabel={thread.replies === null ? '回复数未知' : `${thread.replies} 条回复${newReplies > 0 ? `，${newReplies} 条新增` : ''}`}

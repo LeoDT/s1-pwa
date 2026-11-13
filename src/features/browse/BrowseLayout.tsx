@@ -21,11 +21,12 @@ export function BrowseLayout({ sidebar, main, narrow }: BrowseLayoutProps) {
   )
 }
 
-export function EmptySelection() {
+export function EmptySelection({ hint }: { hint?: string }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 text-muted">
       <MessageSquareDashed size={28} />
       <p className="text-body">从左侧选择帖子</p>
+      {hint ? <p className="text-meta">{hint}</p> : null}
     </div>
   )
 }

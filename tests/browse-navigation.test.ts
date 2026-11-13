@@ -79,6 +79,11 @@ describe('browse navigation integration', () => {
     predicate()
   })
   const forumRequests = () => env.proxy.mock.calls.filter(([url]) => String(url).includes('mod=forumdisplay'))
+  const press = (key: string) => act(() => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+  })
+  const listRows = () => Array.from(host.querySelectorAll<HTMLElement>('.divide-y > div'))
+    .filter((row) => row.querySelector('button') !== null)
 
   beforeEach(() => {
     host = document.createElement('div'); document.body.append(host); root = createRoot(host)
@@ -225,5 +230,82 @@ describe('browse navigation integration', () => {
     const persistedHistoryButton = Array.from(host.querySelectorAll('.divide-y button')).find((button) => button.textContent?.includes(historyTitle))
     expect(persistedHistoryButton?.closest('.divide-y > *')).toBe(historyRow)
     expect(persistedHistoryButton?.textContent).toContain(historyTitle)
+  })
+
+  it('moves list focus, scrolls and pages the thread, then returns with r/z/x', async () => {
+    await mount('/f/6')
+    await wait(() => expect(host.querySelector('.divide-y button')).not.toBeNull())
+    expect(listRows().length).toBeGreaterThan(0)
+    expect(host.querySelector('[data-kb-focused]')).toBeNull()
+
+    press('s')
+    expect(listRows()[0]?.getAttribute('data-kb-focused')).toBe('true')
+    press('s')
+    expect(listRows()[1]?.getAttribute('data-kb-focused')).toBe('true')
+    press('w')
+    expect(listRows()[0]?.getAttribute('data-kb-focused')).toBe('true')
+    press('w')
+    expect(listRows()[0]?.getAttribute('data-kb-focused')).toBe('true')
+
+    press('d')
+    await wait(() => expect(router.state.location.pathname).toMatch(/^\/t\//))
+    await wait(() => expect(host.querySelector('[data-kb-region="content"]')).not.toBeNull())
+
+    const scroller = host.querySelector<HTMLElement>('[data-kb-region="content"] .overflow-y-auto')!
+    Object.defineProperty(scroller, 'clientHeight', { value: 500, configurable: true })
+    scroller.scrollTop = 1000
+    press('s')
+    expect(scroller.scrollTop).toBe(1300)
+    press('w')
+    expect(scroller.scrollTop).toBe(1000)
+
+    press('q')
+    expect(host.querySelector('[data-kb-region]')).toBeNull()
+    expect(listRows()[0]?.getAttribute('data-kb-focused')).toBe('true')
+
+    press('z')
+    expect(host.querySelector('[data-kb-candidate="true"]')?.getAttribute('data-board-fid')).toBe('51')
+    press('q')
+    expect(host.querySelector('[data-kb-candidate]')).toBeNull()
+    expect(host.querySelector('[data-kb-region]')).toBeNull()
+
+    press('d')
+    await wait(() => expect(host.querySelector('[data-kb-region="content"]')).not.toBeNull())
+    const beforeRefresh = forumRequests().length
+    press('r')
+    expect(host.querySelector('[data-kb-focused]')).toBeNull()
+    expect(host.querySelector('[data-kb-region="content"]')).not.toBeNull()
+    await wait(() => expect(forumRequests().length).toBe(beforeRefresh + 1))
+
+    press('q')
+    press('s')
+    expect(listRows()[0]?.getAttribute('data-kb-focused')).toBe('true')
+
+    press('z')
+    press('x')
+    await wait(() => expect(router.state.location.pathname).toBe('/f/51'))
+    await wait(() => expect(forumRequests().some(([url]) => String(url).includes('fid=51'))).toBe(true))
+    expect(host.querySelector('[data-kb-focused]')).toBeNull()
+  })
+
+  it('supports keyboard focus in the history list', async () => {
+    await mount('/history')
+    await wait(() => expect(host.querySelector('.divide-y button')).not.toBeNull())
+    press('s')
+    expect(listRows()[0]?.getAttribute('data-kb-focused')).toBe('true')
+    press('d')
+    await wait(() => expect(router.state.location.pathname).toBe('/history/t/1826103'))
+    await wait(() => expect(host.querySelector('[data-kb-region="content"]')).not.toBeNull())
+  })
+
+  it('ignores keyboard shortcuts below 1024px', async () => {
+    env.wide = false
+    await mount('/f/6')
+    await wait(() => expect(host.querySelector('.divide-y button')).not.toBeNull())
+    press('s')
+    expect(host.querySelector('[data-kb-focused]')).toBeNull()
+    press('r')
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(forumRequests()).toHaveLength(1)
   })
 })

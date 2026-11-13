@@ -5,6 +5,8 @@ import { BottomBar } from '@/components/BottomBar'
 import { Pager } from '@/components/Pager'
 import { ErrorState, PostSkeleton } from '@/components/states'
 import { useBoards, type ThreadPageQuery } from './queries'
+import { useBrowseKeyboard } from './BrowseKeyboard'
+import { isShortcutBlocked, scrollStep } from './keyboard'
 import { useReadingProgress } from './useReadingProgress'
 import { useThreadOpUid } from './useThreadOpUid'
 import { useThreadReadState } from './useThreadReadState'
@@ -25,6 +27,7 @@ import {
   usePreparedImageDimensions,
 } from '@/lib/useImageDimensions'
 import { useSwipeBack } from '@/lib/useSwipeBack'
+import { cn } from '@/lib/utils'
 import { PostCard } from './PostCard'
 
 interface ThreadPaneProps {
@@ -71,6 +74,7 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
   const rootRef = useRef<HTMLDivElement>(null)
   const highlightTimerRef = useRef<number | null>(null)
   const entryHandledRef = useRef<string | null>(null)
+  const { enabled: keyboardEnabled, region, boardCandidate } = useBrowseKeyboard()
   const { edgeSwipe } = usePrefs()
   const narrow = useMediaQuery('(max-width: 1023px)')
   // 只有小屏详情页的顶栏是浮层，需要给内容留出高度
@@ -149,6 +153,50 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
     },
     [fromHistory, navigate, tid],
   )
+
+  // 正文区获得键盘焦点时：w/s 按 60% 高度滚动，a/d 翻页（末页与下一页按钮一致，触发刷新）
+  useEffect(() => {
+    if (!keyboardEnabled || region !== 'content' || boardCandidate !== null) return
+    const scroller = scrollRef.current
+    if (!scroller) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isShortcutBlocked(event)) return
+      const key = event.key.toLowerCase()
+
+      if (key === 'w' || key === 's') {
+        event.preventDefault()
+        const step = scrollStep(scroller.clientHeight)
+        scroller.scrollTop = key === 'w' ? scroller.scrollTop - step : scroller.scrollTop + step
+        return
+      }
+
+      if (key !== 'a' && key !== 'd') return
+      if (event.repeat || query.isFetching) return
+      event.preventDefault()
+      if (key === 'a') {
+        if (page > 1) goPage(page - 1)
+        return
+      }
+      const totalPages = data?.totalPages ?? 1
+      if (page < totalPages) goPage(page + 1)
+      else void query.refetch()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    keyboardEnabled,
+    region,
+    boardCandidate,
+    page,
+    data?.totalPages,
+    query.isFetching,
+    query.refetch,
+    goPage,
+  ])
+
+  const contentFocused = keyboardEnabled && region === 'content'
 
   /** 打开另一个帖子：保持当前列表来源（板块或历史） */
   const openThreadAt = useCallback(
@@ -377,7 +425,11 @@ export function ThreadPane({ tid, page, query, forumId, fromHistory = false }: T
     : { transform: 'translateY(0)', transition: 'transform 180ms var(--motion-ease)' }
 
   return (
-    <div ref={rootRef} className="flex h-full min-h-0 flex-col bg-canvas">
+    <div
+      ref={rootRef}
+      data-kb-region={contentFocused ? 'content' : undefined}
+      className={cn('flex h-full min-h-0 flex-col bg-canvas', contentFocused && 'kb-focus')}
+    >
       <div
         ref={scrollRef}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain"

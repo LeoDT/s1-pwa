@@ -12,21 +12,22 @@ interface DialogProps {
 /** 原生 dialog 浮层：小屏底部抽屉，大屏居中。挂载即打开。 */
 export function Dialog({ title, onClose, children, className }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const closingRef = useRef(false)
+  const mountedRef = useRef(true)
   const titleId = useId()
 
   useEffect(() => {
     const dialog = dialogRef.current
-    if (!dialog || dialog.open) return
+    if (!dialog) return
 
-    closingRef.current = false
-    dialog.showModal()
-    dialog.focus()
+    mountedRef.current = true
+    if (!dialog.open) {
+      dialog.showModal()
+      dialog.focus()
+    }
 
     return () => {
-      if (!dialog.open) return
-      closingRef.current = true
-      dialog.close()
+      mountedRef.current = false
+      if (dialog.open) dialog.close()
     }
   }, [])
 
@@ -37,7 +38,9 @@ export function Dialog({ title, onClose, children, className }: DialogProps) {
       aria-labelledby={titleId}
       aria-modal="true"
       onClose={() => {
-        if (!closingRef.current) onClose()
+        // 卸载/StrictMode 重挂时 cleanup 也会 close，事件异步到达；此时弹层已重新打开或已卸载
+        if (!mountedRef.current || dialogRef.current?.open) return
+        onClose()
       }}
       onCancel={(event) => {
         event.preventDefault()

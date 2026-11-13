@@ -44,6 +44,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 键盘焦点指示：行/正文栏/板块候选共用的内描边，与 active 的底色+左侧竖条区分 */
+@utility kb-focus {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: -2px;
+}
+
 @layer base {
   :root {
     color-scheme: light;

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { BottomBar } from '@/components/BottomBar'
 import { ToolbarButton } from '@/components/ToolbarButton'
@@ -15,6 +15,8 @@ let rememberedScrollLeft = 0
 interface BoardTabsProps {
   boards: BoardEntry[]
   activeFid?: number
+  /** 键盘切板块时的候选；只高亮，不加载 */
+  candidateFid?: number | null
   onSelect: (fid: number) => void
   /** 大屏专用：没有下拉手势，用按钮刷新（列表 = 回第 1 页） */
   onRefresh?: () => void | Promise<unknown>
@@ -28,6 +30,7 @@ interface BoardTabsProps {
 export function BoardTabs({
   boards,
   activeFid,
+  candidateFid = null,
   onSelect,
   onRefresh,
   refreshing = false,
@@ -39,6 +42,15 @@ export function BoardTabs({
     const element = scrollRef.current
     if (element) element.scrollLeft = rememberedScrollLeft
   }, [])
+
+  // 键盘切换板块时把候选滚进可见范围
+  useEffect(() => {
+    if (candidateFid === null) return
+    const element = scrollRef.current?.querySelector(`[data-board-fid="${candidateFid}"]`)
+    if (element instanceof HTMLElement && typeof element.scrollIntoView === 'function') {
+      element.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    }
+  }, [candidateFid])
 
   return (
     <nav
@@ -61,14 +73,18 @@ export function BoardTabs({
         >
           {boards.map((board) => {
             const active = board.fid === activeFid
+            const candidate = board.fid === candidateFid
             return (
               <button
                 key={board.fid}
                 type="button"
+                data-board-fid={board.fid}
+                data-kb-candidate={candidate ? 'true' : undefined}
                 onClick={() => onSelect(board.fid)}
                 className={cn(
                   'relative flex-[1_0_auto] snap-start whitespace-nowrap px-3 text-meta',
                   active ? 'font-medium text-accent-strong' : 'text-text',
+                  candidate && 'kb-focus font-medium text-accent-strong',
                 )}
               >
                 {board.name}

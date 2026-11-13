@@ -191,7 +191,7 @@
 
 - 大屏顶栏内容宽度与浏览框架一致（`--frame-w`），齿轮与右栏右边缘对齐
 
-- 结构：左（预留浏览历史入口）｜ 中：**固定站点名 `Stage1st`**（不随页面变化）｜ 右：设置
+- 结构：左（预留浏览历史入口）｜ 中：**固定站点名 `Stage1st`**（不随页面变化）｜ 右：键盘说明（仅宽屏）、浏览历史、设置
 - **没有返回按钮**，也没有刷新按钮（列表下拉刷新）
 - `position: absolute` 浮在内容上，`background: color-mix(in srgb, var(--color-panel) 92%, transparent)` + `backdrop-filter: blur(8px)`，底部 1px `--color-line`，`z-index: 30`
 - 收起/展开：`transform: translateY(-100%)`，`transition: 180ms`；`prefers-reduced-motion` 时直接切换
@@ -210,7 +210,8 @@
 - 已读：整行 `inset 3px 0 0 var(--color-accent-strong)`，徽章描边与数字转为 `--color-accent-strong`
 - 行间 1px `--color-line`；整行为 `<button>`，`:active` 背景 `--color-panel-light`
 - **激活态**（大屏左栏当前帖子、浏览历史当前帖子）：`--color-panel-light` 底 + `inset 3px 0 0 var(--color-accent-strong)`，标题与徽章数字转 `--color-accent-strong`，带 `aria-current="true"`
-- 板块条（`BoardTabs`）激活项同样用 `--color-accent-strong` 文字 + 底部 2px 主题色指示条
+- **键盘焦点**（仅宽屏）：整行 2px 主题色内描边（`.kb-focus`，`outline-offset: -2px`），不改文字颜色；与 active/已读的底色和左侧竖条叠加时都保留，两者视觉可区分
+- 板块条（`BoardTabs`）激活项同样用 `--color-accent-strong` 文字 + 底部 2px 主题色指示条；键盘切板块的候选只加 2px 主题色内描边（不改变 active）
 
 ### 5.3 帖子 `PostCard`
 
@@ -264,6 +265,7 @@
 - 横向滚动 + `scroll-snap-type: x proximity`，`scrollbar-width: none`
 - 每项 `flex: 1 0 auto; padding: 0 12px`，空间充足时填满可用宽度，放不下时保留内容宽度并横滚；active：主题色文字 + 2px 下划线。
 - 大屏右侧独立刷新按钮；管理入口在设置中。详情页刷新不切换骨架、不重置滚动位置，未变化的楼层通过 memo 跳过重渲染。
+- 键盘切板块的候选只加 2px 主题色内描边（`.kb-focus`）并滚进可见范围，不改变当前列表；`x` 才加载。
 
 ### 5.8 Sheet / 设置
 
@@ -301,7 +303,7 @@
 
 - 点击目标 ≥ 44×44（图标本身可小，但按钮外框不小于 44）；列表项整行可点。
 - 楼层定位高亮：目标楼 `box-shadow: inset 0 0 0 2px var(--color-flag)`，800ms 后 400ms 淡出。
-- 键盘（≥1024）：`←/→` 翻页（输入框聚焦时禁用）、`Esc` 关闭浮层。
+- 键盘（≥1024）：完整键位见 navigation.md §7（`w/s` 选择与滚动、`d` 打开、`a/d` 翻页、`r` 刷新、`z/x` 切板块、`q` 回列表）；输入框聚焦、弹层打开或带修饰键时禁用，`Esc` 只用于关闭浮层。
 
 ### 6.1 动效（只做反馈，不做入场）
 
@@ -324,7 +326,7 @@
 ## 7. 图标
 
 `lucide-react`，线性 1.75px，尺寸 20（顶栏 22）。使用集合：
-`ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, MoreHorizontal, Menu, History, Settings, LogOut, X, ImageOff, AlertCircle, WifiOff, Check, Plus, Trash2, ArrowUp, ArrowDown, Search, ExternalLink`
+`ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, MoreHorizontal, Menu, History, Keyboard, Settings, LogOut, X, ImageOff, AlertCircle, WifiOff, Check, Plus, Trash2, ArrowUp, ArrowDown, Search, ExternalLink`
 
 ## 8. 无障碍
 
@@ -334,7 +336,7 @@
 - 图片 `alt` 取上游 `alt`，缺失用 `图片`
 - 所有对比度组合遵循 §1.3
 - 灯箱打开时焦点陷阱 + `aria-modal="true"`；设置抽屉用 `aria-labelledby` 指向标题
-- 图标按钮一律带 `aria-label`（刷新、删除、关闭、历史、设置等）
+- 图标按钮一律带 `aria-label`（刷新、删除、关闭、历史、键盘说明、设置等）
 
 ## 9. Tailwind v4 接入
 

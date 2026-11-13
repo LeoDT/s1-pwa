@@ -8,6 +8,7 @@ import { EmptyState, ErrorState, ListSkeleton } from '@/components/states'
 import { useSetSettingsOpen } from '@/app/chrome'
 import { useSession } from '@/features/auth/useSession'
 import { BoardTabs } from '@/features/browse/BoardTabs'
+import { useBrowseKeyboard, useListKeyboard } from '@/features/browse/BrowseKeyboard'
 import { ListRow } from '@/features/browse/ListRow'
 import { useBoards } from '@/features/browse/queries'
 import { ApiError } from '@/lib/api'
@@ -57,6 +58,7 @@ export function HistoryPane({ activeTid, visible = true }: HistoryPaneProps) {
   const boards = useBoards()
   const session = useSession()
   const setSettingsOpen = useSetSettingsOpen()
+  const { focusedTid, boardCandidate, setRegion } = useBrowseKeyboard()
   const wide = useMediaQuery('(min-width: 1024px)')
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -144,6 +146,7 @@ export function HistoryPane({ activeTid, visible = true }: HistoryPaneProps) {
 
   const open = (row: ProgressRow) => {
     markFromList()
+    setRegion('content')
     const page = row.position?.page ?? 1
     const pid = row.position?.pid
     clearThreadFocus()
@@ -159,6 +162,16 @@ export function HistoryPane({ activeTid, visible = true }: HistoryPaneProps) {
     }
     void navigate({ to: '/history/t/$tid', params: { tid: String(row.tid) }, replace: wide })
   }
+
+  useListKeyboard({
+    tids: items.map((row) => row.tid),
+    onOpen: (tid) => {
+      const row = items.find((item) => item.tid === tid)
+      if (row) open(row)
+    },
+    onRefresh: refresh,
+    scrollRef,
+  })
 
   return (
     <div className="relative h-full min-h-0 bg-canvas">
@@ -232,6 +245,7 @@ export function HistoryPane({ activeTid, visible = true }: HistoryPaneProps) {
                     <ListRow
                       key={row.tid}
                       active={active}
+                      focused={row.tid === focusedTid}
                       badgeAccent={active}
                       badgeLabel={row.position?.floor ? `读到第 ${row.position.floor} 楼` : '未记录楼层'}
                       badge={
@@ -270,6 +284,7 @@ export function HistoryPane({ activeTid, visible = true }: HistoryPaneProps) {
 
       <BoardTabs
         boards={boards.data ?? []}
+        candidateFid={boardCandidate}
         onRefresh={refresh}
         refreshing={refreshing || pullState.refreshing}
         onSelect={(fid) =>

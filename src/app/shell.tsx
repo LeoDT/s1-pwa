@@ -1,7 +1,9 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
-import { History, Settings } from 'lucide-react'
+import { History, Keyboard, Settings } from 'lucide-react'
+import { Dialog } from '@/components/Dialog'
 import { SettingsSheet } from '@/features/settings/SettingsSheet'
+import { SHORTCUT_GROUPS } from '@/features/browse/keyboard'
 import { useHeaderHidden, useSetHeaderHidden, useSettingsOpen, useSetSettingsOpen } from './chrome'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
@@ -17,6 +19,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const headerHidden = useHeaderHidden()
   const setHeaderHidden = useSetHeaderHidden()
   const wide = useMediaQuery('(min-width: 1024px)')
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const inHistory = pathname === '/history' || pathname.startsWith('/history/')
   const isBrowse = pathname.startsWith('/f/') || pathname.startsWith('/t/') || inHistory
@@ -38,6 +41,17 @@ export function Shell({ children }: { children: ReactNode }) {
         {WORDMARK}
       </span>
       <div className="flex flex-1 items-center justify-end">
+        {wide ? (
+          <button
+            type="button"
+            aria-label="键盘操作"
+            title="键盘操作"
+            onClick={() => setHelpOpen(true)}
+            className="inline-flex size-11 items-center justify-center rounded-md text-text transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light"
+          >
+            <Keyboard size={20} />
+          </button>
+        ) : null}
         <button
           type="button"
           aria-label="浏览历史"
@@ -68,6 +82,31 @@ export function Shell({ children }: { children: ReactNode }) {
     <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
   )
 
+  const keyboardDialog = helpOpen ? (
+    <Dialog title="键盘操作" onClose={() => setHelpOpen(false)}>
+      <p className="text-meta text-muted">仅宽屏（≥1024px）启用；输入框聚焦或弹层打开时不响应。</p>
+      <div className="mt-3 space-y-4">
+        {SHORTCUT_GROUPS.map((group) => (
+          <section key={group.title}>
+            <h3 className="text-ui font-medium text-heading">{group.title}</h3>
+            <dl className="mt-1 divide-y divide-line">
+              {group.items.map((item) => (
+                <div key={item.keys} className="flex items-center justify-between gap-3 py-2">
+                  <dt className="text-ui text-text">{item.label}</dt>
+                  <dd>
+                    <kbd className="rounded-sm border border-line bg-panel-light px-2 py-0.5 text-meta text-heading">
+                      {item.keys}
+                    </kbd>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+    </Dialog>
+  ) : null
+
   if (!isBrowse) {
     return (
       <div className="flex h-dvh flex-col bg-canvas">
@@ -81,6 +120,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="mx-auto w-full max-w-[800px] px-4 py-4">{children}</div>
         </main>
         {settingsSheet}
+        {keyboardDialog}
       </div>
     )
   }
@@ -96,6 +136,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </header>
         <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
         {settingsSheet}
+        {keyboardDialog}
       </div>
     )
   }
@@ -114,6 +155,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </header>
       <main className="h-full">{children}</main>
       {settingsSheet}
+      {keyboardDialog}
     </div>
   )
 }

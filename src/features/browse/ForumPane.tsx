@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ThreadSummary } from '@shared/types'
 import { fetchForumPage, useBoards, useForumPages, useProgressIndex, type ObservedForumPage } from './queries'
+import { useBrowseKeyboard, useListKeyboard } from './BrowseKeyboard'
 import { ThreadRow } from './ThreadRow'
 import { BoardTabs } from './BoardTabs'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/states'
@@ -34,6 +35,7 @@ export function ForumPane({ fid, activeTid, visible = true }: ForumPaneProps) {
   accountRef.current = session.data?.uid
   const openGenerationRef = useRef(0)
 
+  const { focusedTid, boardCandidate, setRegion } = useBrowseKeyboard()
   const wide = useMediaQuery('(min-width: 1024px)')
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -109,6 +111,7 @@ export function ForumPane({ fid, activeTid, visible = true }: ForumPaneProps) {
   const openThread = (thread: typeof threads[number]) => {
     rememberListState(fid, scrollTopRef.current)
     markFromList()
+    setRegion('content')
     // 大屏列表一直在左边，不需要堆历史；小屏 push 一次，保证系统返回能回列表
     void openAtProgress(thread, wide)
   }
@@ -148,6 +151,17 @@ export function ForumPane({ fid, activeTid, visible = true }: ForumPaneProps) {
     () => new Map((progress.data ?? []).map((row) => [row.tid, row])),
     [progress.data],
   )
+
+  const tids = useMemo(() => threads.map((thread) => thread.tid), [threads])
+  useListKeyboard({
+    tids,
+    onOpen: (tid) => {
+      const thread = threads.find((item) => item.tid === tid)
+      if (thread) openThread(thread)
+    },
+    onRefresh: refresh,
+    scrollRef,
+  })
 
   const total = forum.data?.pages[0]?.totalPages ?? 1
   const loaded = forum.data?.pages.length ?? 0
@@ -198,6 +212,7 @@ export function ForumPane({ fid, activeTid, visible = true }: ForumPaneProps) {
                     key={thread.tid}
                     thread={thread}
                     active={thread.tid === activeTid}
+                    focused={thread.tid === focusedTid}
                     read={Boolean(entry && entry.openedAt > 0)}
                     newReplies={getNewReplies(thread.replies, entry?.read?.replies) ?? 0}
                     onOpen={() => openThread(thread)}
@@ -242,6 +257,7 @@ export function ForumPane({ fid, activeTid, visible = true }: ForumPaneProps) {
       <BoardTabs
         boards={boards.data ?? []}
         activeFid={fid}
+        candidateFid={boardCandidate}
         onRefresh={refresh}
         refreshing={refreshing || pullState.refreshing}
         onSelect={(next) =>

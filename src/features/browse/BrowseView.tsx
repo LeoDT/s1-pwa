@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { BrowseKeyboardProvider } from './BrowseKeyboard'
+import { KEYBOARD_HINT } from './keyboard'
 import { BrowseLayout, EmptySelection } from './BrowseLayout'
 import { ForumPane } from './ForumPane'
 import { ThreadPane } from './ThreadPane'
@@ -51,19 +53,27 @@ export function BrowseView({ fid, tid, page = 1, fromHistory = false }: BrowseVi
   }
 
   return (
-    <BrowseLayout
-      narrow={tid === undefined ? 'sidebar' : 'main'}
-      sidebar={sidebar}
-      main={tid === undefined ? <EmptySelection /> : (
-        <ThreadPane
-          key={`${tid}:${page}`}
-          tid={tid}
-          page={page}
-          query={query}
-          forumId={nextSource?.kind === 'forum' ? nextSource.fid : forumId}
-          fromHistory={nextSource?.kind === 'history'}
-        />
-      )}
-    />
+    <BrowseKeyboardProvider
+      enabled={wide}
+      activeFid={nextSource?.kind === 'forum' ? nextSource.fid : null}
+      tid={tid ?? null}
+    >
+      <BrowseLayout
+        narrow={tid === undefined ? 'sidebar' : 'main'}
+        sidebar={sidebar}
+        main={tid === undefined ? (
+          <EmptySelection hint={wide ? KEYBOARD_HINT : undefined} />
+        ) : (
+          <ThreadPane
+            key={`${tid}:${page}`}
+            tid={tid}
+            page={page}
+            query={query}
+            forumId={nextSource?.kind === 'forum' ? nextSource.fid : forumId}
+            fromHistory={nextSource?.kind === 'history'}
+          />
+        )}
+      />
+    </BrowseKeyboardProvider>
   )
 }

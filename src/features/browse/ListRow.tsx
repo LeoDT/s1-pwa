@@ -12,6 +12,8 @@ interface ListRowProps {
   meta?: ReactNode
   /** 当前正在阅读的条目 */
   active?: boolean
+  /** 键盘焦点所在行（与 active 视觉区分） */
+  focused?: boolean
   /** 有阅读历史：保留左侧主题色竖条 */
   read?: boolean
   onOpen: () => void
@@ -30,16 +32,19 @@ export function ListRow({
   title,
   meta,
   active = false,
+  focused = false,
   read = false,
   onOpen,
   action,
 }: ListRowProps) {
   return (
     <div
+      data-kb-focused={focused ? 'true' : undefined}
       className={cn(
         'flex w-full items-start transition-colors duration-[var(--motion-press)] hover:bg-panel-light active:bg-panel-light',
         active && 'bg-panel-light',
         (active || read) && 'shadow-[inset_3px_0_0_var(--color-accent-strong)]',
+        focused && 'kb-focus',
       )}
     >
       <button
